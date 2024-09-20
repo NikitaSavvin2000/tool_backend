@@ -1,3 +1,4 @@
+import json
 from typing import Annotated, List
 
 import pandas as pd
@@ -5,8 +6,9 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.backend.normalization import TimeNormalization
 from src.config import logger, public_or_local
-from src.models.statisticsrequest import  AnalyticsDFsRequest
+from src.models.statisticsrequest import AnalyticsDFsRequest, NormalizationRequest
 
 if public_or_local == 'LOCAL':
     url = 'http://localhost'
@@ -50,6 +52,14 @@ example_dfs_3 = {
     "11:04:00": 32
 }
 
+example_not_norm_data = {
+    "col_time": "time",
+    "col_target": "load_consumption",
+    "json_list_df": [
+        {"load_consumption":56797.7,"time":"2023-08-19 17:53:00"},
+        {"load_consumption":58040.5,"time":"2023-08-19 17:58:00"}]
+}
+
 
 @app.post("/backend/v1/analyticsdfs")
 async def get_concepts(body: Annotated[
@@ -60,6 +70,43 @@ async def get_concepts(body: Annotated[
         dfs_json_list = body.dfs_json_list
         if dfs_json_list:
             return 'Hello Backend'
+        else:
+            logger.error("Something happened during creation of the search table")
+            raise HTTPException(
+                status_code=400,
+                detail="Bad Request",
+                headers={"X-Error": "Something happened during creation of the search table"},
+            )
+    except Exception as ApplicationError:
+        logger.error(ApplicationError.__repr__())
+        raise HTTPException(
+            status_code=400,
+            detail="Unknown Error",
+            headers={"X-Error": f"{ApplicationError.__repr__()}"},
+        )
+
+@app.post("/backend/v1/normalization")
+async def get_concepts(body: Annotated[
+    NormalizationRequest, Body(
+        example={
+            "col_time": example_not_norm_data['col_time'],
+            "col_target": example_not_norm_data['col_target'],
+            "json_list_df": example_not_norm_data['json_list_df'],
+        })]):
+
+    try:
+        col_time = body.col_time
+        col_target = body.col_target
+        json_list_df = body.json_list_df
+        df = pd.DataFrame(json_list_df)
+        if not df.empty:
+            df[col_time] = pd.to_datetime(df[col_time], errors='coerce')
+            df[col_time] = df[col_time].apply(lambda x: x.replace(hour=x.hour or 0,
+                                                                  minute=x.minute or 0,
+                                                                  second=x.second or 0))
+            tn = TimeNormalization(col_time, col_target)
+            df_all_data_norm = tn.df_normalize_with_meta(df)
+            return df_all_data_norm.to_dict()
         else:
             logger.error("Something happened during creation of the search table")
             raise HTTPException(

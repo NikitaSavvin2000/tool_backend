@@ -17,8 +17,13 @@ dependencies = [
     "uvicorn>=0.28.0",
     "pandas>=2.2.1",
     "coverage==7.4.4",
+    "scipy>=1.14.1",
+    "statsmodels>=0.14.2",
+    "tensorflow>=2.16.2",
+    "holidays>=0.57",
+    "scikit-learn>=1.5.2",
 ]
-requires-python = ">=3.9"
+requires-python = "==3.12.*"
 readme = "README.md"
 license = {text = "MIT"}
 

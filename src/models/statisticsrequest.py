@@ -1,6 +1,8 @@
+import json
 from typing import Optional
 
 from pydantic import BaseModel
+from typing import List, Dict
 
 
 class StatisticsRequest(BaseModel):
@@ -19,3 +21,8 @@ class ConceptsRequest(BaseModel):
 
 class AnalyticsDFsRequest(BaseModel):
     dfs_json_list: list[dict]
+
+class NormalizationRequest(BaseModel):
+    col_time: str
+    col_target: str
+    json_list_df: List[Dict]
