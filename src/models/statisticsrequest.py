@@ -5,20 +5,6 @@ from pydantic import BaseModel
 from typing import List, Dict
 
 
-class StatisticsRequest(BaseModel):
-    doc_ids: list[str]
-    years: list[int]
-
-
-class MetaRequest(BaseModel):
-    doc_ids: list[str]
-
-
-class ConceptsRequest(BaseModel):
-    doc_ids: list[str]
-    level: Optional[int]
-    rule: Optional[str]
-
 class AnalyticsDFsRequest(BaseModel):
     dfs_json_list: list[dict]
 
@@ -26,3 +12,22 @@ class NormalizationRequest(BaseModel):
     col_time: str
     col_target: str
     json_list_df: List[Dict]
+
+class ForecastRequest(BaseModel):
+    col_target: str
+    time_points_horizon: int
+    epochs: int
+    lag: int
+    activation: str
+    optimizer: str
+    dropout_count: float
+    model_architecture_params: List[Dict]
+    json_list_df_all_data_norm: List[Dict]
+
+
+class ReverseNormalizationRequest(BaseModel):
+    col_time: str
+    col_target: str
+    json_list_norm_df: List[Dict]
+    min_val: float
+    max_val: float

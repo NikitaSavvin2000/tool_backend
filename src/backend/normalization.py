@@ -9,7 +9,7 @@ class TimeNormalization:
 
     def __init__(self, col_time, col_target):
         self.min_year = 1900
-        self.max_year = 2025
+        self.max_year = 2027
         self.min_weak = 1
         self.max_weak = 52
         self.min_day_of_weak = 0
@@ -23,6 +23,38 @@ class TimeNormalization:
         self.scaler = MinMaxScaler()
         self.col_time = col_time
         self.col_target = col_target
+
+
+    def normalize_column(self, value_series, min_val, max_val):
+        """
+        Нормировка колонки с использованием Min-Max Scaling.
+
+        Parameters:
+        - value_series: pd.Series, колонка значений для нормировки.
+        - min_val: float, минимальное значение для нормировки.
+        - max_val: float, максимальное значение для нормировки.
+
+        Returns:
+        - pd.Series, нормированные значения.
+        """
+        normalized = (value_series - min_val) / (max_val - min_val)
+        return normalized
+
+    def inverse_normalize_column(self, normalized_series, min_val, max_val):
+        """
+        Обратная нормировка колонки.
+
+        Parameters:
+        - normalized_series: pd.Series, колонка нормированных значений.
+        - min_val: float, минимальное значение для обратной нормировки.
+        - max_val: float, максимальное значение для обратной нормировки.
+
+        Returns:
+        - pd.Series, оригинальные значения.
+        """
+        original = normalized_series * (max_val - min_val) + min_val
+        return original
+
 
     def check_difrent_years(self):
         if self.min_year != self.max_year:
@@ -52,6 +84,9 @@ class TimeNormalization:
 
 
     def df_normalize_with_meta(self, df):
+        min_val = df[self.col_target].min()*1.2
+        max_val = df[self.col_target].max()*1.2
+
         df_with_meta = self.meta_date(df)
         normalized_dates = []
         for index, date in df_with_meta.iterrows():
@@ -77,10 +112,11 @@ class TimeNormalization:
                                               'week_sin', 'week_cos', 'is_holiday']
                                      )
 
-        normalized_df[self.col_target] = self.scaler.fit_transform(normalized_df[self.col_target].values.reshape(-1, 1))
-        return normalized_df
+        normalized_df[self.col_target] = self.normalize_column(normalized_df[self.col_target], min_val, max_val)
 
-    def df_denormalize_with_meta(self, df):
+        return normalized_df, min_val, max_val
+
+    def df_denormalize_with_meta(self, df, min_val, max_val):
         df = df.sort_values(by=['year', 'week', 'day_of_week', 'hour', 'minute'], ascending=True)
 
         def _convert_date(date_str):
@@ -108,7 +144,10 @@ class TimeNormalization:
             denormalized_dates.append(denormalized_date)
 
         for i in range(len(denormalized_dates)):
-            denormalized_dates[i][0] = self.scaler.inverse_transform([[denormalized_dates[i][0]]])[0][0]
+            # denormalized_dates[i][0] = self.scaler.inverse_transform([[denormalized_dates[i][0]]])[0][0]
+            denormalized_dates[i][0] = self.inverse_normalize_column(denormalized_dates[i][0], min_val, max_val)
+
+
         denormalized_df = pd.DataFrame(denormalized_dates,
                                        columns=[self.col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second',
                                                 'hour_sin', 'hour_cos', 'day_of_week_sin', 'day_of_week_cos',
