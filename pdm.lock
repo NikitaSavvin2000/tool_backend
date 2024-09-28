@@ -1218,14 +1218,6 @@ files = [
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
 ]
 
-[[package]]
-name = "sklearn"
-version = "0.0.post12"
-summary = ""
-groups = ["default"]
-files = [
-    {file = "sklearn-0.0.post12.tar.gz", hash = "sha256:54cff9e20839b7b202321178228af4d9388bedf78425d9299fd9ee170d68802e"},
-]
 
 [[package]]
 name = "sniffio"
