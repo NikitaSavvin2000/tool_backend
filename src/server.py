@@ -174,6 +174,7 @@ async def get_normalization(body: Annotated[
         df = pd.DataFrame(json_list_df)
         df[col_target] = df[col_target].replace("None", None)
         if not df.empty:
+
             df[col_time] = pd.to_datetime(df[col_time], errors='coerce')
             df[col_time] = df[col_time].apply(lambda x: x.replace(hour=x.hour or 0,
                                                                   minute=x.minute or 0,
@@ -181,6 +182,7 @@ async def get_normalization(body: Annotated[
 
             tn = TimeNormalization(col_time, col_target)
             df_all_data_norm, min_val, max_val = tn.df_normalize_with_meta(df)
+            df_all_data_norm.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_all_data_norm.csv')
             response = {
                 "df_all_data_norm": df_all_data_norm.to_dict(),
                 "min_val": min_val,

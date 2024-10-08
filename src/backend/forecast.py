@@ -157,6 +157,8 @@ def forecast(
 
     predict_values = np.array(predict_values).flatten()
 
+    print(f'predict_values = {predict_values}')
+
     df_evaluetion[col_target] = predict_values
     if len(diff_cols) > 0:
         for col in diff_cols:
@@ -188,7 +190,7 @@ def forecast(
 
     n_features = values.shape[1]
 
-    optimizer = tf.keras.optimizers.Adam(learning_rate=0.00001)
+    # optimizer = tf.keras.optimizers.Adam(learning_rate=0.00001)
     model.compile(optimizer=optimizer, loss='mse')
 
     model.fit(X, y, epochs=epochs, verbose=1, callbacks=[early_stopping, reduce_lr, save_best_weights_callback])
@@ -201,6 +203,9 @@ def forecast(
     predict_values = make_predictions(x_input, x_future, n_features, model, lag)
 
     predict_values = np.array(predict_values).flatten()
+
+    print(f'predict_values = {predict_values}')
+
 
     df_real_predict[col_target] = predict_values
     if len(diff_cols) > 0:
