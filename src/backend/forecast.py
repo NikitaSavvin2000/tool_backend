@@ -1,14 +1,10 @@
-import json
-
 from tensorflow.keras.callbacks import Callback
-from tensorflow.keras.layers import Input, MultiHeadAttention, LayerNormalization, Dropout, LSTM, Dense, Attention
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Bidirectional, Dropout
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
-
 import numpy as np
-
+import pandas as pd
 
 
 class SaveBestWeights(Callback):
@@ -60,7 +56,8 @@ def make_predictions(x_input, x_future, n_features, model, lag):
 def forecast(
         col_target,
         df_all_data_norm,
-        time_points_horizon,
+        evaluation_index,
+        last_know_index,
         epochs,
         lag,
         activation,
@@ -69,7 +66,15 @@ def forecast(
         model_architecture_params,
 ):
 
-    time_points_horizon += 1
+    possible_cols = [col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos', 'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos', 'is_holiday']
+
+    df_all_data_norm = df_all_data_norm[possible_cols]
+
+    df_true_all_col = df_all_data_norm.iloc[evaluation_index: last_know_index]
+    df_true_all_col_skip = df_all_data_norm.iloc[last_know_index: ]
+    df_all_data_norm[col_target] = df_all_data_norm[col_target].replace('None', None)
+    df_all_data_norm[col_target] = df_all_data_norm[col_target].astype(float)
+
     all_columns = df_all_data_norm.columns
 
     col_for_train = [col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1]
@@ -79,26 +84,30 @@ def forecast(
 
     columns = col_for_train
 
-    df = df_all_data_norm
-    train_index = len(df) - time_points_horizon
-    df_train_all_col = df.iloc[:train_index]
-    df_test_all_col = df.iloc[train_index + 1:]
-    df_true_all_col = df_test_all_col.copy()
+    train_index = evaluation_index
+
+
+    print(len(df_true_all_col))
+    df_true_all_col = df_true_all_col.iloc[:last_know_index + 1]
+    print(len(df_true_all_col))
+
 
     df = df_all_data_norm[col_for_train]
-    df_train = df.iloc[:train_index]
-    df_test = df.iloc[train_index + 1:]
-    df_true = df_test.copy()
+    df_train = df.iloc[:train_index+1]
+
+    df_test = df.iloc[train_index + 1: last_know_index + 1]
     df_test.loc[:, col_target] = np.nan
-    df_forecast = df_test.copy()
+
+
+    df_evaluetion = df_test.copy()
     values = df_train[columns].values
     x_input = create_x_input(df_train, lag)
+
     x_future = df_test.values
     X, y = split_sequence(values, lag)
 
 
     n_features = values.shape[1]
-    inputs = Input(shape=(lag, n_features))
 
 
     model = Sequential()
@@ -148,14 +157,66 @@ def forecast(
 
     predict_values = np.array(predict_values).flatten()
 
-    df_forecast[col_target] = predict_values
+    df_evaluetion[col_target] = predict_values
     if len(diff_cols) > 0:
         for col in diff_cols:
-            df_forecast[col] = df_true_all_col[col]
+            df_evaluetion[col] = df_true_all_col[col]
 
 
-    df_forecast[col_target] = predict_values
+    df_evaluetion[col_target] = predict_values
     loss_list = history.history['loss']
 
 
-    return df_forecast, df_true_all_col, loss_list
+    # part 2 fine tuning -------------------------------------
+
+    df_all_data_norm = df_all_data_norm[col_for_train]
+
+    df_all_data_norm = df_all_data_norm[col_for_train]
+
+
+    train_index = last_know_index
+
+    df_train = df_all_data_norm[evaluation_index + 1:train_index]
+
+    df_test = df_all_data_norm.iloc[train_index + 1:]
+    df_test.loc[:, col_target] = np.nan
+    df_real_predict = df_test.copy()
+    values = df_train[columns].values
+    x_input = create_x_input(df_train, lag)
+    x_future = df_test.values
+    X, y = split_sequence(values, lag)
+
+    n_features = values.shape[1]
+
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.00001)
+    model.compile(optimizer=optimizer, loss='mse')
+
+    model.fit(X, y, epochs=epochs, verbose=1, callbacks=[early_stopping, reduce_lr, save_best_weights_callback])
+    model.set_weights(save_best_weights_callback.best_weights)
+
+
+    x_input = x_input.reshape((1, lag, n_features))
+
+
+    predict_values = make_predictions(x_input, x_future, n_features, model, lag)
+
+    predict_values = np.array(predict_values).flatten()
+
+    df_real_predict[col_target] = predict_values
+    if len(diff_cols) > 0:
+        for col in diff_cols:
+            df_real_predict[col] = df_true_all_col_skip[col]
+
+
+    df_real_predict[col_target] = predict_values
+
+    df_evaluetion['second'] = df_evaluetion['second'].fillna(0)
+    df_true_all_col['second'] = df_true_all_col['second'].fillna(0)
+    df_real_predict['second'] = df_real_predict['second'].fillna(0)
+
+
+    df_evaluetion.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_evaluetion.csv')
+    df_true_all_col.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_true_all_col.csv')
+    df_real_predict.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_real_predict.csv')
+
+    return df_evaluetion, df_true_all_col, loss_list, df_real_predict

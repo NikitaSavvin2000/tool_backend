@@ -5,6 +5,7 @@ import pandas as pd
 import holidays
 from sklearn.preprocessing import MinMaxScaler
 
+
 class TimeNormalization:
 
     def __init__(self, col_time, col_target):
@@ -37,10 +38,13 @@ class TimeNormalization:
         Returns:
         - pd.Series, нормированные значения.
         """
-        normalized = (value_series - min_val) / (max_val - min_val)
+        normalized = value_series.apply(
+            lambda x: "None" if pd.isna(x) else (x - min_val) / (max_val - min_val)
+        )
+
         return normalized
 
-    def inverse_normalize_column(self, normalized_series, min_val, max_val):
+    def inverse_normalize_column(self, normalized_value, min_val, max_val):
         """
         Обратная нормировка колонки.
 
@@ -52,7 +56,11 @@ class TimeNormalization:
         Returns:
         - pd.Series, оригинальные значения.
         """
-        original = normalized_series * (max_val - min_val) + min_val
+        if pd.isna(normalized_value):
+            original = "None"
+        else:
+            original = normalized_value * (max_val - min_val) + min_val
+
         return original
 
 

@@ -7,10 +7,11 @@ from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.backend.forecast import forecast
+from src.backend.metrix import metrix_all
 from src.backend.normalization import TimeNormalization
 from src.config import logger, public_or_local
 from src.models.statisticsrequest import AnalyticsDFsRequest, NormalizationRequest, ForecastRequest, \
-    ReverseNormalizationRequest
+    ReverseNormalizationRequest, MenrixAllRequest
 
 if public_or_local == 'LOCAL':
     url = 'http://localhost'
@@ -78,7 +79,8 @@ example_reverse_norm_data = {
 
 example_forecast_point = {
     "col_target": "load_consumption",
-    "time_points_horizon": 3,
+    "evaluation_index": 7,
+    "last_know_index": 9,
     "epochs": 5,
     "lag": 1,
     "activation": "relu",
@@ -101,6 +103,35 @@ example_forecast_point = {
                                    {"load_consumption":0.5249571553,"year":0.984,"week":0.6274509804,"day_of_week":0.8333333333,"hour":0.7826086957,"minute":0.6440677966,"second":0,"hour_sin":-1,"hour_cos":-1.836970199e-16,"day_of_week_sin":-0.9749279122,"day_of_week_cos":-0.222520934,"week_sin":-0.7485107482,"week_cos":-0.6631226582,"is_holiday":0}]
 }
 
+
+example_metrix_all = {
+    "col_time": "time",
+    "col_target": "load_consumption",
+    "json_list_df_reverse_evaluation": [
+        {"load_consumption":18256.488175171136,"time":"2023-12-17 00:07:00"},
+        {"load_consumption":18557.543205893933,"time":"2023-12-17 00:12:00"},
+        {"load_consumption":18732.26521594262,"time":"2023-12-17 00:17:00"},
+        {"load_consumption":18786.505777776718,"time":"2023-12-17 00:22:00"},
+        {"load_consumption":18778.05954055041,"time":"2023-12-17 00:27:00"},
+        {"load_consumption":18707.63702002251,"time":"2023-12-17 00:32:00"},
+        {"load_consumption":18585.811475117684,"time":"2023-12-17 00:37:00"},
+        {"load_consumption":18423.762592223524,"time":"2023-12-17 00:42:00"},
+        {"load_consumption":18245.625279249252,"time":"2023-12-17 00:47:00"},
+        {"load_consumption":18069.144327852846,"time":"2023-12-17 00:52:00"}
+    ],
+    "json_list_df_reverse_comparative": [
+        {"load_consumption":17574.4,"time":"2023-12-17 00:02:00"},
+        {"load_consumption":17930,"time":"2023-12-17 00:07:00"},
+        {"load_consumption":16916.699999999997,"time":"2023-12-17 00:12:00"},
+        {"load_consumption":18008.1,"time":"2023-12-17 00:17:00"},
+        {"load_consumption":17515.1,"time":"2023-12-17 00:22:00"},
+        {"load_consumption":19243.9,"time":"2023-12-17 00:27:00"},
+        {"load_consumption":15745.6,"time":"2023-12-17 00:32:00"},
+        {"load_consumption":16434.9,"time":"2023-12-17 00:37:00"},
+        {"load_consumption":16154.700000000003,"time":"2023-12-17 00:42:00"},
+        {"load_consumption":15885.500000000002,"time":"2023-12-17 00:47:00"}
+    ],
+}
 
 @app.post("/backend/v1/analyticsdfs")
 async def get_concepts(body: Annotated[
@@ -139,12 +170,15 @@ async def get_normalization(body: Annotated[
         col_time = body.col_time
         col_target = body.col_target
         json_list_df = body.json_list_df
+
         df = pd.DataFrame(json_list_df)
+        df[col_target] = df[col_target].replace("None", None)
         if not df.empty:
             df[col_time] = pd.to_datetime(df[col_time], errors='coerce')
             df[col_time] = df[col_time].apply(lambda x: x.replace(hour=x.hour or 0,
                                                                   minute=x.minute or 0,
                                                                   second=x.second or 0))
+
             tn = TimeNormalization(col_time, col_target)
             df_all_data_norm, min_val, max_val = tn.df_normalize_with_meta(df)
             response = {
@@ -174,7 +208,8 @@ async def get_concepts(body: Annotated[
     ForecastRequest, Body(
         example={
             "col_target": example_forecast_point['col_target'],
-            "time_points_horizon": example_forecast_point['time_points_horizon'],
+            "evaluation_index": example_forecast_point['evaluation_index'],
+            "last_know_index": example_forecast_point['last_know_index'],
             "epochs": example_forecast_point['epochs'],
             "lag": example_forecast_point['lag'],
             "activation": example_forecast_point['activation'],
@@ -186,7 +221,8 @@ async def get_concepts(body: Annotated[
 
     try:
         col_target = body.col_target
-        time_points_horizon = body.time_points_horizon
+        evaluation_index = body.evaluation_index
+        last_know_index = body.last_know_index
         epochs = body.epochs
         lag = body.lag
         activation = body.activation
@@ -196,12 +232,12 @@ async def get_concepts(body: Annotated[
         json_list_df_all_data_norm = body.json_list_df_all_data_norm
         df_all_data_norm = pd.DataFrame(json_list_df_all_data_norm)
         df_all_data_norm['second'] = df_all_data_norm['second'].astype('int64')
-
         if not df_all_data_norm.empty:
-            df_forecast, df_true_all_col, loss_list = forecast(
+            df_evaluetion, df_true_all_col, loss_list, df_real_predict = forecast(
                 col_target=col_target,
                 df_all_data_norm=df_all_data_norm,
-                time_points_horizon=time_points_horizon,
+                evaluation_index=body.evaluation_index,
+                last_know_index=body.last_know_index,
                 epochs=epochs,
                 lag=lag,
                 activation=activation,
@@ -210,8 +246,9 @@ async def get_concepts(body: Annotated[
                 model_architecture_params=model_architecture_params,
             )
             response = {
-                "df_forecast": df_forecast.to_dict(),
+                "df_evaluetion": df_evaluetion.to_dict(),
                 "df_true_all_col": df_true_all_col.to_dict(),
+                "df_real_predict": df_real_predict.to_dict(),
                 "loss_list": loss_list
             }
             return response
@@ -272,6 +309,50 @@ async def get_reverse_normalization(body: Annotated[
             headers={"X-Error": f"{ApplicationError.__repr__()}"},
         )
 
+
+@app.post("/backend/v1/all_metrix")
+async def get_metrix_all(body: Annotated[
+    MenrixAllRequest, Body(
+        example={
+            "col_time": example_metrix_all['col_time'],
+            "col_target": example_metrix_all['col_target'],
+            "json_list_df_reverse_evaluation": example_metrix_all['json_list_df_reverse_evaluation'],
+            "json_list_df_reverse_comparative": example_metrix_all['json_list_df_reverse_comparative'],
+
+        })]):
+
+    try:
+        col_time = body.col_time
+        col_target = body.col_target
+        json_list_df_reverse_evaluation = body.json_list_df_reverse_evaluation
+        json_list_df_reverse_comparative = body.json_list_df_reverse_comparative
+
+        df_evaluation  = pd.DataFrame(json_list_df_reverse_evaluation)
+        df_comparative  = pd.DataFrame(json_list_df_reverse_comparative)
+
+        if not df_evaluation.empty and not df_comparative.empty:
+
+            metrics, df_metrics = metrix_all(col_time, col_target, df_evaluation, df_comparative)
+
+            response = {
+                "metrics": metrics,
+                "df_metrics": df_metrics.to_dict()
+            }
+            return response
+        else:
+            logger.error("Something happened during creation of the search table")
+            raise HTTPException(
+                status_code=400,
+                detail="Bad Request",
+                headers={"X-Error": "Something happened during creation of the search table"},
+            )
+    except Exception as ApplicationError:
+        logger.error(ApplicationError.__repr__())
+        raise HTTPException(
+            status_code=400,
+            detail="Unknown Error",
+            headers={"X-Error": f"{ApplicationError.__repr__()}"},
+        )
 
 @app.get("/")
 def read_root():

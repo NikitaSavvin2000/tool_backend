@@ -15,7 +15,8 @@ class NormalizationRequest(BaseModel):
 
 class ForecastRequest(BaseModel):
     col_target: str
-    time_points_horizon: int
+    evaluation_index: int
+    last_know_index: int
     epochs: int
     lag: int
     activation: str
@@ -31,3 +32,9 @@ class ReverseNormalizationRequest(BaseModel):
     json_list_norm_df: List[Dict]
     min_val: float
     max_val: float
+
+class MenrixAllRequest(BaseModel):
+    col_time: str
+    col_target: str
+    json_list_df_reverse_evaluation: List[Dict]
+    json_list_df_reverse_comparative: List[Dict]
