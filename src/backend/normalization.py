@@ -103,8 +103,6 @@ class TimeNormalization:
 
         df_with_meta = self.meta_date(df)
         normalized_dates = []
-        print('1 is_working?')
-
         for index, date in df_with_meta.iterrows():
             if self.check_difrent_years:
                 year_norm = (date['year'] - self.min_year) / (self.max_year - self.min_year)
@@ -122,16 +120,11 @@ class TimeNormalization:
                                date['hour_sin'], date['hour_cos'], date['day_of_week_sin'], date['day_of_week_cos'],
                                date['week_sin'], date['week_cos'], date['is_holiday']]
             normalized_dates.append(normalized_date)
-        print('2 is_working?')
-
         normalized_df = pd.DataFrame(normalized_dates,
                                      columns=[self.col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second',
                                               'hour_sin', 'hour_cos', 'day_of_week_sin', 'day_of_week_cos',
                                               'week_sin', 'week_cos', 'is_holiday']
                                      )
-        print('3 is_working?')
-        print(self.col_target)
-
         normalized_df[self.col_target] = self.normalize_column(normalized_df[self.col_target], min_val, max_val)
         normalized_df = normalized_df.dropna()
         return normalized_df, min_val, max_val

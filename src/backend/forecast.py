@@ -87,9 +87,7 @@ def forecast(
     train_index = evaluation_index
 
 
-    print(len(df_true_all_col))
     df_true_all_col = df_true_all_col.iloc[:last_know_index + 1]
-    print(len(df_true_all_col))
 
 
     df = df_all_data_norm[col_for_train]
@@ -218,10 +216,5 @@ def forecast(
     df_evaluetion['second'] = df_evaluetion['second'].fillna(0)
     df_true_all_col['second'] = df_true_all_col['second'].fillna(0)
     df_real_predict['second'] = df_real_predict['second'].fillna(0)
-
-
-    df_evaluetion.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_evaluetion.csv')
-    df_true_all_col.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_true_all_col.csv')
-    df_real_predict.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_real_predict.csv')
 
     return df_evaluetion, df_true_all_col, loss_list, df_real_predict

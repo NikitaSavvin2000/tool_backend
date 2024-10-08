@@ -182,7 +182,6 @@ async def get_normalization(body: Annotated[
 
             tn = TimeNormalization(col_time, col_target)
             df_all_data_norm, min_val, max_val = tn.df_normalize_with_meta(df)
-            df_all_data_norm.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_all_data_norm.csv')
             response = {
                 "df_all_data_norm": df_all_data_norm.to_dict(),
                 "min_val": min_val,
