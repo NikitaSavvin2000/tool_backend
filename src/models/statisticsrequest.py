@@ -38,3 +38,12 @@ class MenrixAllRequest(BaseModel):
     col_target: str
     json_list_df_reverse_evaluation: List[Dict]
     json_list_df_reverse_comparative: List[Dict]
+
+
+class ForecastRequestXGBoost(BaseModel):
+    col_target: str
+    evaluation_index: int
+    last_know_index: int
+    lag: int
+    model_architecture_params: List[Dict]
+    json_list_df_all_data_norm: List[Dict]

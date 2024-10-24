@@ -30,6 +30,10 @@ def weighted_mean_absolute_percentage_error(y_true, y_pred):
 
 def metrix_all(col_time, col_target, df_evaluetion, df_comparative):
     y_true = df_comparative[col_target].values
+    min_non_zero = np.min(y_true[y_true != 0])
+
+    # Заменяем нули на минимальное ненулевое значение
+    y_true = np.where(y_true == 0, min_non_zero, y_true)
     y_pred = df_evaluetion[col_target].values
 
     metrics = {
@@ -43,7 +47,7 @@ def metrix_all(col_time, col_target, df_evaluetion, df_comparative):
         'MARNE': mean_absolute_range_normalized_error(y_true, y_pred),
         'WMAPE': weighted_mean_absolute_percentage_error(y_true, y_pred)
     }
-
+    print(metrics)
     df_metrics = pd.DataFrame({
         col_time: df_comparative[col_time],
         'MAE': np.abs(y_true - y_pred),
@@ -55,5 +59,5 @@ def metrix_all(col_time, col_target, df_evaluetion, df_comparative):
         'MARNE': np.abs(y_true - y_pred) / (np.max(y_true) - np.min(y_true)),
         'WMAPE': np.abs(y_true - y_pred) / np.abs(y_true) * 100
     })
-
+    df_metrics.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_metrics.csv')
     return metrics, df_metrics

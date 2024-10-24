@@ -87,17 +87,11 @@ class TimeNormalization:
         df_with_meta['week_sin'] = np.sin(2 * np.pi * df_with_meta['week'] / 52)
         df_with_meta['week_cos'] = np.cos(2 * np.pi * df_with_meta['week'] / 52)
 
-        try:
-            it_holidays = holidays.Italy(years=df_with_meta['year'].unique())
-            df_with_meta['is_holiday'] = pd.Series(df_with_meta.index.date).isin(it_holidays).astype(int).values
-        except Exception as e:
-            df_with_meta['is_holiday'] = 0
-            print(e)
-
         return df_with_meta
 
 
     def df_normalize_with_meta(self, df):
+        df[self.col_target] = df[self.col_target].astype(float)
         min_val = df[self.col_target].min()*1.2
         max_val = df[self.col_target].max()*1.2
 
@@ -118,14 +112,16 @@ class TimeNormalization:
             hour_norm = (date['hour'] - self.min_hour) / (self.max_hour - self.min_hour)
             normalized_date = [date[self.col_target], year_norm, weak_norm, day_of_weak_norm, hour_norm, minute_norm, second_norm,
                                date['hour_sin'], date['hour_cos'], date['day_of_week_sin'], date['day_of_week_cos'],
-                               date['week_sin'], date['week_cos'], date['is_holiday']]
+                               date['week_sin'], date['week_cos']]
             normalized_dates.append(normalized_date)
+
         normalized_df = pd.DataFrame(normalized_dates,
                                      columns=[self.col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second',
                                               'hour_sin', 'hour_cos', 'day_of_week_sin', 'day_of_week_cos',
-                                              'week_sin', 'week_cos', 'is_holiday']
+                                              'week_sin', 'week_cos',]
                                      )
         normalized_df[self.col_target] = self.normalize_column(normalized_df[self.col_target], min_val, max_val)
+
         normalized_df = normalized_df.dropna()
         return normalized_df, min_val, max_val
 
@@ -152,19 +148,18 @@ class TimeNormalization:
             denormalized_date = [date[self.col_target], year_denorm, weak_denorm, day_of_weak_denorm, hour_denorm,
                                  minute_denorm, second_denorm,
                                  date['hour_sin'], date['hour_cos'], date['day_of_week_sin'], date['day_of_week_cos'],
-                                 date['week_sin'], date['week_cos'], date['is_holiday']
+                                 date['week_sin'], date['week_cos'],
                                  ]
             denormalized_dates.append(denormalized_date)
 
         for i in range(len(denormalized_dates)):
-            # denormalized_dates[i][0] = self.scaler.inverse_transform([[denormalized_dates[i][0]]])[0][0]
             denormalized_dates[i][0] = self.inverse_normalize_column(denormalized_dates[i][0], min_val, max_val)
 
 
         denormalized_df = pd.DataFrame(denormalized_dates,
                                        columns=[self.col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second',
                                                 'hour_sin', 'hour_cos', 'day_of_week_sin', 'day_of_week_cos',
-                                                'week_sin', 'week_cos', 'is_holiday']
+                                                'week_sin', 'week_cos',]
                                        )
 
         #TODO: Это костыль нужно убрать!!! (проблема что в колонке hout приходит дробное значение к примеру 12.99 и без строк ниде оно округляется до 12

@@ -1,40 +1,7 @@
-from tensorflow.keras.callbacks import Callback
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Bidirectional, Dropout
 import tensorflow as tf
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 import numpy as np
-import pandas as pd
+from xgboost import XGBRegressor
 
-
-class SaveBestWeights(Callback):
-    def __init__(self):
-        super(SaveBestWeights, self).__init__()
-        self.best_weights = None
-        self.best_loss = float('inf')
-
-    def on_epoch_end(self, epoch, logs=None):
-        current_loss = logs.get('loss')
-        if current_loss is None:
-            return
-        if current_loss < self.best_loss:
-            self.best_loss = current_loss
-            self.best_weights = self.model.get_weights()
-
-
-class TerminateOnNaNCallback(tf.keras.callbacks.Callback):
-    def on_epoch_end(self, epoch, logs=None):
-        logs = logs or {}
-        loss = logs.get('loss')
-
-        # Если loss является NaN или None, остановим обучение
-        if loss is None or np.isnan(loss):
-            print(f'\nОбучение остановлено на эпохе {epoch + 1} из-за NaN/None значений в loss.')
-            self.model.stop_training = True
-            df_evaluetion, df_true_all_col, loss_list, df_real_predict = None, None, None, None
-            response_code = 100
-            response_massage = 'The training was interrupted due to overfitting. Try to simplify the model'
-            return df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage
 
 
 def split_sequence(sequence, n_steps):
@@ -56,36 +23,41 @@ def create_x_input(df_train, n_steps):
 
 
 def make_predictions(x_input, x_future, n_features, model, lag):
+    print('is work')
     predict_values = []
     x_future_len = len(x_future)
+
     for i in range(x_future_len):
         try:
-            x_input_tensor = tf.convert_to_tensor(x_input.reshape((1, lag, n_features)), dtype=tf.float32)
+            x_input_tensor = tf.convert_to_tensor(x_input.reshape((1, -1)), dtype=tf.float32)  # (1, 48)
         except Exception as e:
             print('--------------------ERROR---------------------------')
             print(e)
-        y_predict = model.predict(x_input_tensor, verbose=1)
+
+        y_predict = model.predict(x_input_tensor)
         predict_values.append(y_predict)
+
+        # Обновление x_input для следующей итерации
         x_input = np.delete(x_input, (0), axis=1)
         future_lag = x_future[0]
         x_future = np.delete(x_future, 0, axis=0)
         future_lag[0] = y_predict
         x_input = np.append(x_input, future_lag.reshape(1, 1, -1), axis=1)
+        x_input = x_input.reshape((1, lag, n_features))
+
+
     return predict_values
 
 
-def forecast(
+def forecast_XGBoost(
         col_target,
         df_all_data_norm,
         evaluation_index,
         last_know_index,
-        epochs,
         lag,
-        activation,
-        optimizer,
-        dropout_count,
         model_architecture_params,
 ):
+
     possible_cols = [col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
                      'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
 
@@ -123,54 +95,21 @@ def forecast(
 
     n_features = values.shape[1]
 
-    model = Sequential()
-    if len(model_architecture_params) == 3:
-        model.add(Bidirectional(
-            LSTM(int(model_architecture_params[0]['neurons']), activation=activation, return_sequences=True),
-            input_shape=(lag, n_features)))
-        model.add(Dropout(dropout_count))
-        model.add(Bidirectional(
-            LSTM(int(model_architecture_params[1]['neurons']), activation=activation, return_sequences=True)))
-        model.add(Dropout(dropout_count))
-        model.add(Bidirectional(LSTM(int(model_architecture_params[2]['neurons']), activation=activation)))
-        model.add(Dropout(dropout_count))
-        model.add(Dense(1))
+    model_architecture_params = model_architecture_params[0]
 
-    elif len(model_architecture_params) == 2:
-        model.add(Bidirectional(
-            LSTM(int(model_architecture_params[0]['neurons']), activation=activation, return_sequences=True),
-            input_shape=(lag, n_features)))
-        model.add(Dropout(dropout_count))
-        model.add(Bidirectional(
-            LSTM(int(model_architecture_params[1]['neurons']), activation=activation)))
-        model.add(Dropout(dropout_count))
-        model.add(Dense(1))
+    xgb_model = XGBRegressor(
+        objective=model_architecture_params['objective'],  # Регрессия
+        n_estimators=model_architecture_params['n_estimators'],   # Количество деревьев
+        learning_rate=model_architecture_params['learning_rate'],    # Скорость обучения
+        max_depth=model_architecture_params['max_depth'],    # Глубина дерева
+        subsample=model_architecture_params['subsample'],    # Доля выборки для построения каждого дерева
+        colsample_bytree=model_architecture_params['colsample_bytree'],   # Доля признаков для каждого дерева
+    )
 
-    elif len(model_architecture_params) == 1:
-        model.add(Bidirectional(LSTM(int(model_architecture_params[0]['neurons']), activation=activation)))
-        model.add(Dropout(dropout_count))
-        model.add(Dense(1))
+    print('is work 1')
 
-    else:
-        model.add(Bidirectional(LSTM(32, activation='relu')))
-        model.add(Dropout(0.01))
-        model.add(Dense(1))
-
-    model.compile(optimizer=optimizer, loss='mse')
-
-    early_stopping = EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
-    reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=5, min_lr=0.001)
-    save_best_weights_callback = SaveBestWeights()
-    print(f'----------------------------model_architecture_params-------------------------------')
-    print(f'{model_architecture_params}')
-    print(f'------------------------------------------------------------------------------------')
-
-
-    history = model.fit(X, y, epochs=epochs, verbose=1,
-                        callbacks=[early_stopping, reduce_lr, save_best_weights_callback, TerminateOnNaNCallback()])
-
-    model.set_weights(save_best_weights_callback.best_weights)
-
+    X_reshaped = X.reshape(X.shape[0], -1)
+    xgb_model.fit(X_reshaped, y)
 
     try:
         x_input = x_input.reshape((1, lag, n_features))
@@ -178,14 +117,11 @@ def forecast(
         print('--------------------ERROR---------------------------')
         print(e)
 
-    predict_values = make_predictions(x_input, x_future, n_features, model, lag)
+    predict_values = make_predictions(x_input, x_future, n_features, xgb_model, lag)
 
     predict_values = np.array(predict_values).flatten()
 
     print(f'predict_values = {predict_values}')
-
-
-
 
     df_evaluetion[col_target] = predict_values
     if len(diff_cols) > 0:
@@ -193,7 +129,8 @@ def forecast(
             df_evaluetion[col] = df_true_all_col[col]
 
     df_evaluetion[col_target] = predict_values
-    loss_list = history.history['loss']
+    loss_list = [1]
+
 
     # part 2 fine tuning -------------------------------------
 
@@ -202,7 +139,6 @@ def forecast(
     df_all_data_norm = df_all_data_norm[col_for_train]
 
     train_index = last_know_index
-    print(f'last_know_index = {last_know_index}')
 
     df_train = df_all_data_norm[evaluation_index + 1:train_index]
 
@@ -217,18 +153,14 @@ def forecast(
 
     n_features = values.shape[1]
 
-    # optimizer = tf.keras.optimizers.Adam(learning_rate=0.00001)
-    model.compile(optimizer=optimizer, loss='mse')
+    X_reshaped = X.reshape(X.shape[0], -1)
 
-    model.fit(X, y, epochs=epochs, verbose=1, callbacks=[early_stopping, reduce_lr, save_best_weights_callback, TerminateOnNaNCallback()])
-    model.set_weights(save_best_weights_callback.best_weights)
+    xgb_model.fit(X_reshaped, y)
 
     x_input = x_input.reshape((1, lag, n_features))
 
-    print(f'x_input {x_input}')
-    print(f'x_future {x_future}')
 
-    predict_values = make_predictions(x_input, x_future, n_features, model, lag)
+    predict_values = make_predictions(x_input, x_future, n_features, xgb_model, lag)
 
     predict_values = np.array(predict_values).flatten()
 
