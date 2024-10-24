@@ -29,11 +29,11 @@ python -m src.server
 
 ### Строим контейнер
 ```bash
-    docker build -t tool_backend .
+sudo docker build -t tool_backend .
 ```
 Узнаем его IMAGE ID 
 ```bash
-docker images
+sudo docker images
 ```
 
 ```bash
@@ -54,13 +54,13 @@ docker run -d -p 7070:80 <IMAGE ID>
 
 ### Строим контейнер
 ```bash
-docker build -t tool_backend .
+sudo docker build -t tool_backend .
 ```
 Узнаем его ID
 ```bash
-docker images
+sudo docker images
 ```
 
 ```bash
-docker run -p 7070:7070 <IMAGE ID>
+sudo docker run -d -p 7070:7070 --cpuset-cpus="0-10" --memory="42g" bbb1920d4ef5
 ```

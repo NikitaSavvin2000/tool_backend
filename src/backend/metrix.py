@@ -59,5 +59,4 @@ def metrix_all(col_time, col_target, df_evaluetion, df_comparative):
         'MARNE': np.abs(y_true - y_pred) / (np.max(y_true) - np.min(y_true)),
         'WMAPE': np.abs(y_true - y_pred) / np.abs(y_true) * 100
     })
-    df_metrics.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_metrics.csv')
     return metrics, df_metrics
