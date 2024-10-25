@@ -126,6 +126,7 @@ class TimeNormalization:
         return normalized_df, min_val, max_val
 
     def df_denormalize_with_meta(self, df, min_val, max_val):
+        print('Work fun')
         df = df.sort_values(by=['year', 'week', 'day_of_week', 'hour', 'minute'], ascending=True)
 
         def _convert_date(date_str):

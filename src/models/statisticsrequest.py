@@ -45,5 +45,6 @@ class ForecastRequestXGBoost(BaseModel):
     evaluation_index: int
     last_know_index: int
     lag: int
+    type: str
     model_architecture_params: List[Dict]
     json_list_df_all_data_norm: List[Dict]

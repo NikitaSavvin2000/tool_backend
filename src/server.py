@@ -158,6 +158,7 @@ example_forecast_point_XGBoost = {
     "evaluation_index": 7,
     "last_know_index": 9,
     "lag": 1,
+    "type": "predictions",
     "model_architecture_params": {
         "objective": "reg:squarederror",
         "n_estimators": 100,
@@ -408,6 +409,7 @@ async def get_concepts(body: Annotated[
         json_list_df_all_data_norm = body.json_list_df_all_data_norm
         df_all_data_norm = pd.DataFrame(json_list_df_all_data_norm)
         df_all_data_norm['second'] = df_all_data_norm['second'].astype('int64')
+        type=body.type
 
         if not df_all_data_norm.empty:
 
@@ -418,6 +420,7 @@ async def get_concepts(body: Annotated[
                 last_know_index=last_know_index,
                 lag=lag,
                 model_architecture_params=model_architecture_params,
+                type=type
             )
             response = {
                 "df_evaluetion": df_evaluetion.to_dict(),
@@ -461,7 +464,9 @@ async def get_reverse_normalization(body: Annotated[
         min_val = body.min_val
         max_val = body.max_val
         df = pd.DataFrame(json_list_norm_df)
+
         if not df.empty:
+
             tn = TimeNormalization(col_time, col_target)
             df_all_data_reverse_norm = tn.df_denormalize_with_meta(df, min_val, max_val)
             response = {

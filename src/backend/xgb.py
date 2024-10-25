@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from xgboost import XGBRegressor
+import pandas as pd
 
 
 
@@ -23,7 +24,6 @@ def create_x_input(df_train, n_steps):
 
 
 def make_predictions(x_input, x_future, n_features, model, lag):
-    print('is work')
     predict_values = []
     x_future_len = len(x_future)
 
@@ -35,6 +35,7 @@ def make_predictions(x_input, x_future, n_features, model, lag):
             print(e)
 
         y_predict = model.predict(x_input_tensor)
+
         predict_values.append(y_predict)
 
         # Обновление x_input для следующей итерации
@@ -56,13 +57,13 @@ def forecast_XGBoost(
         last_know_index,
         lag,
         model_architecture_params,
+        type
 ):
 
     possible_cols = [col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
                      'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
 
     df_all_data_norm = df_all_data_norm[possible_cols]
-
     df_true_all_col = df_all_data_norm.iloc[evaluation_index: last_know_index]
     df_true_all_col_skip = df_all_data_norm.iloc[last_know_index:]
     df_all_data_norm[col_target] = df_all_data_norm[col_target].replace('None', None)
@@ -106,30 +107,44 @@ def forecast_XGBoost(
         colsample_bytree=model_architecture_params['colsample_bytree'],   # Доля признаков для каждого дерева
     )
 
-    print('is work 1')
 
     X_reshaped = X.reshape(X.shape[0], -1)
-    xgb_model.fit(X_reshaped, y)
+    X_reshaped = np.array(X_reshaped, dtype=float)
+    y = np.array(y, dtype=float)
 
-    try:
-        x_input = x_input.reshape((1, lag, n_features))
-    except Exception as e:
-        print('--------------------ERROR---------------------------')
-        print(e)
 
-    predict_values = make_predictions(x_input, x_future, n_features, xgb_model, lag)
 
-    predict_values = np.array(predict_values).flatten()
 
-    print(f'predict_values = {predict_values}')
+    if type != 'predictions':
+        xgb_model.fit(X_reshaped, y)
+        try:
+            x_input = x_input.reshape((1, lag, n_features))
+        except Exception as e:
+            print('--------------------ERROR---------------------------')
+            print(e)
 
-    df_evaluetion[col_target] = predict_values
-    if len(diff_cols) > 0:
-        for col in diff_cols:
-            df_evaluetion[col] = df_true_all_col[col]
 
-    df_evaluetion[col_target] = predict_values
-    loss_list = [1]
+
+        predict_values = make_predictions(x_input, x_future, n_features, xgb_model, lag)
+
+        predict_values = np.array(predict_values).flatten()
+        print(f'predict_values = {predict_values}')
+
+        df_evaluetion[col_target] = predict_values
+        if len(diff_cols) > 0:
+            for col in diff_cols:
+                df_evaluetion[col] = df_true_all_col[col]
+
+        df_evaluetion[col_target] = predict_values
+        loss_list = [1]
+    else:
+
+        df_evaluetion = pd.DataFrame({
+            'column1': [1, 2, 3],
+            'column2': ['a', 'b', 'c']
+        })
+        df_evaluetion['minute'] = 0
+        df_evaluetion['second'] = 0
 
 
     # part 2 fine tuning -------------------------------------
@@ -186,7 +201,7 @@ def forecast_XGBoost(
     df_real_predict['minute'] = df_real_predict['minute'].fillna(method='ffill')
     df_real_predict['second'] = df_real_predict['second'].fillna(method='ffill')
 
-
+    loss_list = [1]
     # df_evaluetion.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_evaluetion.csv')
     # df_true_all_col.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_true_all_col.csv')
     # df_real_predict.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_real_predict.csv')
