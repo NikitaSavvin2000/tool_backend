@@ -281,6 +281,7 @@ async def get_normalization(body: Annotated[
         df[col_target] = df[col_target].replace("None", None)
 
         if not df.empty:
+            print(df)
             try:
                 try:
                     df[col_target] = df[col_target].str.replace(',', '')
@@ -294,11 +295,17 @@ async def get_normalization(body: Annotated[
             except Exception as e:
                 print(e)
                 df[col_target] = df[col_target].apply(lambda x: to_float(x))
+            print(df)
+
             print(df[col_target])
-            df[col_time] = pd.to_datetime(df[col_time], errors='coerce')
-            df[col_time] = df[col_time].apply(lambda x: x.replace(hour=x.hour or 0,
-                                                                  minute=x.minute or 0,
-                                                                  second=x.second or 0))
+            # df[col_time] = pd.to_datetime(df[col_time])
+
+            df[col_time] = pd.to_datetime(df[col_time], format='%Y-%m-%d %H:%M:%S', errors='coerce')
+
+            # df[col_time] = df[col_time].apply(lambda x: x.replace(hour=x.hour or 0,
+            #                                                       minute=x.minute or 0,
+            #                                                       second=x.second or 0))
+            print(df)
 
             tn = TimeNormalization(col_time, col_target)
             df_all_data_norm, min_val, max_val = tn.df_normalize_with_meta(df)

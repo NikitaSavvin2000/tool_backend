@@ -1,16 +1,12 @@
-import pandas as pd
-import yaml
-import os
 from tensorflow.keras.callbacks import Callback
-from tensorflow.keras.layers import Input, MultiHeadAttention, LayerNormalization, Dropout, LSTM, Dense, Attention
-# from tensorflow.keras.layers import Input, LSTM, Dense, Bidirectional, Dropout, Attention
-
-import pandas as pd
-import numpy as np
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Bidirectional, Dropout
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+import numpy as np
+import pandas as pd
+
+
 
 
 class SaveBestWeights(Callback):
@@ -28,29 +24,49 @@ class SaveBestWeights(Callback):
             self.best_weights = self.model.get_weights()
 
 
+class TerminateOnNaNCallback(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+        loss = logs.get('loss')
+
+        # Если loss является NaN или None, остановим обучение
+        if loss is None or np.isnan(loss):
+            print(f'\nОбучение остановлено на эпохе {epoch + 1} из-за NaN/None значений в loss.')
+            self.model.stop_training = True
+            df_evaluetion, df_true_all_col, loss_list, df_real_predict = None, None, None, None
+            response_code = 100
+            response_massage = 'The training was interrupted due to overfitting. Try to simplify the model'
+            return df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage
+
+
 def split_sequence(sequence, n_steps):
     X, y = [], []
     for i in range(len(sequence)):
         end_ix = i + n_steps
-        if end_ix > len(sequence)-1:
+        if end_ix > len(sequence) - 1:
             break
         seq_x, seq_y = sequence[i:end_ix, :], sequence[end_ix, 0]
         X.append(seq_x)
         y.append(seq_y)
     return np.array(X), np.array(y)
 
+
 def create_x_input(df_train, n_steps):
-    df_input = df_train.iloc[len(df_train)-n_steps:]
+    df_input = df_train.iloc[len(df_train) - n_steps:]
     x_input = df_input.values
     return x_input
 
-def make_predictions(x_input, x_future):
+
+def make_predictions(x_input, x_future, n_features, model, lag):
     predict_values = []
     x_future_len = len(x_future)
     for i in range(x_future_len):
-        x_input_tensor = tf.convert_to_tensor(x_input.reshape((1, lag, n_features)), dtype=tf.float32)
+        try:
+            x_input_tensor = tf.convert_to_tensor(x_input.reshape((1, lag, n_features)), dtype=tf.float32)
+        except Exception as e:
+            print('--------------------ERROR---------------------------')
+            print(e)
         y_predict = model.predict(x_input_tensor, verbose=1)
-        print(y_predict)
         predict_values.append(y_predict)
         x_input = np.delete(x_input, (0), axis=1)
         future_lag = x_future[0]
@@ -60,110 +76,268 @@ def make_predictions(x_input, x_future):
     return predict_values
 
 
-columns = col_for_train
+def forecast(
+        col_target,
+        df_all_data_norm,
+        evaluation_index,
+        last_know_index,
+        epochs,
+        lag,
+        activation,
+        optimizer,
+        dropout_count,
+        model_architecture_params,
+):
+    model_architecture_params = model_architecture_params[0]
 
-df = df_all_data_norm
-train_index = len(df) - 288
-df_train_all_col = df.loc[:train_index]
-df_test_all_col = df.loc[train_index+1:]
-df_true_all_col = df_test_all_col.copy()
-
-df = df_all_data_norm[col_for_train]
-df_train = df.loc[:train_index]
-df_test = df.loc[train_index+1:]
-df_true = df_test.copy()
-
-df_test['P_l'] = None
-df_forecast = df_test.copy()
-values = df_train[columns].values
-x_input = create_x_input(df_train, lag)
-x_future = df_test.values
-X, y = split_sequence(values, lag)
-
-n_features = values.shape[1]
-inputs = Input(shape=(lag, n_features))
-
-# Define the model
-model = Sequential()
-model.add(Bidirectional(LSTM(lstm0_units, activation=activation, return_sequences=True), input_shape=(lag, n_features)))
-model.add(Dropout(dropout_count))
-model.add(Bidirectional(LSTM(lstm1_units, activation=activation, return_sequences=True)))
-model.add(Dropout(dropout_count))
-model.add(Bidirectional(LSTM(lstm2_units, activation=activation)))
-model.add(Dropout(dropout_count))
-# model.add(Dense(dense_units, activation='relu'))
-model.add(Dense(1))
-
-model.compile(optimizer=optimizer, loss='mse')
-
-# Define callbacks
-early_stopping = EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
-reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=5, min_lr=0.001)
-save_best_weights_callback = SaveBestWeights()
-
-# Train the model
-history = model.fit(X, y, epochs=epochs, verbose=1, callbacks=[early_stopping, reduce_lr, save_best_weights_callback])
-model.set_weights(save_best_weights_callback.best_weights)
-
-x_input = x_input.reshape((1, lag, n_features))
-
-predict_values = make_predictions(x_input, x_future)
-
-predict_values = np.array(predict_values).flatten()
+    print(df_all_data_norm)
 
 
-df_forecast['P_l'] = predict_values
+    possible_cols = [col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
+                     'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
+
+    df_all_data_norm = df_all_data_norm[possible_cols]
+    df_true_all_col = df_all_data_norm.iloc[evaluation_index: last_know_index]
+    df_true_all_col_skip = df_all_data_norm.iloc[last_know_index:]
+    df_all_data_norm[col_target] = df_all_data_norm[col_target].replace('None', None)
+    df_all_data_norm[col_target] = df_all_data_norm[col_target].astype(float)
+
+    all_columns = df_all_data_norm.columns
+
+    col_for_train = [col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1]
+
+    diff_cols = all_columns.difference(col_for_train)
+
+    columns = col_for_train
+
+    print(f'all_columns = {all_columns}')
 
 
-df_comparative = tn.df_denormalize_with_meta(df_forecast)
-df_true = tn.df_denormalize_with_meta(df_true_all_col)
+    print(f'col_for_train = {col_for_train}')
 
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import pandas as pd
+    train_index = evaluation_index
+
+    df_true_all_col = df_true_all_col.iloc[:last_know_index + 1]
+
+    df = df_all_data_norm[col_for_train]
+    df_train = df.iloc[:train_index]
+    print('is work0')
+
+    df_test = df.iloc[train_index + 1: last_know_index + 1]
+    df_test.loc[:, col_target] = np.nan
+
+    df_evaluetion = df_test.copy()
+    values = df_train[columns].values
+    x_input = create_x_input(df_train, lag)
+
+    x_future = df_test.values
+    X, y = split_sequence(values, lag)
+
+    n_features = values.shape[1]
+
+    print('is work1')
+
+    model = Sequential()
+    if len(model_architecture_params) == 3:
+        model.add(Bidirectional(
+            LSTM(int(model_architecture_params[0]['neurons']), activation=activation, return_sequences=True),
+            input_shape=(lag, n_features)))
+        model.add(Dropout(dropout_count))
+        model.add(Bidirectional(
+            LSTM(int(model_architecture_params[1]['neurons']), activation=activation, return_sequences=True)))
+        model.add(Dropout(dropout_count))
+        model.add(Bidirectional(LSTM(int(model_architecture_params[2]['neurons']), activation=activation)))
+        model.add(Dropout(dropout_count))
+        model.add(Dense(1))
+
+    elif len(model_architecture_params) == 2:
+        model.add(Bidirectional(
+            LSTM(int(model_architecture_params[0]['neurons']), activation=activation, return_sequences=True),
+            input_shape=(lag, n_features)))
+        model.add(Dropout(dropout_count))
+        model.add(Bidirectional(
+            LSTM(int(model_architecture_params[1]['neurons']), activation=activation)))
+        model.add(Dropout(dropout_count))
+        model.add(Dense(1))
+
+    elif len(model_architecture_params) == 1:
+        model.add(Bidirectional(LSTM(int(model_architecture_params[0]['neurons']), activation=activation)))
+        model.add(Dropout(dropout_count))
+        model.add(Dense(1))
+
+    else:
+        model.add(Bidirectional(LSTM(32, activation='relu')))
+        model.add(Dropout(0.01))
+        model.add(Dense(1))
+
+    model.compile(optimizer=optimizer, loss='mse')
+
+    early_stopping = EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
+    reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=5, min_lr=0.001)
+    save_best_weights_callback = SaveBestWeights()
+    print(f'----------------------------model_architecture_params-------------------------------')
+    print(f'{model_architecture_params}')
+    print(f'------------------------------------------------------------------------------------')
+
+    print('is work2')
 
 
-fig_p_l = make_subplots(rows=1, cols=1, subplot_titles=['P_l_real vs P_l_predict'])
-
-fig_p_l.add_trace(go.Scatter(x=df_true['time'], y=df_true['P_l'], mode='lines', name='P_l_real', line=dict(color='blue')), row=1, col=1)
-fig_p_l.add_trace(go.Scatter(x=df_comparative['time'], y=df_comparative['P_l'], mode='lines', name='P_l_predict', line=dict(color='orange')), row=1, col=1)
-template = "presentation"
-
-fig_p_l.show()
-
-
-import numpy as np
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+    if type != 'predictions':
+        history = model.fit(X, y, epochs=epochs, verbose=1,
+                            callbacks=[early_stopping, reduce_lr, save_best_weights_callback, TerminateOnNaNCallback()])
+        try:
+            x_input = x_input.reshape((1, lag, n_features))
+        except Exception as e:
+            print('--------------------ERROR---------------------------')
+            print(e)
 
 
-def calculate_metrics(y_true, y_pred):
+        x_input = x_input.reshape((1, lag, n_features))
 
-    y_true_mean = y_true.mean()
-        # Расчет RMSE
-    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+        predict_values = make_predictions(x_input, x_future, n_features, model, lag)
 
-    # Расчет R^2
-    ss_res = np.sum((y_true - y_pred) ** 2)
-    ss_tot = np.sum((y_true - y_true_mean) ** 2)
-    r2 = 1 - (ss_res / ss_tot)
 
-    # Расчет MAE
-    mae = mean_absolute_error(y_true, y_pred)
+        predict_values = np.array(predict_values).flatten()
+        print(f'predict_values = {predict_values}')
 
-    # Расчет MAPE
-    mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+        df_evaluetion[col_target] = predict_values
+        if len(diff_cols) > 0:
+            for col in diff_cols:
+                df_evaluetion[col] = df_true_all_col[col]
 
-    # Расчет WMAPE
-    wmape = np.sum(np.abs(y_true - y_pred)) / np.sum(np.abs(y_true)) * 100
+            df_evaluetion[col_target] = predict_values
+            loss_list = [1]
+        else:
+            df_evaluetion = pd.DataFrame({
+                'column1': [1, 2, 3],
+                'column2': ['a', 'b', 'c']
+            })
+            df_evaluetion['minute'] = 0
+            df_evaluetion['second'] = 0
 
-    return rmse, r2, mae, mape, wmape
 
-y_true=df_true['P_l']
-y_pred=df_comparative['P_l']
+    df_all_data_norm = df_all_data_norm[col_for_train]
 
-rmse, r2, mae, mape, wmape = calculate_metrics(y_true=y_true, y_pred=y_pred)
-print(f'RMSE = {rmse}')
-print(f'R-squared = {r2}')
-print(f'MAE = {mae}')
-print(f'MAPE = {mape}')
-print(f'WMAPE = {wmape}')
+
+    train_index = last_know_index
+
+    if type != 'predictions':
+        df_train = df_all_data_norm[evaluation_index :last_know_index+1]
+    else:
+        df_train = df_all_data_norm[:last_know_index+1]
+
+
+    print(f'train_index = {train_index}')
+    print(f'last_know_index = {last_know_index}')
+    print(f'evaluation_index = {evaluation_index}')
+
+
+
+
+    print('-----------------------df_train--------------------')
+
+    print(df_train)
+
+    df_test = df_all_data_norm.iloc[train_index + 1:]
+    print('-----------------------df_test--------------------')
+
+    print(df_test)
+
+    print('-----------------------df_all_data_norm--------------------')
+
+    print(df_all_data_norm)
+
+
+    df_test.loc[:, col_target] = np.nan
+    df_real_predict = df_test.copy()
+    values = df_train[columns].values
+    x_input = create_x_input(df_train, lag)
+    x_future = df_test.values
+    X, y = split_sequence(values, lag)
+
+    n_features = values.shape[1]
+
+
+    model.compile(optimizer=optimizer, loss='mse')
+
+    model.fit(X, y, epochs=epochs, verbose=1, callbacks=[early_stopping, reduce_lr, save_best_weights_callback, TerminateOnNaNCallback()])
+    model.set_weights(save_best_weights_callback.best_weights)
+
+    x_input = x_input.reshape((1, lag, n_features))
+    x_input = x_input.reshape((1, lag, n_features))
+
+
+    predict_values = make_predictions(x_input, x_future, n_features, model, lag)
+
+    predict_values = np.array(predict_values).flatten()
+
+    print(f'predict_values = {predict_values}')
+
+    df_real_predict[col_target] = predict_values
+    if len(diff_cols) > 0:
+        for col in diff_cols:
+            df_real_predict[col] = df_true_all_col_skip[col]
+
+    df_real_predict[col_target] = predict_values
+    print('is work')
+
+    df_evaluetion['second'] = df_evaluetion['second'].fillna(0)
+    df_true_all_col['second'] = df_true_all_col['second'].fillna(0)
+    df_real_predict['second'] = df_real_predict['second'].fillna(0)
+
+    df_evaluetion['minute'] = df_evaluetion['minute'].fillna(method='ffill')
+    df_evaluetion['second'] = df_evaluetion['second'].fillna(method='ffill')
+
+    if "year" in df_evaluetion.columns:
+        df_evaluetion['year'] = df_evaluetion['year'].fillna(method='ffill')
+
+    if "hour" in df_evaluetion.columns:
+        df_evaluetion['hour'] = df_evaluetion['hour'].fillna(method='ffill')
+        df_evaluetion['hour_sin'] = df_evaluetion['hour_sin'].fillna(method='ffill')
+        df_evaluetion['hour_cos'] = df_evaluetion['hour_cos'].fillna(method='ffill')
+
+
+    df_true_all_col['minute'] = df_true_all_col['minute'].fillna(method='ffill')
+    df_true_all_col['second'] = df_true_all_col['second'].fillna(method='ffill')
+    if "hour" in df_true_all_col.columns:
+        df_true_all_col['hour'] = df_true_all_col['hour'].fillna(method='ffill')
+        df_true_all_col['hour_sin'] = df_true_all_col['hour_sin'].fillna(method='ffill')
+        df_true_all_col['hour_cos'] = df_true_all_col['hour_cos'].fillna(method='ffill')
+
+    df_real_predict['minute'] = df_real_predict['minute'].fillna(method='ffill')
+    df_real_predict['second'] = df_real_predict['second'].fillna(method='ffill')
+    if "hour" in df_real_predict.columns:
+        df_real_predict['hour'] = df_real_predict['hour'].fillna(method='ffill')
+        df_real_predict['hour_sin'] = df_real_predict['hour_sin'].fillna(method='ffill')
+        df_real_predict['hour_cos'] = df_real_predict['hour_cos'].fillna(method='ffill')
+
+    loss_list = [1]
+
+    print('----------------------------ПРОВЕРКА----------------------------------------------')
+
+    dataframes = {
+        'df_evaluation': df_evaluetion,
+        'df_true_all_col': df_true_all_col,
+        'df_real_predict': df_real_predict
+    }
+    # Проверка на наличие None
+    for name, df in dataframes.items():
+        none_indices = df[df.isnull().any(axis=1)].index.tolist()
+        if none_indices:
+            print(f"В DataFrame '{name}' есть None на строках: {none_indices}")
+            df_evaluetion = pd.DataFrame()
+            df_true_all_col = pd.DataFrame()
+            df_real_predict = pd.DataFrame()
+            loss_list = [1]
+            response_code = 100
+            response_massage = 'The training was interrupted due to overfitting. Try to simplify the model'
+            return df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage
+
+    #
+    # df_evaluetion.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_evaluetion.csv')
+    # df_true_all_col.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_true_all_col.csv')
+    # df_real_predict.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_real_predict.csv')
+
+    response_code, response_massage = 200, 'The training was successful'
+    return df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage
+
