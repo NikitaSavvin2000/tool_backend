@@ -13,8 +13,9 @@ from src.backend.metrix import metrix_all
 from src.backend.normalization import TimeNormalization
 from src.config import logger, public_or_local
 from src.models.statisticsrequest import AnalyticsDFsRequest, NormalizationRequest, ForecastRequest, \
-    ReverseNormalizationRequest, MenrixAllRequest, ForecastRequestXGBoost
+    ReverseNormalizationRequest, MenrixAllRequest, ForecastRequestXGBoost, ForecastRequestLSTM
 from src.processing.processing import to_float
+from src.backend.lstm import forecast_LSTM
 
 if public_or_local == 'LOCAL':
     url = 'http://localhost'
@@ -159,6 +160,7 @@ example_forecast_point_XGBoost = {
     "last_know_index": 9,
     "lag": 1,
     "type": "predictions",
+    "norm_values": "False",
     "model_architecture_params": {
         "objective": "reg:squarederror",
         "n_estimators": 100,
@@ -302,9 +304,7 @@ async def get_normalization(body: Annotated[
 
             df[col_time] = pd.to_datetime(df[col_time], format='%Y-%m-%d %H:%M:%S', errors='coerce')
 
-            # df[col_time] = df[col_time].apply(lambda x: x.replace(hour=x.hour or 0,
-            #                                                       minute=x.minute or 0,
-            #                                                       second=x.second or 0))
+
             print(df)
 
             tn = TimeNormalization(col_time, col_target)
@@ -415,8 +415,11 @@ async def get_concepts(body: Annotated[
         model_architecture_params = body.model_architecture_params
         json_list_df_all_data_norm = body.json_list_df_all_data_norm
         df_all_data_norm = pd.DataFrame(json_list_df_all_data_norm)
-        df_all_data_norm['second'] = df_all_data_norm['second'].astype('int64')
         type=body.type
+        norm_values = eval(body.norm_values)
+
+        if norm_values:
+            df_all_data_norm['second'] = df_all_data_norm['second'].astype('int64')
 
         if not df_all_data_norm.empty:
 
@@ -427,7 +430,8 @@ async def get_concepts(body: Annotated[
                 last_know_index=last_know_index,
                 lag=lag,
                 model_architecture_params=model_architecture_params,
-                type=type
+                type=type,
+                norm_values=norm_values
             )
             response = {
                 "df_evaluetion": df_evaluetion.to_dict(),
@@ -522,6 +526,71 @@ async def get_metrix_all(body: Annotated[
             response = {
                 "metrics": metrics,
                 "df_metrics": df_metrics.to_dict()
+            }
+            return response
+        else:
+            logger.error("Something happened during creation of the search table")
+            raise HTTPException(
+                status_code=400,
+                detail="Bad Request",
+                headers={"X-Error": "Something happened during creation of the search table"},
+            )
+    except Exception as ApplicationError:
+        logger.error(ApplicationError.__repr__())
+        raise HTTPException(
+            status_code=400,
+            detail="Unknown Error",
+            headers={"X-Error": f"{ApplicationError.__repr__()}"},
+        )
+
+
+
+
+@app.post("/backend/v1/LSTM_forecast")
+async def LSTM_forecast(body: Annotated[
+    ForecastRequestXGBoost, Body(
+        example={
+            "col_target": example_forecast_point_XGBoost['col_target'],
+            "evaluation_index": example_forecast_point_XGBoost['evaluation_index'],
+            "last_know_index": example_forecast_point_XGBoost['last_know_index'],
+            "lag": example_forecast_point_XGBoost['lag'],
+            "model_architecture_params": example_forecast_point_XGBoost['model_architecture_params'],
+            "json_list_df_all_data_norm": example_forecast_point_XGBoost['json_list_df_all_data_norm'],
+        })]):
+
+    try:
+        evaluation_index = body.evaluation_index
+        last_know_index = body.last_know_index
+        col_target = body.col_target
+        lag = body.lag
+        model_architecture_params = body.model_architecture_params
+        json_list_df_all_data_norm = body.json_list_df_all_data_norm
+        df_all_data_norm = pd.DataFrame(json_list_df_all_data_norm)
+        type=body.type
+        norm_values = eval(body.norm_values)
+        print('is work')
+        if norm_values:
+            df_all_data_norm['second'] = df_all_data_norm['second'].astype('int64')
+
+        if not df_all_data_norm.empty:
+
+            df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage = forecast_LSTM(
+                col_target=col_target,
+                df_all_data_norm=df_all_data_norm,
+                evaluation_index=evaluation_index,
+                last_know_index=last_know_index,
+                lag=lag,
+                model_architecture_params=model_architecture_params,
+                type=type,
+                norm_values=norm_values
+            )
+            response = {
+                "df_evaluetion": df_evaluetion.to_dict(),
+                "df_true_all_col": df_true_all_col.to_dict(),
+                "df_real_predict": df_real_predict.to_dict(),
+                "loss_list": loss_list,
+                "response_code": response_code,
+                "response_massage": response_massage,
             }
             return response
         else:

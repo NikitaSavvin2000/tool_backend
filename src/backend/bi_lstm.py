@@ -96,6 +96,13 @@ def forecast(
     possible_cols = [col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
                      'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
 
+    all_col = df_all_data_norm.columns.tolist()  # Убедитесь, что all_col - это список
+
+    # Используем пересечение списков
+    available_cols = [col for col in possible_cols if col in all_col]
+
+    possible_cols = available_cols
+
     df_all_data_norm = df_all_data_norm[possible_cols]
     df_true_all_col = df_all_data_norm.iloc[evaluation_index: last_know_index]
     df_true_all_col_skip = df_all_data_norm.iloc[last_know_index:]

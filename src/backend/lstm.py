@@ -1,12 +1,12 @@
+from xgboost import XGBRegressor
+from sklearn.model_selection import GridSearchCV
+
 from tensorflow.keras.callbacks import Callback
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Bidirectional, Dropout
 import tensorflow as tf
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 import numpy as np
 import pandas as pd
-
-
 
 
 class SaveBestWeights(Callback):
@@ -76,33 +76,40 @@ def make_predictions(x_input, x_future, n_features, model, lag):
     return predict_values
 
 
-def forecast(
+def forecast_LSTM(
         col_target,
         df_all_data_norm,
         evaluation_index,
         last_know_index,
-        epochs,
         lag,
-        activation,
-        optimizer,
-        dropout_count,
         model_architecture_params,
+        type,
+        norm_values
 ):
-    # model_architecture_params = model_architecture_params[0]
 
     print(df_all_data_norm)
 
+    possible_cols = [col_target, 'year', 'month', 'week', 'day', 'day_of_week', 'hour', 'minute', 'second',]
+    if norm_values:
+        print('is norm_values')
+    else:
+        print('is not norm_values')
 
-    possible_cols = [col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
-                     'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
+        all_columns = df_all_data_norm.columns.tolist()
+        col_time = [col for col in all_columns if col != 'col_target'][0]
+        df_all_data_norm[col_time] = pd.to_datetime(df_all_data_norm[col_time])
 
-    all_col = df_all_data_norm.columns.tolist()  # Убедитесь, что all_col - это список
+        df_all_data_norm['year'] = df_all_data_norm[col_time].dt.year
+        df_all_data_norm['month'] = df_all_data_norm[col_time].dt.month
+        df_all_data_norm['day'] = df_all_data_norm[col_time].dt.day
+        df_all_data_norm['week'] = df_all_data_norm[col_time].dt.isocalendar().week
+        df_all_data_norm['day_of_week'] = df_all_data_norm[col_time].dt.dayofweek  # 0 - понедельник, 6 - воскресенье
+        df_all_data_norm['hour'] = df_all_data_norm[col_time].dt.hour
+        df_all_data_norm['minute'] = df_all_data_norm[col_time].dt.minute
+        df_all_data_norm['second'] = df_all_data_norm[col_time].dt.second
 
-    # Используем пересечение списков
-    available_cols = [col for col in possible_cols if col in all_col]
+        print(df_all_data_norm.head())
 
-
-    possible_cols = available_cols
 
     df_all_data_norm = df_all_data_norm[possible_cols]
     df_true_all_col = df_all_data_norm.iloc[evaluation_index: last_know_index]
@@ -112,7 +119,12 @@ def forecast(
 
     all_columns = df_all_data_norm.columns
 
-    col_for_train = [col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1]
+    # col_for_train = [col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1]
+
+    col_for_train = [col_target, 'year', 'month', 'week', 'day', 'day_of_week', 'hour', 'minute',]
+
+
+    print(f'col_for_train = {col_for_train}')
 
     diff_cols = all_columns.difference(col_for_train)
 
@@ -145,6 +157,13 @@ def forecast(
 
     print('is work1')
 
+    dropout_count = 0.01
+
+    activation = "relu"
+    optimizer = "adam"
+    epochs = 25
+
+
     model = Sequential()
     if len(model_architecture_params) == 3:
         model.add(Bidirectional(
@@ -168,31 +187,24 @@ def forecast(
         model.add(Dropout(dropout_count))
         model.add(Dense(1))
 
-    elif len(model_architecture_params) == 1:
-        model.add(Bidirectional(LSTM(int(model_architecture_params[0]['neurons']), activation=activation)))
-        model.add(Dropout(dropout_count))
-        model.add(Dense(1))
+    # elif len(model_architecture_params) == 1:
+    #     model.add(Bidirectional(LSTM(int(model_architecture_params[0]['neurons']), activation=activation)))
+    #     model.add(Dropout(dropout_count))
+    #     model.add(Dense(1))
 
     else:
-        model.add(Bidirectional(LSTM(32, activation='relu')))
+        model.add(Bidirectional(LSTM(500, activation='relu')))
         model.add(Dropout(0.01))
         model.add(Dense(1))
 
     model.compile(optimizer=optimizer, loss='mse')
 
-    early_stopping = EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
-    reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=5, min_lr=0.001)
-    save_best_weights_callback = SaveBestWeights()
-    print(f'----------------------------model_architecture_params-------------------------------')
-    print(f'{model_architecture_params}')
-    print(f'------------------------------------------------------------------------------------')
+
 
     print('is work2')
 
-
     if type != 'predictions':
-        history = model.fit(X, y, epochs=epochs, verbose=1,
-                            callbacks=[early_stopping, reduce_lr, save_best_weights_callback, TerminateOnNaNCallback()])
+        history = model.fit(X, y, epochs=epochs, verbose=1,)
         try:
             x_input = x_input.reshape((1, lag, n_features))
         except Exception as e:
@@ -222,7 +234,17 @@ def forecast(
             })
             df_evaluetion['minute'] = 0
             df_evaluetion['second'] = 0
+    else:
 
+        df_evaluetion = pd.DataFrame({
+            'column1': [1, 2, 3],
+            'column2': ['a', 'b', 'c']
+        })
+        df_evaluetion['minute'] = 0
+        df_evaluetion['second'] = 0
+
+
+    # part 2 fine tuning -------------------------------------
 
     df_all_data_norm = df_all_data_norm[col_for_train]
 
@@ -261,15 +283,36 @@ def forecast(
     values = df_train[columns].values
     x_input = create_x_input(df_train, lag)
     x_future = df_test.values
-    X, y = split_sequence(values, lag)
+
+    try:
+        X, y = split_sequence(values, lag)
+    except Exception as e:
+        print('-----------ERROR- ------------')
+        print(e)
 
     n_features = values.shape[1]
 
 
+    try:
+        n_features = values.shape[1]
+    except Exception as e:
+        print('-----------ERROR- ------------')
+        print(e)
+
+
+
+
     model.compile(optimizer=optimizer, loss='mse')
 
-    model.fit(X, y, epochs=epochs, verbose=1, callbacks=[early_stopping, reduce_lr, save_best_weights_callback, TerminateOnNaNCallback()])
-    model.set_weights(save_best_weights_callback.best_weights)
+
+
+    X = np.array(X, dtype=np.float32)
+    y = np.array(y, dtype=np.float32)
+
+    model.fit(X, y, epochs=epochs, verbose=1)
+
+
+    # model.set_weights(save_best_weights_callback.best_weights)
 
     x_input = x_input.reshape((1, lag, n_features))
     x_input = x_input.reshape((1, lag, n_features))
@@ -330,10 +373,6 @@ def forecast(
 
     print('----------------------------ПРОВЕРКА----------------------------------------------')
 
-    df_evaluetion.fillna(method='ffill', inplace=True)
-
-    print('----------------------------ПРОВЕРКА----------------------------------------------')
-
     dataframes = {
         'df_evaluation': df_evaluetion,
         'df_true_all_col': df_true_all_col,
@@ -351,4 +390,5 @@ def forecast(
 
     response_code, response_massage = 200, 'The training was successful'
     return df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage
+
 

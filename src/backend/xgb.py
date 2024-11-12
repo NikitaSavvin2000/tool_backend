@@ -57,29 +57,41 @@ def forecast_XGBoost(
         last_know_index,
         lag,
         model_architecture_params,
-        type
+        type,
+        norm_values
 ):
-    model_architecture_params = model_architecture_params[0]
 
     print(df_all_data_norm)
-    # best_params = forecast_XGBoost_search(
-    #     col_target,
-    #     df_all_data_norm,
-    #     lag,
-    #     last_know_index
-    # )
-    # model_architecture_params = model_architecture_params[0]
-    #
-    # model_architecture_params['colsample_bytree'] = float(best_params['colsample_bytree'])
-    # model_architecture_params['max_depth'] = int(best_params['max_depth'])
-    # model_architecture_params['n_estimators'] = int(best_params['n_estimators'])
-    # model_architecture_params['subsample'] = float(best_params['subsample'])
-    # # model_architecture_params['colsample_bytree'] = float(best_params['colsample_bytree'])
+
+    if norm_values:
+
+        print('is norm_values')
+        possible_cols = [col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
+                         'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
+        col_for_train = [col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1]
+
+    else:
+        print('is not norm_values')
+        possible_cols = [col_target, 'year', 'month', 'week', 'day', 'day_of_week', 'hour', 'minute', 'second',]
+
+        all_columns = df_all_data_norm.columns.tolist()
+        col_time = [col for col in all_columns if col != 'col_target'][0]
+        df_all_data_norm[col_time] = pd.to_datetime(df_all_data_norm[col_time])
+
+        df_all_data_norm['year'] = df_all_data_norm[col_time].dt.year
+        df_all_data_norm['month'] = df_all_data_norm[col_time].dt.month
+        df_all_data_norm['day'] = df_all_data_norm[col_time].dt.day
+        df_all_data_norm['week'] = df_all_data_norm[col_time].dt.isocalendar().week
+        df_all_data_norm['day_of_week'] = df_all_data_norm[col_time].dt.dayofweek  # 0 - понедельник, 6 - воскресенье
+        df_all_data_norm['hour'] = df_all_data_norm[col_time].dt.hour
+        df_all_data_norm['minute'] = df_all_data_norm[col_time].dt.minute
+        df_all_data_norm['second'] = df_all_data_norm[col_time].dt.second
+
+        col_for_train = [col_target, 'year', 'month', 'week', 'day', 'day_of_week', 'hour', 'minute',]
 
 
 
-    possible_cols = [col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
-                     'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
+    model_architecture_params = model_architecture_params[0]
 
     df_all_data_norm = df_all_data_norm[possible_cols]
     df_true_all_col = df_all_data_norm.iloc[evaluation_index: last_know_index]
@@ -89,7 +101,8 @@ def forecast_XGBoost(
 
     all_columns = df_all_data_norm.columns
 
-    col_for_train = [col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1]
+
+    print(f'col_for_train = {col_for_train}')
 
     diff_cols = all_columns.difference(col_for_train)
 
@@ -130,25 +143,42 @@ def forecast_XGBoost(
         subsample=model_architecture_params['subsample'],    # Доля выборки для построения каждого дерева
         colsample_bytree=model_architecture_params['colsample_bytree'],   # Доля признаков для каждого дерева
         reg_alpha=model_architecture_params.get('reg_alpha', 0),  # L1-регуляризация (по умолчанию 0)
-        reg_lambda=model_architecture_params.get('reg_lambda', 1)
+        reg_lambda=model_architecture_params.get('reg_lambda', 1),
+        min_child_weight=model_architecture_params.get('min_child_weight', 1),  # Минимальная сумма весов в листе
+        booster=model_architecture_params.get('booster', 'gbtree')
     )
 
     print('is work2')
 
+    print(model_architecture_params)
+
     if type != 'predictions':
         X_reshaped = X.reshape(X.shape[0], -1)
+        print('is work3')
+
         X_reshaped = np.array(X_reshaped, dtype=float)
+        print('is work4')
+
         y = np.array(y, dtype=float)
+        print('is work5')
+
         xgb_model.fit(X_reshaped, y)
+        print('is work6')
+
         try:
             x_input = x_input.reshape((1, lag, n_features))
+            print('is work7')
+
         except Exception as e:
             print('--------------------ERROR---------------------------')
             print(e)
 
 
+            print('is work8')
 
         predict_values = make_predictions(x_input, x_future, n_features, xgb_model, lag)
+
+        print('is work9')
 
         predict_values = np.array(predict_values).flatten()
         print(f'predict_values = {predict_values}')
@@ -246,27 +276,36 @@ def forecast_XGBoost(
 
     if "hour" in df_evaluetion.columns:
         df_evaluetion['hour'] = df_evaluetion['hour'].fillna(method='ffill')
+    if "hour_sin" in df_evaluetion.columns:
         df_evaluetion['hour_sin'] = df_evaluetion['hour_sin'].fillna(method='ffill')
+    if "hour_cos" in df_evaluetion.columns:
         df_evaluetion['hour_cos'] = df_evaluetion['hour_cos'].fillna(method='ffill')
 
 
     df_true_all_col['minute'] = df_true_all_col['minute'].fillna(method='ffill')
     df_true_all_col['second'] = df_true_all_col['second'].fillna(method='ffill')
+
     if "hour" in df_true_all_col.columns:
         df_true_all_col['hour'] = df_true_all_col['hour'].fillna(method='ffill')
+    if "hour_sin" in df_true_all_col.columns:
         df_true_all_col['hour_sin'] = df_true_all_col['hour_sin'].fillna(method='ffill')
+    if "hour_cos" in df_true_all_col.columns:
         df_true_all_col['hour_cos'] = df_true_all_col['hour_cos'].fillna(method='ffill')
 
     df_real_predict['minute'] = df_real_predict['minute'].fillna(method='ffill')
     df_real_predict['second'] = df_real_predict['second'].fillna(method='ffill')
     if "hour" in df_real_predict.columns:
         df_real_predict['hour'] = df_real_predict['hour'].fillna(method='ffill')
+    if "hour_sin" in df_real_predict.columns:
         df_real_predict['hour_sin'] = df_real_predict['hour_sin'].fillna(method='ffill')
+    if "hour_cos" in df_real_predict.columns:
         df_real_predict['hour_cos'] = df_real_predict['hour_cos'].fillna(method='ffill')
 
     loss_list = [1]
 
     print('----------------------------ПРОВЕРКА----------------------------------------------')
+
+    df_evaluetion.fillna(method='ffill', inplace=True)
 
     dataframes = {
         'df_evaluation': df_evaluetion,
@@ -298,6 +337,17 @@ def forecast_XGBoost_search(
 
     possible_cols = [col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
                      'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
+
+    all_col = df_all_data_norm.columns.tolist()  # Убедитесь, что all_col - это список
+
+    # Используем пересечение списков
+    available_cols = [col for col in possible_cols if col in all_col]
+
+    # Или, используя множество для пересечения
+    available_cols = list(set(possible_cols) & set(all_col))
+
+    possible_cols = available_cols
+
 
     df_all_data_norm = df_all_data_norm[possible_cols]
     df_all_data_norm[col_target] = df_all_data_norm[col_target].replace('None', None)

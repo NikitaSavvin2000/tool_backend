@@ -48,3 +48,21 @@ class ForecastRequestXGBoost(BaseModel):
     type: str
     model_architecture_params: List[Dict]
     json_list_df_all_data_norm: List[Dict]
+    norm_values: str
+
+
+class ForecastRequestLSTM(BaseModel):
+    col_target: str
+    evaluation_index: int
+    last_know_index: int
+    epochs: int
+    lag: int
+    activation: str
+    optimizer: str
+    dropout_count: float
+    model_architecture_params: List[Dict]
+    json_list_df_all_data_norm: List[Dict]
+    norm_values: str
+    type: str
+
+
