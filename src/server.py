@@ -12,10 +12,11 @@ from src.backend.xgb import forecast_XGBoost
 from src.backend.metrix import metrix_all
 from src.backend.normalization import TimeNormalization
 from src.config import logger, public_or_local
-from src.models.statisticsrequest import AnalyticsDFsRequest, NormalizationRequest, ForecastRequest, \
-    ReverseNormalizationRequest, MenrixAllRequest, ForecastRequestXGBoost, ForecastRequestLSTM
+from src.models.schemes import AnalyticsDFsRequest, NormalizationRequest, ForecastRequest, \
+    ReverseNormalizationRequest, MenrixAllRequest, ForecastRequestXGBoost, ForecastRequestLSTM, ForecastRequestNeuralNetworks
 from src.processing.processing import to_float
 from src.backend.lstm import forecast_LSTM
+from src.backend.new_network import forecast_neural_networks
 
 if public_or_local == 'LOCAL':
     url = 'http://localhost'
@@ -153,7 +154,6 @@ example_forecast_point = {
          "week_cos": -0.6631226582, "is_holiday": 0}]
 }
 
-
 example_forecast_point_XGBoost = {
     "col_target": "load_consumption",
     "evaluation_index": 7,
@@ -169,6 +169,86 @@ example_forecast_point_XGBoost = {
         "subsample": 0.8,
         "colsample_bytree": 0.8,
     },
+    "json_list_df_all_data_norm": [
+        {"load_consumption": 0.6800409376, "year": 0.984, "week": 0.6274509804, "day_of_week": 0.8333333333,
+         "hour": 0.7391304348, "minute": 0.8983050847, "second": 0, "hour_sin": -0.9659258263,
+         "hour_cos": -0.2588190451, "day_of_week_sin": -0.9749279122, "day_of_week_cos": -0.222520934,
+         "week_sin": -0.7485107482, "week_cos": -0.6631226582, "is_holiday": 0},
+        {"load_consumption": 0.6952882419, "year": 0.984, "week": 0.6274509804, "day_of_week": 0.8333333333,
+         "hour": 0.7391304348, "minute": 0.9830508475, "second": 0, "hour_sin": -0.9659258263,
+         "hour_cos": -0.2588190451, "day_of_week_sin": -0.9749279122, "day_of_week_cos": -0.222520934,
+         "week_sin": -0.7485107482, "week_cos": -0.6631226582, "is_holiday": 0},
+        {"load_consumption": 0.7110373283, "year": 0.984, "week": 0.6274509804, "day_of_week": 0.8333333333,
+         "hour": 0.7826086957, "minute": 0.0508474576, "second": 0, "hour_sin": -1, "hour_cos": -1.836970199e-16,
+         "day_of_week_sin": -0.9749279122, "day_of_week_cos": -0.222520934, "week_sin": -0.7485107482,
+         "week_cos": -0.6631226582, "is_holiday": 0},
+        {"load_consumption": 0.6988007163, "year": 0.984, "week": 0.6274509804, "day_of_week": 0.8333333333,
+         "hour": 0.7826086957, "minute": 0.1355932203, "second": 0, "hour_sin": -1, "hour_cos": -1.836970199e-16,
+         "day_of_week_sin": -0.9749279122, "day_of_week_cos": -0.222520934, "week_sin": -0.7485107482,
+         "week_cos": -0.6631226582, "is_holiday": 0},
+        {"load_consumption": 0.6925315077, "year": 0.984, "week": 0.6274509804, "day_of_week": 0.8333333333,
+         "hour": 0.7826086957, "minute": 0.2203389831, "second": 0, "hour_sin": -1, "hour_cos": -1.836970199e-16,
+         "day_of_week_sin": -0.9749279122, "day_of_week_cos": -0.222520934, "week_sin": -0.7485107482,
+         "week_cos": -0.6631226582, "is_holiday": 0},
+        {"load_consumption": 0.6344474735, "year": 0.984, "week": 0.6274509804, "day_of_week": 0.8333333333,
+         "hour": 0.7826086957, "minute": 0.3050847458, "second": 0, "hour_sin": -1, "hour_cos": -1.836970199e-16,
+         "day_of_week_sin": -0.9749279122, "day_of_week_cos": -0.222520934, "week_sin": -0.7485107482,
+         "week_cos": -0.6631226582, "is_holiday": 0},
+        {"load_consumption": 0.5210668107, "year": 0.984, "week": 0.6274509804, "day_of_week": 0.8333333333,
+         "hour": 0.7826086957, "minute": 0.3898305085, "second": 0, "hour_sin": -1, "hour_cos": -1.836970199e-16,
+         "day_of_week_sin": -0.9749279122, "day_of_week_cos": -0.222520934, "week_sin": -0.7485107482,
+         "week_cos": -0.6631226582, "is_holiday": 0},
+        {"load_consumption": 0.5220188471, "year": 0.984, "week": 0.6274509804, "day_of_week": 0.8333333333,
+         "hour": 0.7826086957, "minute": 0.4745762712, "second": 0, "hour_sin": -1, "hour_cos": -1.836970199e-16,
+         "day_of_week_sin": -0.9749279122, "day_of_week_cos": -0.222520934, "week_sin": -0.7485107482,
+         "week_cos": -0.6631226582, "is_holiday": 0},
+        {"load_consumption": 0.5324090483, "year": 0.984, "week": 0.6274509804, "day_of_week": 0.8333333333,
+         "hour": 0.7826086957, "minute": 0.5593220339, "second": 0, "hour_sin": -1, "hour_cos": -1.836970199e-16,
+         "day_of_week_sin": -0.9749279122, "day_of_week_cos": -0.222520934, "week_sin": -0.7485107482,
+         "week_cos": -0.6631226582, "is_holiday": 0},
+        {"load_consumption": 0.5249571553, "year": 0.984, "week": 0.6274509804, "day_of_week": 0.8333333333,
+         "hour": 0.7826086957, "minute": 0.6440677966, "second": 0, "hour_sin": -1, "hour_cos": -1.836970199e-16,
+         "day_of_week_sin": -0.9749279122, "day_of_week_cos": -0.222520934, "week_sin": -0.7485107482,
+         "week_cos": -0.6631226582, "is_holiday": 0}]
+}
+
+example_forecast_neural_networks = {
+    "col_target": "load_consumption",
+    "evaluation_index": 7,
+    "last_know_index": 9,
+    "type": "predictions",
+    "norm_values": "True",
+    "model_architecture_params": [{
+        "layers": {
+            "layer_0": {
+                "model_type": "LSTM",
+                "neurons": 3,
+                "recurrent_dropout": 0,
+                "activation": "relu",
+                "l2_regularizers": 0
+            },
+            "layer_1": {
+                "model_type": "Bi-LSTM",
+                "neurons": 1,
+                "recurrent_dropout": 0,
+                "activation": "relu",
+                "l2_regularizers": 0
+            },
+            "layer_2": {
+                "model_type": "Bi-LSTM",
+                "neurons": 1,
+                "recurrent_dropout": 0,
+                "activation": "relu",
+                "l2_regularizers": 0
+            }
+        },
+        "epochs": 5,
+        "optimizer": "adam",
+        "lag": 4,
+        "points_per_call": 4,
+        "final_l2_regularizer": 0.2,
+        "activation": "linear"
+    }],
     "json_list_df_all_data_norm": [
         {"load_consumption": 0.6800409376, "year": 0.984, "week": 0.6274509804, "day_of_week": 0.8333333333,
          "hour": 0.7391304348, "minute": 0.8983050847, "second": 0, "hour_sin": -0.9659258263,
@@ -239,6 +319,97 @@ example_metrix_all = {
         {"load_consumption": 16154.700000000003, "time": "2023-12-17 00:42:00"},
         {"load_consumption": 15885.500000000002, "time": "2023-12-17 00:47:00"}
     ],
+}
+
+example_forecast_prophet = {
+    "col_target": "load_consumption",
+    "col_time": "time",
+    "evaluation_index": 7,
+    "last_know_index": 9,
+    "count_forecast_point": 2,
+    "type": "predictions",
+    "json_list_df_all_data": [
+        {
+            "time": "2023-12-18 07:51:18",
+            "load_consumption": 30035.7
+        },
+        {
+            "time": "2023-12-18 07:56:19",
+            "load_consumption": 30388.8
+        },
+        {
+            "time": "2023-12-18 08:01:18",
+            "load_consumption": 28574.1
+        },
+        {
+            "time": "2023-12-18 08:06:18",
+            "load_consumption": 28788.9
+        },
+        {
+            "time": "2023-12-18 08:11:17",
+            "load_consumption": 30401.4
+        },
+        {
+            "time": "2023-12-18 08:16:17",
+            "load_consumption": 38862.6
+        },
+        {
+            "time": "2023-12-18 08:21:18",
+            "load_consumption": 47326.1
+        },
+        {
+            "time": "2023-12-18 08:26:18",
+            "load_consumption": 43447.9
+        },
+        {
+            "time": "2023-12-18 08:31:17",
+            "load_consumption": 42628.3
+        },
+        {
+            "time": "2023-12-18 08:36:17",
+            "load_consumption": 45304.2
+        },
+        {
+            "time": "2023-12-18 08:41:17",
+            "load_consumption": 44403.9
+        },
+        {
+            "time": "2023-12-18 08:46:17",
+            "load_consumption": 45483.5
+        },
+        {
+            "time": "2023-12-18 08:51:16",
+            "load_consumption": 47645.5
+        },
+        {
+            "time": "2023-12-18 08:56:16",
+            "load_consumption": 45234.6
+        },
+        {
+            "time": "2023-12-18 09:01:17",
+            "load_consumption": 45466.1
+        },
+        {
+            "time": "2023-12-18 09:06:17",
+            "load_consumption": 47131.2
+        },
+        {
+            "time": "2023-12-18 09:11:16",
+            "load_consumption": 45947.5
+        },
+        {
+            "time": "2023-12-18 09:16:16",
+            "load_consumption": 45396.9
+        },
+        {
+            "time": "2023-12-18 09:21:16",
+            "load_consumption": 45587.1
+        },
+        {
+            "time": "2023-12-18 09:26:16",
+            "load_consumption": 46904.2
+        }
+    ]
 }
 
 
@@ -608,6 +779,68 @@ async def LSTM_forecast(body: Annotated[
             headers={"X-Error": f"{ApplicationError.__repr__()}"},
         )
 
+
+@app.post("/backend/v1/forecast_neural_networks")
+async def request_forecast_neural_networks(body: Annotated[
+    ForecastRequestNeuralNetworks, Body(
+        example={
+            "col_target": example_forecast_neural_networks['col_target'],
+            "evaluation_index": example_forecast_neural_networks['evaluation_index'],
+            "last_know_index": example_forecast_neural_networks['last_know_index'],
+            "model_architecture_params": example_forecast_neural_networks['model_architecture_params'],
+            "json_list_df_all_data_norm": example_forecast_neural_networks['json_list_df_all_data_norm'],
+            "type": example_forecast_neural_networks['type'],
+            "norm_values": example_forecast_neural_networks['norm_values']
+        })]):
+
+    try:
+        col_target = body.col_target
+        evaluation_index = body.evaluation_index
+        last_know_index = body.last_know_index
+        model_architecture_params = body.model_architecture_params
+        json_list_df_all_data_norm = body.json_list_df_all_data_norm
+        df_all_data_norm = pd.DataFrame(json_list_df_all_data_norm)
+        type=body.type
+        norm_values = eval(body.norm_values)
+        print('is work')
+        if norm_values:
+            df_all_data_norm['second'] = df_all_data_norm['second'].astype('int64')
+
+        if not df_all_data_norm.empty:
+
+            (df_evaluetion, df_true_all_col, loss_list, df_real_predict,
+             response_code, response_massage) = forecast_neural_networks(
+                col_target=col_target,
+                df_all_data_norm=df_all_data_norm,
+                evaluation_index=evaluation_index,
+                last_know_index=last_know_index,
+                model_architecture_params=model_architecture_params,
+                type=type,
+                norm_values=norm_values
+            )
+            response = {
+                "df_evaluetion": df_evaluetion.to_dict(),
+                "df_true_all_col": df_true_all_col.to_dict(),
+                "df_real_predict": df_real_predict.to_dict(),
+                "loss_list": loss_list,
+                "response_code": response_code,
+                "response_massage": response_massage,
+            }
+            return response
+        else:
+            logger.error("Something happened during creation of the search table")
+            raise HTTPException(
+                status_code=400,
+                detail="Bad Request",
+                headers={"X-Error": "Something happened during creation of the search table"},
+            )
+    except Exception as ApplicationError:
+        logger.error(ApplicationError.__repr__())
+        raise HTTPException(
+            status_code=400,
+            detail="Unknown Error",
+            headers={"X-Error": f"{ApplicationError.__repr__()}"},
+        )
 
 @app.get("/")
 def read_root():

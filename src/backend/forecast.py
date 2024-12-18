@@ -66,7 +66,7 @@ def make_predictions(x_input, x_future, n_features, model, lag):
         except Exception as e:
             print('--------------------ERROR---------------------------')
             print(e)
-        y_predict = model.predict(x_input_tensor, verbose=1)
+        y_predict = model.predict(x_input_tensor, verbose=0)
         predict_values.append(y_predict)
         x_input = np.delete(x_input, (0), axis=1)
         future_lag = x_future[0]
@@ -131,7 +131,8 @@ def forecast(
     df_train = df.iloc[:train_index]
     print('is work0')
 
-    df_test = df.iloc[train_index + 1: last_know_index + 1]
+    df_test = df.iloc[train_index: last_know_index]
+
     df_test.loc[:, col_target] = np.nan
 
     df_evaluetion = df_test.copy()
@@ -289,48 +290,6 @@ def forecast(
     df_real_predict[col_target] = predict_values
     print('is work')
 
-    df_evaluetion['second'] = df_evaluetion['second'].fillna(0)
-    df_true_all_col['second'] = df_true_all_col['second'].fillna(0)
-    df_real_predict['second'] = df_real_predict['second'].fillna(0)
-
-    df_evaluetion['minute'] = df_evaluetion['minute'].fillna(method='ffill')
-    df_evaluetion['second'] = df_evaluetion['second'].fillna(method='ffill')
-
-    if "year" in df_evaluetion.columns:
-        df_evaluetion['year'] = df_evaluetion['year'].fillna(method='ffill')
-
-    if "hour" in df_evaluetion.columns:
-        df_evaluetion['hour'] = df_evaluetion['hour'].fillna(method='ffill')
-    if "hour_sin" in df_evaluetion.columns:
-        df_evaluetion['hour_sin'] = df_evaluetion['hour_sin'].fillna(method='ffill')
-    if "hour_cos" in df_evaluetion.columns:
-        df_evaluetion['hour_cos'] = df_evaluetion['hour_cos'].fillna(method='ffill')
-
-
-    df_true_all_col['minute'] = df_true_all_col['minute'].fillna(method='ffill')
-    df_true_all_col['second'] = df_true_all_col['second'].fillna(method='ffill')
-
-    if "hour" in df_true_all_col.columns:
-        df_true_all_col['hour'] = df_true_all_col['hour'].fillna(method='ffill')
-    if "hour_sin" in df_true_all_col.columns:
-        df_true_all_col['hour_sin'] = df_true_all_col['hour_sin'].fillna(method='ffill')
-    if "hour_cos" in df_true_all_col.columns:
-        df_true_all_col['hour_cos'] = df_true_all_col['hour_cos'].fillna(method='ffill')
-
-    df_real_predict['minute'] = df_real_predict['minute'].fillna(method='ffill')
-    df_real_predict['second'] = df_real_predict['second'].fillna(method='ffill')
-    if "hour" in df_real_predict.columns:
-        df_real_predict['hour'] = df_real_predict['hour'].fillna(method='ffill')
-    if "hour_sin" in df_real_predict.columns:
-        df_real_predict['hour_sin'] = df_real_predict['hour_sin'].fillna(method='ffill')
-    if "hour_cos" in df_real_predict.columns:
-        df_real_predict['hour_cos'] = df_real_predict['hour_cos'].fillna(method='ffill')
-
-    loss_list = [1]
-
-    print('----------------------------ПРОВЕРКА----------------------------------------------')
-
-    df_evaluetion.fillna(method='ffill', inplace=True)
 
     print('----------------------------ПРОВЕРКА----------------------------------------------')
 
@@ -344,6 +303,8 @@ def forecast(
         none_indices = df[df.isnull().any(axis=1)].index.tolist()
         if none_indices:
             print(f"В DataFrame '{name}' есть None на строках: {none_indices}")
+
+    df_evaluetion = df_evaluetion.dropna()
     #
     # df_evaluetion.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_evaluetion.csv')
     # df_true_all_col.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_true_all_col.csv')

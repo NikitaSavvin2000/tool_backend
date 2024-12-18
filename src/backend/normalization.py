@@ -100,7 +100,6 @@ class TimeNormalization:
 
 
     def df_normalize_with_meta(self, df):
-        print('is working')
 
         df[self.col_target] = df[self.col_target].astype(float)
         min_val = df[self.col_target].min()*1.2
