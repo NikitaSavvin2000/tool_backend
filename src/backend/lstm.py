@@ -7,45 +7,28 @@ from tensorflow.keras.layers import LSTM, Dense, Bidirectional, Dropout
 import tensorflow as tf
 import numpy as np
 import pandas as pd
+from tensorflow.keras import regularizers
 
+#
+# def split_sequence(sequence, n_steps):
+#     X, y = [], []
+#     for i in range(len(sequence)):
+#         end_ix = i + n_steps
+#         if end_ix > len(sequence) - 1:
+#             break
+#         seq_x, seq_y = sequence[i:end_ix, :], sequence[end_ix, 0]
+#         X.append(seq_x)
+#         y.append(seq_y)
+#     return np.array(X), np.array(y)
 
-class SaveBestWeights(Callback):
-    def __init__(self):
-        super(SaveBestWeights, self).__init__()
-        self.best_weights = None
-        self.best_loss = float('inf')
-
-    def on_epoch_end(self, epoch, logs=None):
-        current_loss = logs.get('loss')
-        if current_loss is None:
-            return
-        if current_loss < self.best_loss:
-            self.best_loss = current_loss
-            self.best_weights = self.model.get_weights()
-
-
-class TerminateOnNaNCallback(tf.keras.callbacks.Callback):
-    def on_epoch_end(self, epoch, logs=None):
-        logs = logs or {}
-        loss = logs.get('loss')
-
-        # Если loss является NaN или None, остановим обучение
-        if loss is None or np.isnan(loss):
-            print(f'\nОбучение остановлено на эпохе {epoch + 1} из-за NaN/None значений в loss.')
-            self.model.stop_training = True
-            df_evaluetion, df_true_all_col, loss_list, df_real_predict = None, None, None, None
-            response_code = 100
-            response_massage = 'The training was interrupted due to overfitting. Try to simplify the model'
-            return df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage
-
-
-def split_sequence(sequence, n_steps):
+def split_sequence(sequence, n_steps, horizon):
     X, y = [], []
     for i in range(len(sequence)):
         end_ix = i + n_steps
-        if end_ix > len(sequence) - 1:
+        out_end_ix = end_ix + horizon
+        if out_end_ix > len(sequence):
             break
-        seq_x, seq_y = sequence[i:end_ix, :], sequence[end_ix, 0]
+        seq_x, seq_y = sequence[i:end_ix, :], sequence[end_ix:out_end_ix, 0]
         X.append(seq_x)
         y.append(seq_y)
     return np.array(X), np.array(y)
@@ -57,22 +40,50 @@ def create_x_input(df_train, n_steps):
     return x_input
 
 
-def make_predictions(x_input, x_future, n_features, model, lag):
+# def make_predictions(x_input, x_future, n_features, model, lag):
+#     predict_values = []
+#     x_future_len = len(x_future)
+#     for i in range(x_future_len):
+#         try:
+#             x_input_tensor = tf.convert_to_tensor(x_input.reshape((1, lag, n_features)), dtype=tf.float32)
+#         except Exception as e:
+#             print('--------------------ERROR---------------------------')
+#             print(e)
+#         y_predict = model.predict(x_input_tensor, verbose=1)
+#         predict_values.append(y_predict)
+#         x_input = np.delete(x_input, (0), axis=1)
+#         future_lag = x_future[0]
+#         x_future = np.delete(x_future, 0, axis=0)
+#         future_lag[0] = y_predict
+#         x_input = np.append(x_input, future_lag.reshape(1, 1, -1), axis=1)
+#     return predict_values
+
+def make_predictions(x_input, x_future, points_per_call, model):
     predict_values = []
     x_future_len = len(x_future)
-    for i in range(x_future_len):
-        try:
-            x_input_tensor = tf.convert_to_tensor(x_input.reshape((1, lag, n_features)), dtype=tf.float32)
-        except Exception as e:
-            print('--------------------ERROR---------------------------')
-            print(e)
-        y_predict = model.predict(x_input_tensor, verbose=1)
-        predict_values.append(y_predict)
-        x_input = np.delete(x_input, (0), axis=1)
-        future_lag = x_future[0]
-        x_future = np.delete(x_future, 0, axis=0)
-        future_lag[0] = y_predict
-        x_input = np.append(x_input, future_lag.reshape(1, 1, -1), axis=1)
+    remaining_horizon = x_future_len
+
+    while remaining_horizon > 0:
+        current_points_to_predict = min(remaining_horizon, points_per_call)
+        x_input_tensor = tf.convert_to_tensor(x_input.reshape((1, x_input.shape[1], x_input.shape[2])), dtype=tf.float32)
+        y_predict = model.predict(x_input_tensor, verbose=0)
+
+        if len(y_predict.shape) == 2 and y_predict.shape[0] == 1:
+            y_predict = y_predict[0]
+
+        y_predict = y_predict[:current_points_to_predict]
+        predict_values.extend(y_predict)
+
+        for i in range(current_points_to_predict):
+            cur_val = y_predict[i]
+            x_input = np.delete(x_input, (0), axis=1)
+            future_lag = x_future[0]
+            x_future = np.delete(x_future, 0, axis=0)
+            future_lag[0] = cur_val
+            x_input = np.append(x_input, future_lag.reshape(1, 1, -1), axis=1)
+
+        remaining_horizon -= current_points_to_predict
+
     return predict_values
 
 
@@ -88,8 +99,11 @@ def forecast_LSTM(
 ):
 
     print(df_all_data_norm)
+    # print(f'cols = {df_all_data_norm.columns}')
+    possible_cols = [col_target, 'year', 'month', 'day', 'week', 'day_of_week',
+           'hour', 'minute', 'second', 'hour_sin', 'hour_cos', 'day_of_week_sin',
+           'day_of_week_cos', 'week_sin', 'week_cos', 'month_sin', 'month_cos']
 
-    possible_cols = [col_target, 'year', 'month', 'week', 'day', 'day_of_week', 'hour', 'minute', 'second',]
     if norm_values:
         print('is norm_values')
     else:
@@ -119,21 +133,15 @@ def forecast_LSTM(
 
     all_columns = df_all_data_norm.columns
 
-    # col_for_train = [col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1]
+    col_for_train = [col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1]
 
-    col_for_train = [col_target, 'year', 'month', 'week', 'day', 'day_of_week', 'hour', 'minute',]
-
+    # col_for_train = [col_target, 'year', 'month', 'week', 'day', 'day_of_week', 'hour', 'minute',]
 
     print(f'col_for_train = {col_for_train}')
 
     diff_cols = all_columns.difference(col_for_train)
 
     columns = col_for_train
-
-    print(f'all_columns = {all_columns}')
-
-
-    print(f'col_for_train = {col_for_train}')
 
     train_index = evaluation_index
 
@@ -151,20 +159,23 @@ def forecast_LSTM(
     x_input = create_x_input(df_train, lag)
 
     x_future = df_test.values
-    X, y = split_sequence(values, lag)
+    # X, y = split_sequence(values, lag)
+    points_per_call = 16
+    X, y = split_sequence(values, lag, points_per_call)
+
 
     n_features = values.shape[1]
 
     print('is work1')
 
-    dropout_count = 0.01
-
     activation = "relu"
     optimizer = "adam"
-    epochs = 25
+    epochs = 3
 
 
     model = Sequential()
+    tf.keras.utils.set_random_seed(91)
+
     if len(model_architecture_params) == 3:
         model.add(Bidirectional(
             LSTM(int(model_architecture_params[0]['neurons']), activation=activation, return_sequences=True),
@@ -187,15 +198,19 @@ def forecast_LSTM(
         model.add(Dropout(dropout_count))
         model.add(Dense(1))
 
-    # elif len(model_architecture_params) == 1:
-    #     model.add(Bidirectional(LSTM(int(model_architecture_params[0]['neurons']), activation=activation)))
-    #     model.add(Dropout(dropout_count))
-    #     model.add(Dense(1))
-
     else:
-        model.add(Bidirectional(LSTM(500, activation='relu')))
-        model.add(Dropout(0.01))
-        model.add(Dense(1))
+        epochs = 3
+        lstm0_units, lstm1_units, lstm2_units = 30, 20, 10
+        activation = 'relu'
+        recurrent_dropout_rate = 0.2
+        regularizers_l2 = 0.2
+        points_per_call = 16
+        model.add(LSTM(lstm0_units, activation='softplus', return_sequences=True ,recurrent_dropout=recurrent_dropout_rate, input_shape=(lag, n_features)))
+        model.add(LSTM(lstm1_units, activation=activation, return_sequences=True,recurrent_dropout=recurrent_dropout_rate))
+        model.add(LSTM(lstm2_units, activation=activation,recurrent_dropout=recurrent_dropout_rate))
+        model.add(Dense(points_per_call, activation='linear', kernel_regularizer=regularizers.l2(regularizers_l2)))
+
+        model.compile(optimizer=optimizer, loss='mean_squared_error', metrics=['mae'])
 
     model.compile(optimizer=optimizer, loss='mse')
 
@@ -214,7 +229,7 @@ def forecast_LSTM(
 
         x_input = x_input.reshape((1, lag, n_features))
 
-        predict_values = make_predictions(x_input, x_future, n_features, model, lag)
+        predict_values = make_predictions(x_input, x_future, points_per_call, model)
 
 
         predict_values = np.array(predict_values).flatten()
@@ -285,7 +300,7 @@ def forecast_LSTM(
     x_future = df_test.values
 
     try:
-        X, y = split_sequence(values, lag)
+        X, y = split_sequence(values, lag, points_per_call)
     except Exception as e:
         print('-----------ERROR- ------------')
         print(e)
@@ -318,7 +333,8 @@ def forecast_LSTM(
     x_input = x_input.reshape((1, lag, n_features))
 
 
-    predict_values = make_predictions(x_input, x_future, n_features, model, lag)
+    # predict_values = make_predictions(x_input, x_future, n_features, model, lag)
+    predict_values = make_predictions(x_input, x_future, points_per_call, model)
 
     predict_values = np.array(predict_values).flatten()
 
@@ -383,10 +399,7 @@ def forecast_LSTM(
         none_indices = df[df.isnull().any(axis=1)].index.tolist()
         if none_indices:
             print(f"В DataFrame '{name}' есть None на строках: {none_indices}")
-    #
-    # df_evaluetion.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_evaluetion.csv')
-    # df_true_all_col.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_true_all_col.csv')
-    # df_real_predict.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_real_predict.csv')
+
 
     response_code, response_massage = 200, 'The training was successful'
     return df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage

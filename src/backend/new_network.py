@@ -134,9 +134,13 @@ def forecast_neural_networks(
 
 
     print(df_all_data_norm)
+    #
+    # possible_cols = [col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
+    #                  'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
 
-    possible_cols = [col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
-                     'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
+    possible_cols = [col_target, 'year', 'month', 'day', 'week', 'day_of_week',
+                     'hour', 'minute', 'second', 'hour_sin', 'hour_cos', 'day_of_week_sin',
+                     'day_of_week_cos', 'week_sin', 'week_cos', 'month_sin', 'month_cos']
 
     col_for_train = [col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1]
 
@@ -202,9 +206,6 @@ def forecast_neural_networks(
 
 
     n_features = values.shape[1]
-
-    print('is work1')
-
 
 
     layerList = list(layers.keys())
@@ -466,10 +467,6 @@ def forecast_neural_networks(
         none_indices = df[df.isnull().any(axis=1)].index.tolist()
         if none_indices:
             print(f"В DataFrame '{name}' есть None на строках: {none_indices}")
-    #
-    # df_evaluetion.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_evaluetion.csv')
-    # df_true_all_col.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_true_all_col.csv')
-    # df_real_predict.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_real_predict.csv')
 
     response_code, response_massage = 200, 'The training was successful'
     return df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage

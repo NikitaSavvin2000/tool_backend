@@ -8,7 +8,6 @@ import pandas as pd
 
 
 
-
 class SaveBestWeights(Callback):
     def __init__(self):
         super(SaveBestWeights, self).__init__()
@@ -28,8 +27,6 @@ class TerminateOnNaNCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         logs = logs or {}
         loss = logs.get('loss')
-
-        # Если loss является NaN или None, остановим обучение
         if loss is None or np.isnan(loss):
             print(f'\nОбучение остановлено на эпохе {epoch + 1} из-за NaN/None значений в loss.')
             self.model.stop_training = True
@@ -64,7 +61,6 @@ def make_predictions(x_input, x_future, n_features, model, lag):
         try:
             x_input_tensor = tf.convert_to_tensor(x_input.reshape((1, lag, n_features)), dtype=tf.float32)
         except Exception as e:
-            print('--------------------ERROR---------------------------')
             print(e)
         y_predict = model.predict(x_input_tensor, verbose=0)
         predict_values.append(y_predict)
@@ -88,7 +84,6 @@ def forecast(
         dropout_count,
         model_architecture_params,
 ):
-    # model_architecture_params = model_architecture_params[0]
 
     print(df_all_data_norm)
 
@@ -96,9 +91,8 @@ def forecast(
     possible_cols = [col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
                      'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
 
-    all_col = df_all_data_norm.columns.tolist()  # Убедитесь, что all_col - это список
+    all_col = df_all_data_norm.columns.tolist()
 
-    # Используем пересечение списков
     available_cols = [col for col in possible_cols if col in all_col]
 
 
@@ -236,25 +230,8 @@ def forecast(
         df_train = df_all_data_norm[:last_know_index+1]
 
 
-    print(f'train_index = {train_index}')
-    print(f'last_know_index = {last_know_index}')
-    print(f'evaluation_index = {evaluation_index}')
-
-
-
-
-    print('-----------------------df_train--------------------')
-
-    print(df_train)
-
     df_test = df_all_data_norm.iloc[train_index + 1:]
-    print('-----------------------df_test--------------------')
 
-    print(df_test)
-
-    print('-----------------------df_all_data_norm--------------------')
-
-    print(df_all_data_norm)
 
 
     df_test.loc[:, col_target] = np.nan
@@ -291,24 +268,18 @@ def forecast(
     print('is work')
 
 
-    print('----------------------------ПРОВЕРКА----------------------------------------------')
 
     dataframes = {
         'df_evaluation': df_evaluetion,
         'df_true_all_col': df_true_all_col,
         'df_real_predict': df_real_predict
     }
-    # Проверка на наличие None
     for name, df in dataframes.items():
         none_indices = df[df.isnull().any(axis=1)].index.tolist()
         if none_indices:
             print(f"В DataFrame '{name}' есть None на строках: {none_indices}")
 
     df_evaluetion = df_evaluetion.dropna()
-    #
-    # df_evaluetion.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_evaluetion.csv')
-    # df_true_all_col.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_true_all_col.csv')
-    # df_real_predict.to_csv('/Users/nikitasavvin/Desktop/Учеба/tool_backend/experiments/df_real_predict.csv')
 
     response_code, response_massage = 200, 'The training was successful'
     return df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage
