@@ -1,5 +1,6 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 
@@ -47,7 +48,6 @@ def metrix_all(col_time, col_target, df_evaluetion, df_comparative):
         'MARNE': mean_absolute_range_normalized_error(y_true, y_pred),
         'WMAPE': weighted_mean_absolute_percentage_error(y_true, y_pred)
     }
-    print(metrics)
     df_metrics = pd.DataFrame({
         col_time: df_comparative[col_time],
         'MAE': np.abs(y_true - y_pred),

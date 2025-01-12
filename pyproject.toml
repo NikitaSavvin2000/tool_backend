@@ -14,7 +14,7 @@ dependencies = [
     "pdm-bump>=0.7.3",
     "pydantic>=2.6.3",
     "fastapi>=0.110.0",
-    "uvicorn>=0.28.0",
+    "uvicorn>=0.34.0",
     "pandas>=2.2.1",
     "coverage==7.4.4",
     "scipy>=1.14.1",
