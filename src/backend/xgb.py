@@ -87,13 +87,13 @@ def forecast_XGBoost(
     Returns:
         dict: DataFrames containing evaluation, true values, and predictions.
     """
-
+    print(df_all_data_norm.columns)
     if norm_values:
         possible_cols = [
             col_target, 'year', 'month', 'day', 'week', 'day_of_week',
             'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
             'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',
-            'month_sin', 'month_cos'
+            'month_sin', 'month_cos', 'part_of_day', 'is_night', 'is_weekend', 'day_of_year'
         ]
         col_for_train = [
             col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1
@@ -123,6 +123,8 @@ def forecast_XGBoost(
     model_architecture_params = model_architecture_params[0]
 
     df_all_data_norm = df_all_data_norm[possible_cols]
+    # print(df_all_data_norm['load_consumption'])
+    print(df_all_data_norm['load_consumption'].iloc[:-499])
     df_true_all_col = df_all_data_norm.iloc[evaluation_index: last_known_index]
     df_true_all_col_skip = df_all_data_norm.iloc[last_known_index:]
     df_all_data_norm[col_target] = df_all_data_norm[col_target].replace('None', None)

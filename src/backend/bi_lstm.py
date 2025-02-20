@@ -7,8 +7,6 @@ import numpy as np
 import pandas as pd
 
 
-
-
 class SaveBestWeights(Callback):
     def __init__(self):
         super(SaveBestWeights, self).__init__()
