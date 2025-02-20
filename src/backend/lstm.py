@@ -100,9 +100,16 @@ def forecast_LSTM(
 
     print(df_all_data_norm)
     # print(f'cols = {df_all_data_norm.columns}')
-    possible_cols = [col_target, 'year', 'month', 'day', 'week', 'day_of_week',
-           'hour', 'minute', 'second', 'hour_sin', 'hour_cos', 'day_of_week_sin',
-           'day_of_week_cos', 'week_sin', 'week_cos', 'month_sin', 'month_cos']
+    # possible_cols = [col_target, 'year', 'month', 'day', 'week', 'day_of_week',
+    #        'hour', 'minute', 'second', 'hour_sin', 'hour_cos', 'day_of_week_sin',
+    #        'day_of_week_cos', 'week_sin', 'week_cos', 'month_sin', 'month_cos']
+
+    possible_cols = [
+        col_target, 'year', 'month', 'day', 'week', 'day_of_week',
+        'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
+        'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',
+        'month_sin', 'month_cos', 'part_of_day', 'is_night', 'is_weekend', 'day_of_year'
+    ]
 
     if norm_values:
         print('is norm_values')
@@ -122,7 +129,6 @@ def forecast_LSTM(
         df_all_data_norm['minute'] = df_all_data_norm[col_time].dt.minute
         df_all_data_norm['second'] = df_all_data_norm[col_time].dt.second
 
-        print(df_all_data_norm.head())
 
 
     df_all_data_norm = df_all_data_norm[possible_cols]
@@ -135,7 +141,6 @@ def forecast_LSTM(
 
     col_for_train = [col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1]
 
-    # col_for_train = [col_target, 'year', 'month', 'week', 'day', 'day_of_week', 'hour', 'minute',]
 
     print(f'col_for_train = {col_for_train}')
 
@@ -159,7 +164,6 @@ def forecast_LSTM(
     x_input = create_x_input(df_train, lag)
 
     x_future = df_test.values
-    # X, y = split_sequence(values, lag)
     points_per_call = 16
     X, y = split_sequence(values, lag, points_per_call)
 
@@ -275,8 +279,6 @@ def forecast_LSTM(
     print(f'train_index = {train_index}')
     print(f'last_know_index = {last_know_index}')
     print(f'evaluation_index = {evaluation_index}')
-
-
 
 
     print('-----------------------df_train--------------------')

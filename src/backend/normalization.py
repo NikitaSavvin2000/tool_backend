@@ -7,7 +7,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 class Time2Vec:
 
-    def __init__(self, col_target, col_time):
+    def __init__(self, col_time, col_target):
         self.min_year = 1900
         self.max_year = 2100
         self.min_month = 1
@@ -148,7 +148,7 @@ class Time2Vec:
                                                                    'part_of_day', 'is_night', 'is_weekend', 'day_of_year'
                                                                ] + diff_cols)
         normalized_df[self.col_target] = self.normalize_column(normalized_df[self.col_target], min_val, max_val)
-        normalized_df = normalized_df.dropna()
+        normalized_df = normalized_df.fillna("None")
 
         return normalized_df, min_val, max_val
 

@@ -11,7 +11,7 @@ from src.backend.lstm import forecast_LSTM
 from src.backend.xgb import forecast_XGBoost
 from src.config import logger, public_or_local
 from src.processing.processing import to_float
-from src.backend.normalization import TimeNormalization, Time2Vec
+from src.backend.normalization import Time2Vec
 from src.backend.new_network import forecast_neural_networks
 from src.models.schemes import (
     AnalyticsDFsRequest, NormalizationRequest, ForecastRequest,
