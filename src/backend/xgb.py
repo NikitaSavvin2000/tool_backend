@@ -71,6 +71,8 @@ def forecast_XGBoost(
         col_target, df_all_data_norm, evaluation_index, last_known_index, lag,
         model_architecture_params, forecast_type, norm_values
 ):
+    print('=========00==========')
+    print(df_all_data_norm)
     """
     Perform forecasting using XGBoost for regression.
 
@@ -87,17 +89,18 @@ def forecast_XGBoost(
     Returns:
         dict: DataFrames containing evaluation, true values, and predictions.
     """
-
+    print(df_all_data_norm.columns)
     if norm_values:
         possible_cols = [
             col_target, 'year', 'month', 'day', 'week', 'day_of_week',
             'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
             'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',
-            'month_sin', 'month_cos'
+            'month_sin', 'month_cos', 'part_of_day', 'is_night', 'is_weekend', 'day_of_year'
         ]
         col_for_train = [
             col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1
         ]
+
     else:
         possible_cols = [
             col_target, 'year', 'month', 'week', 'day', 'day_of_week',
@@ -123,10 +126,17 @@ def forecast_XGBoost(
     model_architecture_params = model_architecture_params[0]
 
     df_all_data_norm = df_all_data_norm[possible_cols]
+    print('=========11==========')
+    print(df_all_data_norm)
+    # print(df_all_data_norm['load_consumption'])
+
     df_true_all_col = df_all_data_norm.iloc[evaluation_index: last_known_index]
     df_true_all_col_skip = df_all_data_norm.iloc[last_known_index:]
     df_all_data_norm[col_target] = df_all_data_norm[col_target].replace('None', None)
     df_all_data_norm[col_target] = df_all_data_norm[col_target].astype(float)
+
+    print('=========22==========')
+    print(df_all_data_norm)
 
     all_columns = df_all_data_norm.columns
     diff_cols = all_columns.difference(col_for_train)
@@ -165,6 +175,7 @@ def forecast_XGBoost(
             logger.error(e)
 
         predict_values = make_predictions(x_input, x_future, n_features, xgb_model, lag)
+
         predict_values = np.array(predict_values).flatten()
 
         df_evaluetion[col_target] = predict_values
@@ -183,6 +194,9 @@ def forecast_XGBoost(
         df_evaluetion['second'] = 0
 
     df_all_data_norm = df_all_data_norm[col_for_train]
+
+    print('=========33==========')
+    print(df_all_data_norm)
     train_index = last_known_index
 
     if forecast_type != 'predictions':
@@ -190,22 +204,26 @@ def forecast_XGBoost(
     else:
         df_train = df_all_data_norm[:last_known_index + 1]
 
+
     df_test = df_all_data_norm.iloc[train_index + 1:]
     df_test.loc[:, col_target] = np.nan
     df_real_predict = df_test.copy()
     values = df_train[columns].values
     x_input = create_x_input(df_train, lag)
+    print(df_test)
     x_future = df_test.values
     X, y = split_sequence(values, lag)
-
     n_features = values.shape[1]
 
     X_reshaped = X.reshape(X.shape[0], -1)
     xgb_model.fit(X_reshaped, y)
 
     x_input = x_input.reshape((1, lag, n_features))
+    print(x_future)
 
     predict_values = make_predictions(x_input, x_future, n_features, xgb_model, lag)
+
+    print(predict_values)
     predict_values = np.array(predict_values).flatten()
 
     df_real_predict[col_target] = predict_values
@@ -225,6 +243,9 @@ def forecast_XGBoost(
                 df[col] = df[col].fillna(method='ffill')
 
     loss_list = [1]
+    print(df_evaluetion)
+    print(df_true_all_col)
+    print(df_real_predict)
 
     df_evaluetion.fillna(method='ffill', inplace=True)
 

@@ -11,7 +11,7 @@ from src.backend.lstm import forecast_LSTM
 from src.backend.xgb import forecast_XGBoost
 from src.config import logger, public_or_local
 from src.processing.processing import to_float
-from src.backend.normalization import TimeNormalization, Time2Vec
+from src.backend.normalization import Time2Vec
 from src.backend.new_network import forecast_neural_networks
 from src.models.schemes import (
     AnalyticsDFsRequest, NormalizationRequest, ForecastRequest,
@@ -68,79 +68,6 @@ async def get_concepts(body: Annotated[
             detail="Unknown Error",
             headers={"X-Error": f"{ApplicationError.__repr__()}"},
         )
-
-#
-# @app.post("/backend/v1/normalization")
-# async def get_normalization(body: Annotated[
-#     NormalizationRequest, Body(
-#         example={
-#             "col_time": example_not_norm_data['col_time'],
-#             "col_target": example_not_norm_data['col_target'],
-#             "json_list_df": example_not_norm_data['json_list_df'],
-#         })]):
-#     """
-#     Эндпоинт для нормализации данных с временной и целевой колонками.
-#     Принимает данные в виде списка словарей, преобразует их в DataFrame и нормализует с использованием
-#     указанного временного и целевого столбца. Возвращает нормализованные данные и метаинформацию.
-#
-#     Параметры:
-#     - body (NormalizationRequest): Запрос с данными для нормализации:
-#         - col_time (str): Название столбца с временными метками.
-#         - col_target (str): Название столбца с целевыми значениями.
-#         - json_list_df (List[dict]): Данные в виде списка словарей для преобразования в DataFrame.
-#
-#     Возвращает:
-#     - dict: Словарь с нормализованными данными (`df_all_data_norm`), минимальным значением (`min_val`),
-#       максимальным значением (`max_val`).
-#
-#     Исключения:
-#     - HTTPException: В случае ошибки при обработке запроса или данных (например, пустой DataFrame или ошибка преобразования).
-#     """
-#     try:
-#         col_time = body.col_time
-#         col_target = body.col_target
-#         json_list_df = body.json_list_df
-#
-#         df = pd.DataFrame(json_list_df)
-#         df[col_target] = df[col_target].replace("None", None)
-#
-#         if df.empty:
-#             raise HTTPException(
-#                 status_code=400,
-#                 detail="Input data is empty",
-#                 headers={"X-Error": "Empty input data provided"}
-#             )
-#         try:
-#             try:
-#                 df[col_target] = df[col_target].str.replace(',', '')
-#             except Exception as e:
-#                 logger.error(e)
-#             finally:
-#                 df[col_target] = df[col_target].astype(float)
-#         except Exception as e:
-#             logger.error(e)
-#
-#             df[col_target] = df[col_target].apply(lambda x: to_float(x))
-#
-#         df[col_time] = pd.to_datetime(df[col_time], format='%Y-%m-%d %H:%M:%S', errors='coerce')
-#         tn = TimeNormalization(col_time, col_target)
-#         df_all_data_norm, min_val, max_val = tn.df_normalize_with_meta(df)
-#         response = {
-#             "df_all_data_norm": df_all_data_norm.to_dict(),
-#             "min_val": min_val,
-#             "max_val": max_val
-#         }
-#         return response
-#
-#     except Exception as ApplicationError:
-#         logger.error(ApplicationError.__repr__())
-#         raise HTTPException(
-#             status_code=400,
-#             detail="Unknown Error",
-#             headers={"X-Error": f"{ApplicationError.__repr__()}"},
-#         )
-
-
 
 
 @app.post("/backend/v1/forecast")
@@ -271,47 +198,6 @@ async def get_concepts(body: Annotated[
             headers={"X-Error": f"{ApplicationError.__repr__()}"},
         )
 
-
-# @app.post("/backend/v1/reverse_normalization")
-# async def get_reverse_normalization(body: Annotated[
-#     ReverseNormalizationRequest, Body(
-#         example={
-#             "col_time": example_reverse_norm_data['col_time'],
-#             "col_target": example_reverse_norm_data['col_target'],
-#             "json_list_norm_df": example_reverse_norm_data['json_list_norm_df'],
-#             "min_val": example_reverse_norm_data['min_val'],
-#             "max_val": example_reverse_norm_data['max_val']
-#         })]):
-#     try:
-#         col_time = body.col_time
-#         col_target = body.col_target
-#         json_list_norm_df = body.json_list_norm_df
-#         min_val = body.min_val
-#         max_val = body.max_val
-#         df = pd.DataFrame(json_list_norm_df)
-#
-#         if not df.empty:
-#
-#             tn = TimeNormalization(col_time, col_target)
-#             df_all_data_reverse_norm = tn.df_denormalize_with_meta(df, min_val, max_val)
-#             response = {
-#                 "df_all_data_reverse_norm": df_all_data_reverse_norm.to_dict()
-#             }
-#             return response
-#         else:
-#             logger.error("Something happened during creation of the search table")
-#             raise HTTPException(
-#                 status_code=400,
-#                 detail="Bad Request",
-#                 headers={"X-Error": "Something happened during creation of the search table"},
-#             )
-#     except Exception as ApplicationError:
-#         logger.error(ApplicationError.__repr__())
-#         raise HTTPException(
-#             status_code=400,
-#             detail="Unknown Error",
-#             headers={"X-Error": f"{ApplicationError.__repr__()}"},
-#         )
 
 
 @app.post("/backend/v1/all_metrix")
