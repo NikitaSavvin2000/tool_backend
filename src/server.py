@@ -311,7 +311,7 @@ async def get_concepts(body: Annotated[
 #             status_code=400,
 #             detail="Unknown Error",
 #             headers={"X-Error": f"{ApplicationError.__repr__()}"},
-        )
+#         )
 
 
 @app.post("/backend/v1/all_metrix")
