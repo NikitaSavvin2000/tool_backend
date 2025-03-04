@@ -76,3 +76,5 @@ class ForecastRequestNeuralNetworks(BaseModel):
     type: str
 
 
+class UpdateColRequest(BaseModel):
+    col_for_train: List[str]

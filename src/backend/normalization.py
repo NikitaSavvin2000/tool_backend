@@ -4,7 +4,6 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
 
-
 class Time2Vec:
 
     def __init__(self, col_time, col_target):
