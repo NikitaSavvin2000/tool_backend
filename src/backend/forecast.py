@@ -115,6 +115,7 @@ def forecast(
 
     all_columns = df_all_data_norm.columns
 
+
     col_for_train = [col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1]
 
     diff_cols = all_columns.difference(col_for_train)

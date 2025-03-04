@@ -13,10 +13,11 @@ from src.config import logger, public_or_local
 from src.processing.processing import to_float
 from src.backend.normalization import Time2Vec
 from src.backend.new_network import forecast_neural_networks
+from src.backend.update_col_for_train import update_col_for_train
 from src.models.schemes import (
     AnalyticsDFsRequest, NormalizationRequest, ForecastRequest,
     ReverseNormalizationRequest, MenrixAllRequest, ForecastRequestXGBoost,
-    ForecastRequestNeuralNetworks
+    ForecastRequestNeuralNetworks, UpdateColRequest
 )
 from src.examples_fastapi.examples import (
     example_dfs_1, example_dfs_2, example_dfs_3,
@@ -368,17 +369,6 @@ async def request_forecast_neural_networks(body: Annotated[
         )
 
 
-
-
-
-
-
-
-
-
-
-
-
 @app.post("/backend/v1/normalization")
 async def get_vectorization(body: Annotated[
     NormalizationRequest, Body(
@@ -491,10 +481,43 @@ async def get_reverse_vectorization(body: Annotated[
             headers={"X-Error": f"{ApplicationError.__repr__()}"},
         )
 
+
+@app.post("/backend/v1/update_col_for_train")
+async def update_col_for_train_request(body: Annotated[
+    UpdateColRequest, Body(
+        example={
+            "col_for_train": ['year', 'month', 'day', 'day_of_year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'part_of_day', 'is_night']
+        })]):
+    """
+    Возможные колонки
+    ['year', 'month', 'day', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
+    'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos', 'month_sin', 'month_cos', 'part_of_day',
+     'is_night', 'is_weekend', 'day_of_year']"
+    """
+    try:
+        col_for_train = body.col_for_train
+        massage = update_col_for_train(new_cols_for_train=col_for_train)
+        return massage
+
+    except Exception as ApplicationError:
+        logger.error(ApplicationError.__repr__())
+        raise HTTPException(
+            status_code=400,
+            detail="Unknown Error",
+            headers={"X-Error": f"{ApplicationError.__repr__()}"},
+        )
+
+
+
+
+
+
+
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the indicators System API"}
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=7070)
+    uvicorn.run(app, host="0.0.0.0", port=7071)
