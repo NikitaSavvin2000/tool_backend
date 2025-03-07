@@ -5,8 +5,10 @@ import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 import numpy as np
 import pandas as pd
+import os
+import yaml
 
-
+home_path = os.getcwd()
 
 class SaveBestWeights(Callback):
     def __init__(self):
@@ -116,7 +118,19 @@ def forecast(
     all_columns = df_all_data_norm.columns
 
 
-    col_for_train = [col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1]
+    file_path = f'{home_path}/src/backend/col_for_train_lstm.yaml'
+
+    with open(file_path, 'r', encoding='utf-8') as f:
+        col_for_train_init = yaml.safe_load(f)
+        col_for_train_init = col_for_train_init['col_for_train']
+
+    col_for_train_init.insert(0, col_target)
+
+    col_for_train = [
+        col for col in col_for_train_init if len(df_all_data_norm[col].unique()) > 1
+    ]
+
+
 
     diff_cols = all_columns.difference(col_for_train)
 
