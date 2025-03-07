@@ -1,25 +1,15 @@
-from xgboost import XGBRegressor
-from sklearn.model_selection import GridSearchCV
-
-from tensorflow.keras.callbacks import Callback
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Bidirectional, Dropout
 import tensorflow as tf
 import numpy as np
 import pandas as pd
 from tensorflow.keras import regularizers
+import yaml
+import os
 
-#
-# def split_sequence(sequence, n_steps):
-#     X, y = [], []
-#     for i in range(len(sequence)):
-#         end_ix = i + n_steps
-#         if end_ix > len(sequence) - 1:
-#             break
-#         seq_x, seq_y = sequence[i:end_ix, :], sequence[end_ix, 0]
-#         X.append(seq_x)
-#         y.append(seq_y)
-#     return np.array(X), np.array(y)
+
+home_path = os.getcwd()
+
 
 def split_sequence(sequence, n_steps, horizon):
     X, y = [], []
@@ -57,6 +47,7 @@ def create_x_input(df_train, n_steps):
 #         future_lag[0] = y_predict
 #         x_input = np.append(x_input, future_lag.reshape(1, 1, -1), axis=1)
 #     return predict_values
+
 
 def make_predictions(x_input, x_future, points_per_call, model):
     predict_values = []
@@ -98,12 +89,6 @@ def forecast_LSTM(
         norm_values
 ):
 
-    print(df_all_data_norm)
-    # print(f'cols = {df_all_data_norm.columns}')
-    # possible_cols = [col_target, 'year', 'month', 'day', 'week', 'day_of_week',
-    #        'hour', 'minute', 'second', 'hour_sin', 'hour_cos', 'day_of_week_sin',
-    #        'day_of_week_cos', 'week_sin', 'week_cos', 'month_sin', 'month_cos']
-
     possible_cols = [
         col_target, 'year', 'month', 'day', 'week', 'day_of_week',
         'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
@@ -113,9 +98,18 @@ def forecast_LSTM(
 
     if norm_values:
         print('is norm_values')
-    else:
-        print('is not norm_values')
+        file_path = f'{home_path}/src/backend/col_for_train_lstm.yaml'
 
+        with open(file_path, 'r', encoding='utf-8') as f:
+            col_for_train_init = yaml.safe_load(f)
+            col_for_train_init = col_for_train_init['col_for_train']
+
+        col_for_train_init.insert(0, col_target)
+
+        col_for_train = [
+            col for col in col_for_train_init if len(df_all_data_norm[col].unique()) > 1
+        ]
+    else:
         all_columns = df_all_data_norm.columns.tolist()
         col_time = [col for col in all_columns if col != 'col_target'][0]
         df_all_data_norm[col_time] = pd.to_datetime(df_all_data_norm[col_time])
@@ -132,6 +126,7 @@ def forecast_LSTM(
 
 
     df_all_data_norm = df_all_data_norm[possible_cols]
+
     df_true_all_col = df_all_data_norm.iloc[evaluation_index: last_know_index]
     df_true_all_col_skip = df_all_data_norm.iloc[last_know_index:]
     df_all_data_norm[col_target] = df_all_data_norm[col_target].replace('None', None)
@@ -139,7 +134,17 @@ def forecast_LSTM(
 
     all_columns = df_all_data_norm.columns
 
-    col_for_train = [col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1]
+    file_path = f'{home_path}/src/backend/col_for_train_lstm.yaml'
+
+    with open(file_path, 'r', encoding='utf-8') as f:
+        col_for_train_init = yaml.safe_load(f)
+        col_for_train_init = col_for_train_init['col_for_train']
+
+    col_for_train_init.insert(0, col_target)
+
+    col_for_train = [
+        col for col in col_for_train_init if len(df_all_data_norm[col].unique()) > 1
+    ]
 
 
     print(f'col_for_train = {col_for_train}')

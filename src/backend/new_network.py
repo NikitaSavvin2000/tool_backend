@@ -7,6 +7,10 @@ from tensorflow.keras import regularizers
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.callbacks import Callback
 from tensorflow.keras.layers import LSTM, Dense, Bidirectional, Dropout, MaxPooling1D, Conv1D
+import os
+import yaml
+
+home_path = os.getcwd()
 
 
 class SaveBestWeights(Callback):
@@ -129,7 +133,18 @@ def forecast_neural_networks(
         'month_sin', 'month_cos', 'part_of_day', 'is_night', 'is_weekend', 'day_of_year'
     ]
 
-    col_for_train = [col for col in df_all_data_norm.columns if len(df_all_data_norm[col].unique()) > 1]
+    file_path = f'{home_path}/src/backend/col_for_train_lstm.yaml'
+
+    with open(file_path, 'r', encoding='utf-8') as f:
+        col_for_train_init = yaml.safe_load(f)
+        col_for_train_init = col_for_train_init['col_for_train']
+
+    col_for_train_init.insert(0, col_target)
+
+    col_for_train = [
+        col for col in col_for_train_init if len(df_all_data_norm[col].unique()) > 1
+    ]
+
 
     if not norm_values:
         all_columns = df_all_data_norm.columns.tolist()
