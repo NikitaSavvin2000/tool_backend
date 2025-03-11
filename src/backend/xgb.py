@@ -93,7 +93,6 @@ def forecast_XGBoost(
     Returns:
         dict: DataFrames containing evaluation, true values, and predictions.
     """
-    print(df_all_data_norm.columns)
     if norm_values:
 
         possible_cols = [
@@ -114,6 +113,10 @@ def forecast_XGBoost(
         col_for_train = [
             col for col in col_for_train_init if len(df_all_data_norm[col].unique()) > 1
         ]
+        print('='*100)
+        print(col_for_train)
+        print('='*100)
+
 
     else:
         possible_cols = [
@@ -136,6 +139,7 @@ def forecast_XGBoost(
         col_for_train = [
             col_target, 'year', 'month', 'week', 'day', 'day_of_week', 'hour', 'minute'
         ]
+
 
     model_architecture_params = model_architecture_params[0]
 

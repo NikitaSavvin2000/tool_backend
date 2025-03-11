@@ -419,8 +419,8 @@ async def get_vectorization(body: Annotated[
             logger.error(e)
 
             df[col_target] = df[col_target].apply(lambda x: to_float(x))
-
-        df[col_time] = pd.to_datetime(df[col_time], format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        # df[col_time] = pd.to_datetime(df[col_time], format='%Y-%m-%d %H:%M:%S', errors='coerce')
+        df[col_time] = pd.to_datetime(df[col_time], errors='coerce')
         t2v = Time2Vec(col_time=col_time, col_target=col_target)
         df_all_data_norm, min_val, max_val = t2v.vectorization(df)
         response = {
