@@ -1,2 +1,23 @@
 col_for_train:
+- year
+- month
+- day
+- week
+- day_of_week
+- minute
 - hour_sin
+- day_of_week_sin
+- day_of_week_cos
+- week_sin
+- week_cos
+- month_sin
+- month_cos
+- part_of_day
+- is_night
+- is_weekend
+- day_of_year
+- is_working_hours
+- season
+- season_sin
+- season_cos
+- moon_phase
