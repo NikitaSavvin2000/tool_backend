@@ -17,12 +17,13 @@ dependencies = [
     "uvicorn>=0.34.0",
     "pandas>=2.2.1",
     "coverage==7.4.4",
-    "scipy>=1.14.1",
+    "scipy>=1.15.2",
     "statsmodels>=0.14.2",
     "tensorflow>=2.16.2",
     "holidays>=0.57",
     "scikit-learn>=1.5.2",
     "xgboost>=2.1.1",
+    "ephem>=4.2",
 ]
 requires-python = "==3.12.*"
 readme = "README.md"
