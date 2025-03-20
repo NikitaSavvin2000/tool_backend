@@ -70,13 +70,10 @@ def make_predictions(x_input, x_future, n_features, model, lag):
 
     return predict_values
 
-
 def forecast_XGBoost(
         col_target, df_all_data_norm, evaluation_index, last_known_index, lag,
         model_architecture_params, forecast_type, norm_values
 ):
-    print('=========00==========')
-    print(df_all_data_norm)
     """
     Perform forecasting using XGBoost for regression.
 
@@ -144,17 +141,12 @@ def forecast_XGBoost(
     model_architecture_params = model_architecture_params[0]
 
     df_all_data_norm = df_all_data_norm[possible_cols]
-    print('=========11==========')
-    print(df_all_data_norm)
-    # print(df_all_data_norm['load_consumption'])
 
     df_true_all_col = df_all_data_norm.iloc[evaluation_index: last_known_index]
     df_true_all_col_skip = df_all_data_norm.iloc[last_known_index:]
     df_all_data_norm[col_target] = df_all_data_norm[col_target].replace('None', None)
     df_all_data_norm[col_target] = df_all_data_norm[col_target].astype(float)
 
-    print('=========22==========')
-    print(df_all_data_norm)
 
     all_columns = df_all_data_norm.columns
     diff_cols = all_columns.difference(col_for_train)
@@ -213,8 +205,6 @@ def forecast_XGBoost(
 
     df_all_data_norm = df_all_data_norm[col_for_train]
 
-    print('=========33==========')
-    print(df_all_data_norm)
     train_index = last_known_index
 
     if forecast_type != 'predictions':
