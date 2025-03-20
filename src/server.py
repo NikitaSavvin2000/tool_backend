@@ -24,7 +24,6 @@ from src.examples_fastapi.examples import (
     example_not_norm_data, example_reverse_norm_data,
     example_forecast_point, example_forecast_point_XGBoost,
     example_forecast_neural_networks, example_metrix_all,
-    example_forecast_prophet
 )
 
 
@@ -439,7 +438,6 @@ async def get_vectorization(body: Annotated[
         )
 
 
-
 @app.post("/backend/v1/reverse_normalization")
 async def get_reverse_vectorization(body: Annotated[
     ReverseNormalizationRequest, Body(
@@ -490,9 +488,13 @@ async def update_col_for_train_request(body: Annotated[
         })]):
     """
     Возможные колонки
-    ["year", "month", "day", "week", "day_of_week", "hour", "minute", "second", "hour_sin", "hour_cos",
-     "day_of_week_sin", "day_of_week_cos", "week_sin", "week_cos", "month_sin", "month_cos", "part_of_day",
-     "is_night", "is_weekend", "day_of_year"]"
+        "year", "month", "day", "week", "day_of_week", "hour", "minute", "second",
+        "hour_sin", "hour_cos", "day_of_week_sin", "day_of_week_cos",
+        "week_sin", "week_cos", "month_sin", "month_cos",
+        "part_of_day", "is_night", "is_weekend", "day_of_year",
+        "is_working_hours", "season", "season_sin", "season_cos",
+        "quarter", "quarter_sin", "quarter_cos", "moon_phase",
+        "time_trend", "fourier_time"
     """
     try:
         col_for_train = body.col_for_train
@@ -515,9 +517,13 @@ async def update_col_for_train_lstm_request(body: Annotated[
         })]):
     """
     Возможные колонки
-    ["year", "month", "day", "week", "day_of_week", "hour", "minute", "second", "hour_sin", "hour_cos",
-     "day_of_week_sin", "day_of_week_cos", "week_sin", "week_cos", "month_sin", "month_cos", "part_of_day",
-     "is_night", "is_weekend", "day_of_year"]"
+        "year", "month", "day", "week", "day_of_week", "hour", "minute", "second",
+        "hour_sin", "hour_cos", "day_of_week_sin", "day_of_week_cos",
+        "week_sin", "week_cos", "month_sin", "month_cos",
+        "part_of_day", "is_night", "is_weekend", "day_of_year",
+        "is_working_hours", "season", "season_sin", "season_cos",
+        "quarter", "quarter_sin", "quarter_cos", "moon_phase",
+        "time_trend", "fourier_time"
     """
     try:
         col_for_train = body.col_for_train
