@@ -62,5 +62,5 @@ sudo docker images
 ```
 
 ```bash
-sudo docker run -d -p 7070:7070 --cpuset-cpus="0-10" --memory="42g" bbb1920d4ef5
+sudo docker run -d -p 7070:7071 --cpuset-cpus="0-10" --memory="42g" bbb1920d4ef5
 ```

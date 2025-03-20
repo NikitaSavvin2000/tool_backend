@@ -8,8 +8,6 @@ import yaml
 import os
 home_path = os.getcwd()
 
-
-
 def split_sequence(sequence, n_steps):
     """
     Split a univariate sequence into samples for supervised learning.
@@ -28,6 +26,7 @@ def split_sequence(sequence, n_steps):
         y.append(seq_y)
     return np.array(X), np.array(y)
 
+
 def create_x_input(df_train, n_steps):
     """
     Create the input array for predictions from the training DataFrame.
@@ -40,6 +39,7 @@ def create_x_input(df_train, n_steps):
         np.ndarray: Input array for predictions.
     """
     return df_train.iloc[-n_steps:].values
+
 
 def make_predictions(x_input, x_future, n_features, model, lag):
     """
@@ -70,6 +70,7 @@ def make_predictions(x_input, x_future, n_features, model, lag):
 
     return predict_values
 
+
 def forecast_XGBoost(
         col_target, df_all_data_norm, evaluation_index, last_known_index, lag,
         model_architecture_params, forecast_type, norm_values
@@ -92,11 +93,14 @@ def forecast_XGBoost(
     """
     if norm_values:
 
-        possible_cols = [
-            col_target, 'year', 'month', 'day', 'week', 'day_of_week',
-            'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
-            'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',
-            'month_sin', 'month_cos', 'part_of_day', 'is_night', 'is_weekend', 'day_of_year'
+        possible_cols = [col_target,
+            "year", "month", "day", "week", "day_of_week", "hour", "minute", "second",
+            "hour_sin", "hour_cos", "day_of_week_sin", "day_of_week_cos",
+            "week_sin", "week_cos", "month_sin", "month_cos",
+            "part_of_day", "is_night", "is_weekend", "day_of_year",
+            "is_working_hours", "season", "season_sin", "season_cos",
+            "quarter", "quarter_sin", "quarter_cos", "moon_phase",
+            "time_trend", "fourier_time"
         ]
 
         file_path = f'{home_path}/src/backend/col_for_train.yaml'
