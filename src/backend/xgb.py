@@ -114,10 +114,6 @@ def forecast_XGBoost(
         col_for_train = [
             col for col in col_for_train_init if len(df_all_data_norm[col].unique()) > 1
         ]
-        print('='*100)
-        print(col_for_train)
-        print('='*100)
-
 
     else:
         possible_cols = [
@@ -222,7 +218,6 @@ def forecast_XGBoost(
     df_real_predict = df_test.copy()
     values = df_train[columns].values
     x_input = create_x_input(df_train, lag)
-    print(df_test)
     x_future = df_test.values
     X, y = split_sequence(values, lag)
     n_features = values.shape[1]
@@ -231,11 +226,10 @@ def forecast_XGBoost(
     xgb_model.fit(X_reshaped, y)
 
     x_input = x_input.reshape((1, lag, n_features))
-    print(x_future)
 
     predict_values = make_predictions(x_input, x_future, n_features, xgb_model, lag)
 
-    print(predict_values)
+    print(f'predict_values = {predict_values}')
     predict_values = np.array(predict_values).flatten()
 
     df_real_predict[col_target] = predict_values
@@ -255,9 +249,6 @@ def forecast_XGBoost(
                 df[col] = df[col].fillna(method='ffill')
 
     loss_list = [1]
-    print(df_evaluetion)
-    print(df_true_all_col)
-    print(df_real_predict)
 
     df_evaluetion.fillna(method='ffill', inplace=True)
 

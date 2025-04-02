@@ -78,3 +78,21 @@ class ForecastRequestNeuralNetworks(BaseModel):
 
 class UpdateColRequest(BaseModel):
     col_for_train: List[str]
+
+
+class ColsToChose(BaseModel):
+    df: List[Dict]
+
+
+class ConvertRequest(BaseModel):
+    df: List[Dict]
+    time_column: str
+
+
+class PredictRequest(BaseModel):
+    df: List[Dict]
+    time_column: str
+    col_target: str
+    forecast_horizon_time: str
+
+
