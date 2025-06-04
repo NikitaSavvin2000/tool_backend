@@ -12,10 +12,15 @@ class NotExistCol(Exception):
 
 
 def update_col_for_train(new_cols_for_train):
-    possible_cols = ['year', 'month', 'day', 'week', 'day_of_week',
-        'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
-        'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',
-        'month_sin', 'month_cos', 'part_of_day', 'is_night', 'is_weekend', 'day_of_year'
+
+    possible_cols = [
+        "year", "month", "day", "week", "day_of_week", "hour", "minute", "second",
+        "hour_sin", "hour_cos", "day_of_week_sin", "day_of_week_cos",
+        "week_sin", "week_cos", "month_sin", "month_cos",
+        "part_of_day", "is_night", "is_weekend", "day_of_year",
+        "is_working_hours", "season", "season_sin", "season_cos",
+        "quarter", "quarter_sin", "quarter_cos", "moon_phase",
+        "time_trend", "fourier_time"
     ]
 
     not_possible_cols = []
@@ -42,11 +47,15 @@ def update_col_for_train(new_cols_for_train):
 
 
 def update_col_for_train_lstm(new_cols_for_train):
-    possible_cols = ['year', 'month', 'day', 'week', 'day_of_week',
-                     'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
-                     'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',
-                     'month_sin', 'month_cos', 'part_of_day', 'is_night', 'is_weekend', 'day_of_year'
-                     ]
+    possible_cols = [
+        "year", "month", "day", "week", "day_of_week", "hour", "minute", "second",
+        "hour_sin", "hour_cos", "day_of_week_sin", "day_of_week_cos",
+        "week_sin", "week_cos", "month_sin", "month_cos",
+        "part_of_day", "is_night", "is_weekend", "day_of_year",
+        "is_working_hours", "season", "season_sin", "season_cos",
+        "quarter", "quarter_sin", "quarter_cos", "moon_phase",
+        "time_trend", "fourier_time"
+    ]
 
     not_possible_cols = []
     for new_col in new_cols_for_train:
