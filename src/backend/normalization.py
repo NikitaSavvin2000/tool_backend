@@ -2,6 +2,8 @@ import math
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
+import ephem
+from scipy.fftpack import fft
 
 
 class Time2Vec:
@@ -40,10 +42,21 @@ class Time2Vec:
     def check_different_years(self):
         return self.min_year != self.max_year
 
+    def get_season(self, month):
+        if month in [12, 1, 2]:
+            return 0  # Зима
+        elif month in [3, 4, 5]:
+            return 1  # Весна
+        elif month in [6, 7, 8]:
+            return 2  # Лето
+        else:
+            return 3
+
     def meta_date(self, df):
         df_with_meta = df.copy()
         df_with_meta[self.col_time] = pd.to_datetime(df_with_meta[self.col_time])
         df_with_meta.set_index(self.col_time, inplace=True)
+        df_with_meta[self.col_time] = df[self.col_time]
         df_with_meta['year'] = df_with_meta.index.year
         df_with_meta['month'] = df_with_meta.index.month
         df_with_meta['day'] = df_with_meta.index.day
@@ -64,6 +77,19 @@ class Time2Vec:
         df_with_meta['is_night'] = df_with_meta['hour'].apply(lambda x: 1 if x >= 22 or x < 6 else 0)
         df_with_meta['is_weekend'] = df_with_meta['day_of_week'].apply(lambda x: 1 if x >= 5 else 0)
         df_with_meta['day_of_year'] = df_with_meta.index.dayofyear
+
+        df_with_meta['is_working_hours'] = df_with_meta.apply(lambda row: 1 if 9 <= row['hour'] < 18 and row['is_weekend'] == 0 else 0, axis=1)
+        df_with_meta['season'] = df_with_meta['month'].apply(self.get_season)
+        df_with_meta['season_sin'] = np.sin(2 * np.pi * df_with_meta['season'] / 4)
+        df_with_meta['season_cos'] = np.cos(2 * np.pi * df_with_meta['season'] / 4)
+        df_with_meta['quarter'] = df_with_meta.index.quarter
+        df_with_meta['quarter_sin'] = np.sin(2 * np.pi * df_with_meta['quarter'] / 4)
+        df_with_meta['quarter_cos'] = np.cos(2 * np.pi * df_with_meta['quarter'] / 4)
+        df_with_meta['moon_phase'] = df_with_meta.index.to_series().apply(lambda x: ephem.Moon(x).phase / 29.53)
+
+        df_with_meta['time_trend'] = (df_with_meta.index - df_with_meta.index.min()).total_seconds()
+        df_with_meta['fourier_time'] = np.abs(fft(df_with_meta['hour_sin'].astype(float).to_numpy()))
+
         return df_with_meta
 
     def normalize_column(self, column, min_val, max_val):
@@ -72,9 +98,12 @@ class Time2Vec:
     def inverse_normalize_column(self, column, min_val, max_val):
         return column * (max_val - min_val) + min_val
 
+
     def vectorization(self, df):
         all_col = df.columns
         col_vec = [
+            self.col_time,
+            self.col_target,
             "year",
             "month",
             "day",
@@ -95,15 +124,19 @@ class Time2Vec:
             "is_night",
             "is_weekend",
             "day_of_year",
-            self.col_time,
-            self.col_target
+            "is_working_hours",
+            "season",
+            "season_sin",
+            "season_cos",
+            "quarter",
+            "quarter_sin",
+            "quarter_cos",
+            "moon_phase",
+            "time_trend",
+            "fourier_time"
         ]
 
         diff_cols = list(all_col.difference(col_vec))
-        print('is working')
-        print(df)
-        print(self.col_target)
-        print(self.col_time)
 
         df[self.col_target] = df[self.col_target].astype(float)
         min_val = df[self.col_target].min() * 1.2
@@ -111,7 +144,6 @@ class Time2Vec:
 
         df_with_meta = self.meta_date(df)
         normalized_dates = []
-        print('is working')
 
         for index, date in df_with_meta.iterrows():
             time = index
@@ -130,22 +162,28 @@ class Time2Vec:
             is_weekend_norm = date['is_weekend']
             day_of_year_norm = (date['day_of_year'] - 1) / 365
 
+            is_working_hours = date["is_working_hours"]
+            season = date["season"]
+            season_sin = date["season_sin"]
+            season_cos = date["season_cos"]
+            quarter = date["quarter"]
+            quarter_sin = date["quarter_sin"]
+            quarter_cos = date["quarter_cos"]
+            moon_phase = date["moon_phase"]
+            time_trend = date["time_trend"]
+            fourier_time = date["fourier_time"]
+
             normalized_date = [
                                   time, date[self.col_target], year_norm, month_norm, day_norm, week_norm, day_of_week_norm,
                                   hour_norm, minute_norm, second_norm,
                                   date['hour_sin'], date['hour_cos'], date['day_of_week_sin'], date['day_of_week_cos'],
                                   date['week_sin'], date['week_cos'], date['month_sin'], date['month_cos'],
-                                  part_of_day_norm, is_night_norm, is_weekend_norm, day_of_year_norm
+                                  part_of_day_norm, is_night_norm, is_weekend_norm, day_of_year_norm, is_working_hours,
+                                  season, season_sin, season_cos, quarter, quarter_sin, quarter_cos, moon_phase, time_trend, fourier_time
                               ] + diff_col_values
             normalized_dates.append(normalized_date)
 
-        normalized_df = pd.DataFrame(normalized_dates, columns=[
-                                                                   self.col_time, self.col_target, 'year', 'month', 'day', 'week', 'day_of_week',
-                                                                   'hour', 'minute', 'second',
-                                                                   'hour_sin', 'hour_cos', 'day_of_week_sin', 'day_of_week_cos',
-                                                                   'week_sin', 'week_cos', 'month_sin', 'month_cos',
-                                                                   'part_of_day', 'is_night', 'is_weekend', 'day_of_year'
-                                                               ] + diff_cols)
+        normalized_df = pd.DataFrame(normalized_dates, columns=col_vec + diff_cols)
         normalized_df[self.col_target] = self.normalize_column(normalized_df[self.col_target], min_val, max_val)
         normalized_df = normalized_df.fillna("None")
 
@@ -165,17 +203,9 @@ class Time2Vec:
             minute_denorm = date['minute'] * (self.max_minute - self.min_minute) + self.min_minute
             second_denorm = date['second'] * (self.max_second - self.min_second) + self.min_second
 
-            part_of_day_denorm = date['part_of_day'] * 3  # возвращаем в диапазон 0-3
-            is_night_denorm = date['is_night']  # бинарное значение, не нужно изменять
-            is_weekend_denorm = date['is_weekend']  # также бинарное
-            day_of_year_denorm = date['day_of_year'] * 365 + 1  # возвращаем в диапазон от 1 до 365
-
             denormalized_date = [
                 date[self.col_target], year_denorm, month_denorm, day_denorm, week_denorm,
-                day_of_week_denorm, hour_denorm, minute_denorm, second_denorm,
-                date['hour_sin'], date['hour_cos'], date['day_of_week_sin'], date['day_of_week_cos'],
-                date['week_sin'], date['week_cos'], date['month_sin'], date['month_cos'],
-                part_of_day_denorm, is_night_denorm, is_weekend_denorm, day_of_year_denorm
+                day_of_week_denorm, hour_denorm, minute_denorm, second_denorm
             ]
             denormalized_dates.append(denormalized_date)
 
@@ -184,10 +214,7 @@ class Time2Vec:
 
         denormalized_df = pd.DataFrame(denormalized_dates, columns=[
             self.col_target, 'year', 'month', 'day', 'week', 'day_of_week',
-            'hour', 'minute', 'second',
-            'hour_sin', 'hour_cos', 'day_of_week_sin', 'day_of_week_cos',
-            'week_sin', 'week_cos', 'month_sin', 'month_cos',
-            'part_of_day', 'is_night', 'is_weekend', 'day_of_year'
+            'hour', 'minute', 'second'
         ])
 
         denormalized_df['hour'] = denormalized_df['hour'].apply(lambda x: math.ceil(x))
