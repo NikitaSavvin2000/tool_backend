@@ -234,3 +234,10 @@ class Time2Vec:
         })
 
         return denormalized_df
+
+
+    def light_reverse_vectorization(self, df, min_val, max_val):
+        df = df[[self.col_target]]
+        df[self.col_target] = self.inverse_normalize_column(df[self.col_target], min_val, max_val)
+        return df
+

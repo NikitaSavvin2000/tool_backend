@@ -340,17 +340,6 @@ def generate_possible_date(df, time_column):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
     df = pd.read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vQT1DfqAB5Yec8MIQ_E5A8w-SXNcRmTwbXsv2W-ZT1ZcXN_G83BHlb6QBgnWkO-MpH3oVgfLoE0SnLx/pub?gid=1952392108&single=true&output=csv")
     col_time = 'Datetime'

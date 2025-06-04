@@ -30,25 +30,6 @@ def create_x_input(df_train, n_steps):
     return x_input
 
 
-# def make_predictions(x_input, x_future, n_features, model, lag):
-#     predict_values = []
-#     x_future_len = len(x_future)
-#     for i in range(x_future_len):
-#         try:
-#             x_input_tensor = tf.convert_to_tensor(x_input.reshape((1, lag, n_features)), dtype=tf.float32)
-#         except Exception as e:
-#             print('--------------------ERROR---------------------------')
-#             print(e)
-#         y_predict = model.predict(x_input_tensor, verbose=1)
-#         predict_values.append(y_predict)
-#         x_input = np.delete(x_input, (0), axis=1)
-#         future_lag = x_future[0]
-#         x_future = np.delete(x_future, 0, axis=0)
-#         future_lag[0] = y_predict
-#         x_input = np.append(x_input, future_lag.reshape(1, 1, -1), axis=1)
-#     return predict_values
-
-
 def make_predictions(x_input, x_future, points_per_call, model):
     predict_values = []
     x_future_len = len(x_future)
