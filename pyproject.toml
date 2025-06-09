@@ -6,7 +6,7 @@ authors = [
     {name = "Nikita Savvin", email = "nikita.vsav@gmail.com"},
 ]
 dependencies = [
-    "pytest>=8.1.1",
+    "pytest>=8.4.0",
     "tox==4.14.2",
     "pre-commit>=3.6.2",
     "pytest-cov>=4.1.0",
@@ -15,7 +15,7 @@ dependencies = [
     "pydantic>=2.6.3",
     "fastapi>=0.110.0",
     "uvicorn>=0.34.0",
-    "pandas>=2.2.1",
+    "pandas>=2.3.0",
     "coverage==7.4.4",
     "scipy>=1.15.2",
     "statsmodels>=0.14.2",
@@ -26,6 +26,7 @@ dependencies = [
     "ephem>=4.2",
     "python-dateutil>=2.9.0.post0",
     "tqdm>=4.67.1",
+    "requests>=2.32.3",
 ]
 requires-python = "==3.12.*"
 readme = "README.md"
