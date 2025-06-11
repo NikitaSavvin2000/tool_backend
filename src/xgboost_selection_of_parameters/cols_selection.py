@@ -1,28 +1,16 @@
-import numpy as np
-import pandas as pd
-import optuna
-from xgboost import XGBRegressor
-from sklearn.model_selection import cross_val_score
-
-from src.backend.normalization import Time2Vec
-from sklearn.metrics import mean_squared_error, mean_absolute_error
-from tqdm import tqdm
-from xgboost import XGBRegressor
-import plotly.graph_objects as go
-
-import tensorflow as tf
-from xgboost import DMatrix, cv
-from src.config import logger
-import yaml
 import os
 
-import numpy as np
 import pandas as pd
-from xgboost import XGBRegressor
 import psycopg2
-import requests
+import tensorflow as tf
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+from tqdm import tqdm
 from xgboost import XGBRegressor
-from sklearn.base import RegressorMixin
+
+import plotly.graph_objects as go
+
+from src.backend.normalization import Time2Vec
+from src.config import logger
 
 
 home_path = os.getcwd()
@@ -90,8 +78,6 @@ def make_predictions(x_input, x_future, n_features, model, lag):
     return predict_values
 
 
-
-
 MODEL_ARCHITECTURE_PARAMS = {
     "objective": "reg:squarederror",
     "n_estimators": 500,
@@ -102,7 +88,6 @@ MODEL_ARCHITECTURE_PARAMS = {
     "min_child_weight": 5,
     "booster": "gbtree"
 }
-
 
 
 def calculate_metrics(y_true, y_pred):
