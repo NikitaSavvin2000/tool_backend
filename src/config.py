@@ -1,13 +1,6 @@
-import logging
+# src/config.py
 import os
-from dotenv import load_dotenv
+from src.core.logger import setup_logger
 
-load_dotenv()
-
+logger = setup_logger()
 public_or_local = os.getenv("PUBLIC_OR_LOCAL", "LOCAL")
-
-
-logging.basicConfig(
-    format="%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s", datefmt="%H:%M:%S", level=logging.ERROR,
-)
-logger = logging.getLogger("microservice indicators")

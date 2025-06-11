@@ -3,7 +3,9 @@ import pandas as pd
 import time
 import pytest
 
-URL = "http://localhost:7071/backend/v1/generate_forecast"
+# URL = "http://localhost:7071/backend/v1/generate_forecast"
+URL = "http://localhost:7071/backend/v1/pipeline/generate_forecast"
+
 
 # Фикстура: ждёт, пока сервер запустится
 @pytest.fixture(scope="module", autouse=True)
