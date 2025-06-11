@@ -393,3 +393,5 @@ def forecast_LSTM(
     return df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage
 
 
+
+

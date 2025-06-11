@@ -1,11 +1,14 @@
-import numpy as np
-import pandas as pd
+
 import tensorflow as tf
 
-from xgboost import XGBRegressor
 from src.config import logger
 import yaml
 import os
+
+import numpy as np
+import pandas as pd
+from xgboost import XGBRegressor
+
 home_path = os.getcwd()
 
 def split_sequence(sequence, n_steps):
@@ -265,111 +268,6 @@ def forecast_XGBoost(
 
     return df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_message
 
-# def forecast_XGBoost_user(
-#         col_target, df_all_data_norm, evaluation_index, last_known_index, lag,
-#         model_architecture_params, col_for_train
-# ):
-#     """
-#     Perform forecasting using XGBoost for regression.
-#
-#     Parameters:
-#         col_target (str): Target column name.
-#         df_all_data_norm (pd.DataFrame): Normalized data.
-#         evaluation_index (int): Start index for evaluation.
-#         last_known_index (int): Last known data index.
-#         lag (int): Number of time steps for prediction.
-#         model_architecture_params (dict): Parameters for XGBoost model.
-#         forecast_type (str): Type of forecast ('predictions' or other).
-#         norm_values (bool): Whether to normalize input values.
-#
-#     Returns:
-#         dict: DataFrames containing evaluation, true values, and predictions.
-#     """
-#     col_for_train = [col_target] + col_for_train
-#
-#     model_architecture_params = model_architecture_params[0]
-#
-#     df_all_data_norm = df_all_data_norm[col_for_train]
-#
-#     df_true_all_col = df_all_data_norm.loc[:last_known_index]
-#     df_true_all_col_skip = df_all_data_norm.loc[last_known_index:]
-#
-#     print(df_true_all_col)
-#
-#     df_all_data_norm[col_target] = df_all_data_norm[col_target].replace('None', None)
-#     df_all_data_norm[col_target] = df_all_data_norm[col_target].astype(float)
-#
-#
-#     all_columns = df_all_data_norm.columns
-#     diff_cols = all_columns.difference(col_for_train)
-#     columns = col_for_train
-#     train_index = evaluation_index
-#
-#     df_true_all_col = df_true_all_col.iloc[:last_known_index + 1]
-#
-#     df = df_all_data_norm[col_for_train]
-#     df_test = df.iloc[train_index + 1: last_known_index + 1]
-#     df_test.loc[:, col_target] = np.nan
-#
-#     xgb_model = XGBRegressor(**model_architecture_params)
-#
-#     df_all_data_norm = df_all_data_norm[col_for_train]
-#
-#     train_index = last_known_index
-#
-#
-#     df_train = df_all_data_norm[:last_known_index + 1]
-#
-#
-#     df_test = df_all_data_norm.iloc[train_index + 1:]
-#     df_test.loc[:, col_target] = np.nan
-#     df_real_predict = df_test.copy()
-#     values = df_train[columns].values
-#     x_input = create_x_input(df_train, lag)
-#     x_future = df_test.values
-#     X, y = split_sequence(values, lag)
-#     n_features = values.shape[1]
-#
-#     X_reshaped = X.reshape(X.shape[0], -1)
-#     xgb_model.fit(X_reshaped, y)
-#
-#     x_input = x_input.reshape((1, lag, n_features))
-#
-#     predict_values = make_predictions(x_input, x_future, n_features, xgb_model, lag)
-#
-#     predict_values = np.array(predict_values).flatten()
-#
-#     df_real_predict[col_target] = predict_values
-#     if len(diff_cols) > 0:
-#         for col in diff_cols:
-#             df_real_predict[col] = df_true_all_col_skip[col]
-#
-#     df_real_predict[col_target] = predict_values
-#
-#     for df in [df_true_all_col, df_real_predict]:
-#         df['second'] = df['second'].fillna(0)
-#         df['minute'] = df['minute'].fillna(method='ffill')
-#         df['second'] = df['second'].fillna(method='ffill')
-#
-#         for col in ['year', 'hour', 'hour_sin', 'hour_cos']:
-#             if col in df.columns:
-#                 df[col] = df[col].fillna(method='ffill')
-#
-#     dataframes = {
-#         'df_true_all_col': df_true_all_col,
-#         'df_real_predict': df_real_predict
-#     }
-#     for name, df in dataframes.items():
-#         none_indices = df[df.isnull().any(axis=1)].index.tolist()
-#         if none_indices:
-#             logger.error(f"В DataFrame '{name}' есть None на строках: {none_indices}")
-#
-#     return df_true_all_col, df_real_predict
-
-
-import numpy as np
-import pandas as pd
-from xgboost import XGBRegressor
 
 def forecast_XGBoost_user(
         col_target, time_column, df_all_data_norm, last_known_index, lag,
