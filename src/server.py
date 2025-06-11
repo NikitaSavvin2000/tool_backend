@@ -84,8 +84,6 @@ async def get_concepts(body: Annotated[
             headers={"X-Error": f"{ApplicationError.__repr__()}"},
         )
 
-
-
 @app.post("/backend/v1/forecast")
 async def get_concepts(body: Annotated[
     ForecastRequest, Body(

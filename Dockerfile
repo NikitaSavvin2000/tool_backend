@@ -7,6 +7,9 @@ COPY . /app
 WORKDIR /app
 
 ENV PYTHONPATH=/app
+ENV CUDA_VISIBLE_DEVICES=""
+
+ENV PYTHONPATH=/app
 
 COPY pyproject.toml .
 COPY pdm.lock .
