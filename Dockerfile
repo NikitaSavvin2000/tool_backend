@@ -21,3 +21,4 @@ RUN pdm install --prod --no-lock --no-editable
 EXPOSE 7078
 
 ENTRYPOINT ["pdm", "run", "src/server.py"]
+
