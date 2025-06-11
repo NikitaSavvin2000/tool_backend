@@ -1,4 +1,17 @@
-# src/api/v1/router.py
+"""
+Маршруты API версии v1
+
+Этот модуль содержит главный роутер для всех API-эндпоинтов версии v1.
+Все эндпоинты разделены по отдельным модулям:
+- /forecast — прогнозирование
+- /normalization — нормализация данных
+- /metrix — вычисление метрик
+- /pipeline — пайплайновые функции 
+- /analytics — аналитика по входным данным
+- /col_update — обновление списка колонок для обучения
+- /user_predict — пользовательские прогнозы
+
+"""
 
 from fastapi import APIRouter
 from src.api.v1 import (
@@ -11,7 +24,7 @@ from src.api.v1 import (
     user_predict,
 )
 
-router = APIRouter(prefix="/backend/v1")
+router = APIRouter(prefix="")
 
 router.include_router(forecast.router, prefix="/forecast")
 router.include_router(normalization.router, prefix="/normalization")

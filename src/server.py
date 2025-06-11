@@ -1,4 +1,4 @@
-# src/main.py
+# src/server.py
 from fastapi import FastAPI
 from src.api.v1.router import router as v1_router
 from src.config import logger, public_or_local

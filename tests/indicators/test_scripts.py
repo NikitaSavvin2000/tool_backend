@@ -5,7 +5,7 @@ import pandas as pd
 def func_generate_forecast(df: pd.DataFrame, time_column: str, col_target: str, forecast_horizon_time: str):
     # url = "http://0.0.0.0:7071/backend/v1/generate_forecast"
 
-    url = "http://0.0.0.0:7071/backend/v1/backend/v1/pipeline/generate_forecast"
+    url = "http://0.0.0.0:7071/backend/v1/pipeline/generate_forecast"
     
 
     df[time_column] = df[time_column].astype(str)
