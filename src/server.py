@@ -50,8 +50,8 @@ else:
 origins = [
     url
 ]
-
-app = FastAPI(docs_url="/backend/v1/", openapi_url='/backend/v1/openapi.json')
+docs_url = "/backend/v1/"
+app = FastAPI(docs_url=docs_url, openapi_url='/backend/v1/openapi.json')
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -931,5 +931,9 @@ def read_root():
     return {"message": "Welcome to the indicators System API"}
 
 
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=7071)
+    port = 7071
+    print(f'🚀 Документация http://0.0.0.0:{port}{docs_url}')
+    uvicorn.run("server:app", host="0.0.0.0", port=port, workers=2, log_level="debug")
+
