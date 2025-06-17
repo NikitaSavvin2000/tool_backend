@@ -48,7 +48,7 @@ class ForecastRequestXGBoost(BaseModel):
     type: str
     model_architecture_params: List[Dict]
     json_list_df_all_data_norm: List[Dict]
-    norm_values: str
+    norm_values: bool
 
 
 class ForecastRequestLSTM(BaseModel):

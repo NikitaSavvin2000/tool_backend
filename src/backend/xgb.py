@@ -92,6 +92,7 @@ def forecast_XGBoost(
         dict: DataFrames containing evaluation, true values, and predictions.
     """
     if norm_values:
+        print(f'if norm_values: work')
 
         possible_cols = [col_target,
             "year", "month", "day", "week", "day_of_week", "hour", "minute", "second",
@@ -141,6 +142,8 @@ def forecast_XGBoost(
     model_architecture_params = model_architecture_params[0]
 
     df_all_data_norm = df_all_data_norm[possible_cols]
+    print(f'col_target = {col_target}')
+    print(df_all_data_norm)
 
     df_true_all_col = df_all_data_norm.iloc[evaluation_index: last_known_index]
     df_true_all_col_skip = df_all_data_norm.iloc[last_known_index:]

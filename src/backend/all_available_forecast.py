@@ -99,9 +99,10 @@ def all_available_forecast(
     df_real_predict.iloc[-1, df_real_predict.columns.get_loc(col_target)] = last_value
     df_real_predict = df_real_predict[[time_column, col_target]]
     df[time_column] = df[time_column].dt.strftime("%Y-%m-%d %H:%M:%S")
-    last_real_data = df.to_json(orient="records", force_ascii=False)
     df_real_predict[time_column] = df_real_predict[time_column].dt.strftime("%Y-%m-%d %H:%M:%S")
-    predictions = df_real_predict.to_json(orient="records", force_ascii=False)
+    last_real_data = df.to_dict(orient="records")
+    predictions = df_real_predict.to_dict(orient="records")
+
 
     return {
         "map_data": {
@@ -350,23 +351,23 @@ def generate_possible_date(df, time_column):
 
 
 
-
-if __name__ == "__main__":
-    df = pd.read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vQT1DfqAB5Yec8MIQ_E5A8w-SXNcRmTwbXsv2W-ZT1ZcXN_G83BHlb6QBgnWkO-MpH3oVgfLoE0SnLx/pub?gid=1952392108&single=true&output=csv")
-    col_time = 'Datetime'
-    col_target = 'consumption'
-    forecast_horizon_time = '2017-12-31 23:45:00'
-
-    # response = all_available_forecast(df, time_column, col_target, forecast_horizon_time)
-    # cols_to_chose = cols_to_chose(df=df)
-    # print(cols_to_chose)
-    test_df = pd.DataFrame({
-        'mixed_dates': [
-            '2023_03', '2023-09-21 21:22', 'March 2023', '2025 May', 1679722200, '20230325', 2025, 'March 25, 2023', None, '25-03-2023'
-        ]
-    })
-
-    # test_df['mixed_dates_new'] = test_df['mixed_dates'].apply(convert_to_standard_datetime)
-    print(df[col_time])
-    data = generate_possible_date(df, col_time)
-    print(data)
+#
+# if __name__ == "__main__":
+#     df = pd.read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vQT1DfqAB5Yec8MIQ_E5A8w-SXNcRmTwbXsv2W-ZT1ZcXN_G83BHlb6QBgnWkO-MpH3oVgfLoE0SnLx/pub?gid=1952392108&single=true&output=csv")
+#     col_time = 'Datetime'
+#     col_target = 'consumption'
+#     forecast_horizon_time = '2017-12-31 23:45:00'
+#
+#     # response = all_available_forecast(df, time_column, col_target, forecast_horizon_time)
+#     # cols_to_chose = cols_to_chose(df=df)
+#     # print(cols_to_chose)
+#     test_df = pd.DataFrame({
+#         'mixed_dates': [
+#             '2023_03', '2023-09-21 21:22', 'March 2023', '2025 May', 1679722200, '20230325', 2025, 'March 25, 2023', None, '25-03-2023'
+#         ]
+#     })
+#
+#     # test_df['mixed_dates_new'] = test_df['mixed_dates'].apply(convert_to_standard_datetime)
+#     print(df[col_time])
+#     data = generate_possible_date(df, col_time)
+#     print(data)

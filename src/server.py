@@ -158,6 +158,9 @@ async def get_concepts(body: Annotated[
             "lag": example_forecast_point_XGBoost['lag'],
             "model_architecture_params": example_forecast_point_XGBoost['model_architecture_params'],
             "json_list_df_all_data_norm": example_forecast_point_XGBoost['json_list_df_all_data_norm'],
+            "norm_values": example_forecast_point_XGBoost['norm_values'],
+            "type": example_forecast_point_XGBoost['type']
+
         })]):
 
     try:
@@ -169,14 +172,22 @@ async def get_concepts(body: Annotated[
         json_list_df_all_data_norm = body.json_list_df_all_data_norm
         df_all_data_norm = pd.DataFrame(json_list_df_all_data_norm)
         type=body.type
-        norm_values = eval(body.norm_values)
-        logger.info('I work')
+        norm_values = body.norm_values
+        print('================= norm_values===========')
+        print(norm_values)
+        # print(type(norm_values))
+
+        # norm_values = eval(norm_values)
 
 
         if norm_values:
             df_all_data_norm['second'] = df_all_data_norm['second'].astype('int64')
 
+        print('I work')
+
+
         if not df_all_data_norm.empty:
+            print('I work')
 
             df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage = forecast_XGBoost(
                 col_target=col_target,

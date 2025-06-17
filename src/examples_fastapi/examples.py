@@ -122,15 +122,15 @@ example_forecast_point_XGBoost = {
     "last_know_index": 9,
     "lag": 1,
     "type": "predictions",
-    "norm_values": "False",
-    "model_architecture_params": {
+    "norm_values": 'false',
+    "model_architecture_params": [{
         "objective": "reg:squarederror",
         "n_estimators": 100,
         "learning_rate": 0.1,
         "max_depth": 6,
         "subsample": 0.8,
         "colsample_bytree": 0.8,
-    },
+    }],
     "json_list_df_all_data_norm": [
         {"load_consumption": 0.6800409376, "year": 0.984, "week": 0.6274509804, "day_of_week": 0.8333333333,
          "hour": 0.7391304348, "minute": 0.8983050847, "second": 0, "hour_sin": -0.9659258263,
