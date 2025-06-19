@@ -25,6 +25,16 @@ source .venv/bin/activate
 python -m src.server
 ```
 
+# Возможные ошибки при запуске
+
+### `ModuleNotFoundError: No module named 'src'`
+## Решение
+```bash
+export PYTHONPATH=$PWD/src:$PYTHONPATH
+```
+
+
+
 # Запуск контейнера публично
 
 ### Строим контейнер
@@ -49,7 +59,6 @@ docker run -d -p 7070:80 <IMAGE ID>
 ```
 
 
-
 # Запуск контейнера локально
 
 ### Строим контейнер
@@ -62,5 +71,5 @@ sudo docker images
 ```
 
 ```bash
-sudo docker run -d -p 7070:7071 --cpuset-cpus="0-10" --memory="42g" bbb1920d4ef5
+sudo docker run --restart unless-stopped -d -p 7070:7071 --cpuset-cpus="0-10" --memory="42g" bbb1920d4ef5
 ```
