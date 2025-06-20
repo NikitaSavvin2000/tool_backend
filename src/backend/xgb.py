@@ -215,7 +215,6 @@ def forecast_XGBoost(
     else:
         df_train = df_all_data_norm[:last_known_index + 1]
 
-
     df_test = df_all_data_norm.iloc[train_index + 1:]
     df_test.loc[:, col_target] = np.nan
     df_real_predict = df_test.copy()
@@ -232,7 +231,6 @@ def forecast_XGBoost(
 
     predict_values = make_predictions(x_input, x_future, n_features, xgb_model, lag)
 
-    print(f'predict_values = {predict_values}')
     predict_values = np.array(predict_values).flatten()
 
     df_real_predict[col_target] = predict_values

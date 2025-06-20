@@ -60,7 +60,10 @@ def all_available_forecast(
     :param norm_values: Флаг нормализации значений
     :return: Словарь с прогнозными данными
     """
+
+    df[time_column] = pd.to_datetime(df[time_column])
     df = df.sort_values(by=time_column, ascending=False).reset_index(drop=True)
+    df[time_column] = df[time_column].astype(str)
 
     last_value = df[col_target].iloc[0]
     last_known_data = df.iloc[0][time_column]
@@ -71,12 +74,10 @@ def all_available_forecast(
     date_range = date_range[1:]
 
     df_future = pd.DataFrame({time_column: date_range, col_target: [None] * len(date_range)})
+
     df_all_data = pd.concat([df, df_future], ignore_index=True)
 
     df_all_data = df_all_data.sort_values(by=time_column, ascending=True).reset_index(drop=True)
-
-    idx_first_none = df_all_data[col_target].first_valid_index()
-
 
     evaluation_index = df_all_data.index[-1]
     last_known_index = len(df_all_data) - len(date_range) - 1
