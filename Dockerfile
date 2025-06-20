@@ -1,4 +1,4 @@
-FROM python:3.11-buster
+FROM python:3.9.16-slim-buster
 USER root
 RUN apt-get update
 RUN apt-get install -y vim poppler-utils
