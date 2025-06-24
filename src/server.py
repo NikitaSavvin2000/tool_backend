@@ -1,6 +1,7 @@
 # src/server.py
 from fastapi import FastAPI
 from src.api.v1.router import router as v1_router
+from routers.xgboost_router import router as xgboost_router
 from src.config import logger, public_or_local
 
 logger.info("Starting microservice indicators")
@@ -19,7 +20,8 @@ app.add_middleware(
 )
 
 # Подключаем маршруты
-app.include_router(v1_router, prefix="/backend/v1")
+# app.include_router(v1_router, prefix="/backend/v1")
+app.include_router(xgboost_router)
 
 @app.get("/")
 def read_root():

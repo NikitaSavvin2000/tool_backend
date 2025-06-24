@@ -2,8 +2,35 @@ import json
 from typing import Optional
 
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
 
+class PredictRequest(BaseModel):
+    df: List[Dict]
+    time_column: str
+    col_target: str
+    forecast_horizon_time: str
+    model_architecture_params: Optional[List[Dict]] = None
+    lag: Optional[int] = None
+    type: Optional[str] = "xgboost"
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "df": [
+                    {"Дата": "2023-01-01", "Цена": 100},
+                    {"Дата": "2023-01-02", "Цена": 105},
+                    {"Дата": "2023-01-03", "Цена": 110}
+                ],
+                "time_column": "Дата",
+                "col_target": "Цена",
+                "forecast_horizon_time": "2024-01-01",
+                "model_architecture_params": [
+                    {"n_estimators": 100, "learning_rate": 0.1}
+                ],
+                "lag": 5,
+                "type": "xgboost"
+            }
+        }
 
 class AnalyticsDFsRequest(BaseModel):
     dfs_json_list: list[dict]
