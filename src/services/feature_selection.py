@@ -99,66 +99,70 @@ def lag_selection_xgboots(
 ) -> Dict[str, int]:
     """
     Выполняет подбор оптимального значения лага для прогнозирования.
-    
-    :param df_init: Исходный DataFrame.
-    :param time_column: Название колонки с временными метками.
-    :param col_target: Название целевой переменной.
-    :param cols: Список признаков для обучения.
-    :return: Словарь с оптимальным значением лага и значением MAPE.
     """
-    # Сохранение оригинального формата временной колонки
-    original_column = df_init[time_column].copy()
-    df_init[time_column] = pd.to_datetime(df_init[time_column], errors='coerce')
+    # Проверка минимального количества строк
+    if len(df_init) < 2:
+        raise ValueError("Для подбора лага требуется минимум 2 строки во входных данных.")
+
+    # Преобразование временной колонки
+    df_init.loc[:, time_column] = pd.to_datetime(df_init[time_column], errors="coerce")
     df_init = df_init.sort_values(by=time_column).reset_index(drop=True)
-    df_init[time_column] = original_column[df_init.index]
-    
+
     # Определение размера тестовой выборки
-    last_value = df_init[col_target].iloc[0]
-    optimal_evaluation_points = 300
-    if len(df_init) < optimal_evaluation_points / 0.1:
-        optimal_evaluation_points = int(len(df_init) * 0.1)
-    df_evaluation = df_init[-optimal_evaluation_points:]
-    df = df_init[:-optimal_evaluation_points]
+    optimal_evaluation_points = min(300, len(df_init) // 2)
+    if len(df_init) <= optimal_evaluation_points:
+        raise ValueError("Недостаточно данных для разделения на обучающую и тестовую выборки.")
+    
+    df_evaluation = df_init[-optimal_evaluation_points:].copy()
+    df = df_init[:-optimal_evaluation_points].copy()
+
+    # Создание пустой тестовой выборки
     df_empty = df_evaluation.copy()
     df_empty[col_target] = None
-    
+
     # Объединение данных для нормализации
-    df_all_data = pd.concat([df, df_empty], ignore_index=True).sort_values(by=time_column).reset_index(drop=True)
-    last_known_index = len(df_all_data) - optimal_evaluation_points
-    
+    df_all_data = pd.concat([df, df_empty.dropna(how="all")], ignore_index=True)
+    df_all_data = df_all_data.sort_values(by=time_column).reset_index(drop=True)
+
     # Нормализация данных
     t2v = Time2Vec(col_time=time_column, col_target=col_target)
     df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
-    df_all_data_norm = df_all_data_norm.sort_values(by=time_column).reset_index(drop=True)
-    
+
     # Поиск оптимального значения лага
     best_lag = None
     best_mape = float('inf')
-    df_evaluation[time_column] = pd.to_datetime(df_evaluation[time_column], errors='coerce')
+    df_evaluation.loc[:, time_column] = pd.to_datetime(df_evaluation[time_column], errors="coerce")
     df_evaluation = df_evaluation.sort_values(by=time_column).reset_index(drop=True)
-    
-    for lag in tqdm(range(1, 22)):
+
+    max_lag = min(len(df) - 1, 21)
+    for lag in tqdm(range(1, max_lag + 1)):
         df_true_all, df_pred_vector = forecast_XGBoost_sistem(
             col_target=col_target,
             time_column=time_column,
             df_all_data_norm=df_all_data_norm,
-            last_known_index=last_known_index,
+            last_known_index=len(df_all_data) - optimal_evaluation_points,
             lag=lag,
             model_architecture_params=[{"objective": "reg:squarederror"}],
             col_for_train=cols
         )
+
+        # Проверка на пустые данные
+        if df_pred_vector.size == 0:
+            raise ValueError("Forecast returned empty predictions. Check the input data and model configuration.")
+
         df_real_predict = t2v.light_reverse_vectorization(df_pred_vector, min_val, max_val)
         df_real_predict[col_target] = df_real_predict[col_target].astype('float64')
-        df_real_predict.at[df_real_predict.index[-1], col_target] = last_value
+        df_real_predict.at[df_real_predict.index[-1], col_target] = df_init[col_target].iloc[0]
         df_real_predict[time_column] = df_evaluation[time_column]
-        
+
         y_true = df_evaluation[col_target].reset_index(drop=True)
         y_pred = df_real_predict[col_target].reset_index(drop=True)
+
         _, _, _, mape, _ = calculate_metrics(y_true=y_true, y_pred=y_pred)
-        
         print(f"CURRENT MAPE = {mape} | BEST LAG = {best_lag}")
+
         if mape < best_mape:
             best_mape = mape
             best_lag = lag
-    
+
     return {"best_lag": best_lag, "best_mape": best_mape}

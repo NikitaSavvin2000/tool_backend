@@ -4,10 +4,36 @@ from src.xgboost_selection_of_parameters.main import user_predict_XGBoost
 from src.utils.date_utils import standardize_datetime
 
 if __name__ == "__main__":
-    # Получаем путь к директории, где находится local_debug.py
+    # Тестовый случай с 2 строками
+    test_df = pd.DataFrame({
+        "Дата": ["2023-01-01 00:00:00", "2023-01-02 00:00:00"],
+        "Цена": [100.0, 105.0],
+    })
+
+    # Преобразование даты
+    test_df["Дата"] = test_df["Дата"].apply(lambda x: standardize_datetime(str(x)))
+
+    # Параметры прогнозирования
+    time_column = "Дата"
+    col_target = "Цена"
+    forecast_horizon_time = "2023-01-03 00:00:00"
+    forecast_horizon_time = standardize_datetime(forecast_horizon_time)
+
+    # Прогнозирование
+    try:
+        predict_dict = user_predict_XGBoost(
+            df=test_df,
+            time_column=time_column,
+            col_target=col_target,
+            forecast_horizon_time=forecast_horizon_time,
+        )
+        print("Прогноз успешно построен:")
+        print(predict_dict)
+    except ValueError as e:
+        print(f"Ошибка: {e}")
+
+    # Основной запуск с реальными данными
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # Путь к CSV файлу с данными
     csv_path = os.path.join(current_dir, "Прошлые данные - TSLA.csv")
     
     # Загружаем данные
@@ -19,13 +45,13 @@ if __name__ == "__main__":
         lambda x: x.map(lambda y: float(str(y).replace('%', '').replace('M', '').replace(',', '.')))
     )
     
-    # Преобразование даты с использованием standardize_datetime
+    # Преобразование даты
     df_data['Дата'] = df_data['Дата'].apply(lambda x: standardize_datetime(str(x)))
     
     # Параметры прогнозирования
     time_column = 'Дата'
     col_target = 'Цена'
-    forecast_horizon_time = '2025-06-05 00:00:00'  # Стандартизируем границу прогнозирования
+    forecast_horizon_time = '2025-06-05 00:00:00'
     forecast_horizon_time = standardize_datetime(forecast_horizon_time)
     
     # Разделение данных на обучающую и тестовую выборки

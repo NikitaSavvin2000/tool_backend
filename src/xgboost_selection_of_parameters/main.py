@@ -8,6 +8,15 @@ from src.models.xgboost_model import forecast_XGBoost_sistem
 from src.utils.metrics import calculate_metrics
 from src.utils.date_utils import standardize_datetime
 
+def validate_input_data(df: pd.DataFrame) -> None:
+    """
+    Проверяет входные данные на соответствие минимальным требованиям.
+    
+    :param df: Исходный DataFrame с временными метками и данными.
+    :raises ValueError: Если количество строк меньше 2.
+    """
+    if len(df) < 2:
+        raise ValueError("Входной временной ряд должен содержать минимум 2 наблюдения.")
 
 def user_predict_XGBoost(
     df: pd.DataFrame,
@@ -24,6 +33,9 @@ def user_predict_XGBoost(
     :param forecast_horizon_time: Временная граница прогнозирования.
     :return: Словарь с прогнозными данными.
     """
+    # Валидация входных данных
+    validate_input_data(df)
+
     # Стандартизация границ прогнозирования
     forecast_horizon_time = standardize_datetime(forecast_horizon_time)
 
