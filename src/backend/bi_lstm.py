@@ -88,9 +88,6 @@ def forecast(
 ):
     model_architecture_params = model_architecture_params[0]
 
-    print(df_all_data_norm)
-
-
     possible_cols = [col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
                      'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
 
@@ -115,19 +112,12 @@ def forecast(
 
     columns = col_for_train
 
-    print(f'all_columns = {all_columns}')
-
-
-    print(f'col_for_train = {col_for_train}')
-
     train_index = evaluation_index
 
     df_true_all_col = df_true_all_col.iloc[:last_know_index + 1]
 
     df = df_all_data_norm[col_for_train]
     df_train = df.iloc[:train_index]
-    print('is work0')
-
     df_test = df.iloc[train_index + 1: last_know_index + 1]
     df_test.loc[:, col_target] = np.nan
 
@@ -139,9 +129,6 @@ def forecast(
     X, y = split_sequence(values, lag)
 
     n_features = values.shape[1]
-
-    print('is work1')
-
     model = Sequential()
     if len(model_architecture_params) == 3:
         model.add(Bidirectional(
@@ -180,12 +167,6 @@ def forecast(
     early_stopping = EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
     reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=5, min_lr=0.001)
     save_best_weights_callback = SaveBestWeights()
-    print(f'----------------------------model_architecture_params-------------------------------')
-    print(f'{model_architecture_params}')
-    print(f'------------------------------------------------------------------------------------')
-
-    print('is work2')
-
 
     if type != 'predictions':
         history = model.fit(X, y, epochs=epochs, verbose=1,
@@ -203,7 +184,6 @@ def forecast(
 
 
         predict_values = np.array(predict_values).flatten()
-        print(f'predict_values = {predict_values}')
 
         df_evaluetion[col_target] = predict_values
         if len(diff_cols) > 0:
@@ -232,26 +212,7 @@ def forecast(
         df_train = df_all_data_norm[:last_know_index+1]
 
 
-    print(f'train_index = {train_index}')
-    print(f'last_know_index = {last_know_index}')
-    print(f'evaluation_index = {evaluation_index}')
-
-
-
-
-    print('-----------------------df_train--------------------')
-
-    print(df_train)
-
     df_test = df_all_data_norm.iloc[train_index + 1:]
-    print('-----------------------df_test--------------------')
-
-    print(df_test)
-
-    print('-----------------------df_all_data_norm--------------------')
-
-    print(df_all_data_norm)
-
 
     df_test.loc[:, col_target] = np.nan
     df_real_predict = df_test.copy()
@@ -261,7 +222,6 @@ def forecast(
     X, y = split_sequence(values, lag)
 
     n_features = values.shape[1]
-
 
     model.compile(optimizer=optimizer, loss='mse')
 
@@ -275,8 +235,6 @@ def forecast(
     predict_values = make_predictions(x_input, x_future, n_features, model, lag)
 
     predict_values = np.array(predict_values).flatten()
-
-    print(f'predict_values = {predict_values}')
 
     df_real_predict[col_target] = predict_values
     if len(diff_cols) > 0:

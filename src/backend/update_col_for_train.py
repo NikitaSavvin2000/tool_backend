@@ -38,7 +38,6 @@ def update_col_for_train(new_cols_for_train):
         file_path = f'{home_path}/src/backend/col_for_train.yaml'
         with open(file_path, 'r', encoding='utf-8') as f:
             col_for_train = yaml.safe_load(f)
-            print(col_for_train['col_for_train'])
             col_for_train['col_for_train'] = new_cols_for_train
         with open(file_path, 'w', encoding='utf-8') as f:
             yaml.safe_dump(col_for_train, f, allow_unicode=True, default_flow_style=False)
@@ -72,7 +71,6 @@ def update_col_for_train_lstm(new_cols_for_train):
         file_path = f'{home_path}/src/backend/col_for_train_lstm.yaml'
         with open(file_path, 'r', encoding='utf-8') as f:
             col_for_train = yaml.safe_load(f)
-            print(col_for_train['col_for_train'])
             col_for_train['col_for_train'] = new_cols_for_train
         with open(file_path, 'w', encoding='utf-8') as f:
             yaml.safe_dump(col_for_train, f, allow_unicode=True, default_flow_style=False)

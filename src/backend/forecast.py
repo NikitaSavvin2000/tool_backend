@@ -87,12 +87,6 @@ def forecast(
         model_architecture_params,
 ):
 
-    print(df_all_data_norm)
-
-
-    # possible_cols = [col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
-    #                  'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
-
     possible_cols = [
         col_target, 'year', 'month', 'day', 'week', 'day_of_week',
         'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
@@ -136,18 +130,12 @@ def forecast(
 
     columns = col_for_train
 
-    print(f'all_columns = {all_columns}')
-
-
-    print(f'col_for_train = {col_for_train}')
-
     train_index = evaluation_index
 
     df_true_all_col = df_true_all_col.iloc[:last_know_index + 1]
 
     df = df_all_data_norm[col_for_train]
     df_train = df.iloc[:train_index]
-    print('is work0')
 
     df_test = df.iloc[train_index: last_know_index]
 
@@ -162,7 +150,6 @@ def forecast(
 
     n_features = values.shape[1]
 
-    print('is work1')
 
     model = Sequential()
     if len(model_architecture_params) == 3:
@@ -202,12 +189,6 @@ def forecast(
     early_stopping = EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
     reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=5, min_lr=0.001)
     save_best_weights_callback = SaveBestWeights()
-    print(f'----------------------------model_architecture_params-------------------------------')
-    print(f'{model_architecture_params}')
-    print(f'------------------------------------------------------------------------------------')
-
-    print('is work2')
-
 
     if type != 'predictions':
         history = model.fit(X, y, epochs=epochs, verbose=1,
@@ -225,7 +206,6 @@ def forecast(
 
 
         predict_values = np.array(predict_values).flatten()
-        print(f'predict_values = {predict_values}')
 
         df_evaluetion[col_target] = predict_values
         if len(diff_cols) > 0:

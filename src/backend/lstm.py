@@ -97,7 +97,6 @@ def forecast_LSTM(
     ]
 
     if norm_values:
-        print('is norm_values')
         file_path = f'{home_path}/src/backend/col_for_train_lstm.yaml'
 
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -146,9 +145,6 @@ def forecast_LSTM(
         col for col in col_for_train_init if len(df_all_data_norm[col].unique()) > 1
     ]
 
-
-    print(f'col_for_train = {col_for_train}')
-
     diff_cols = all_columns.difference(col_for_train)
 
     columns = col_for_train
@@ -159,7 +155,6 @@ def forecast_LSTM(
 
     df = df_all_data_norm[col_for_train]
     df_train = df.iloc[:train_index]
-    print('is work0')
 
     df_test = df.iloc[train_index + 1: last_know_index + 1]
     df_test.loc[:, col_target] = np.nan
@@ -169,17 +164,15 @@ def forecast_LSTM(
     x_input = create_x_input(df_train, lag)
 
     x_future = df_test.values
-    points_per_call = 16
+    points_per_call = 1
     X, y = split_sequence(values, lag, points_per_call)
 
 
     n_features = values.shape[1]
 
-    print('is work1')
-
     activation = "relu"
     optimizer = "adam"
-    epochs = 3
+    epochs = 5
 
 
     model = Sequential()
@@ -224,9 +217,6 @@ def forecast_LSTM(
     model.compile(optimizer=optimizer, loss='mse')
 
 
-
-    print('is work2')
-
     if type != 'predictions':
         history = model.fit(X, y, epochs=epochs, verbose=1,)
         try:
@@ -242,7 +232,6 @@ def forecast_LSTM(
 
 
         predict_values = np.array(predict_values).flatten()
-        print(f'predict_values = {predict_values}')
 
         df_evaluetion[col_target] = predict_values
         if len(diff_cols) > 0:
@@ -280,25 +269,7 @@ def forecast_LSTM(
     else:
         df_train = df_all_data_norm[:last_know_index+1]
 
-
-    print(f'train_index = {train_index}')
-    print(f'last_know_index = {last_know_index}')
-    print(f'evaluation_index = {evaluation_index}')
-
-
-    print('-----------------------df_train--------------------')
-
-    print(df_train)
-
     df_test = df_all_data_norm.iloc[train_index + 1:]
-    print('-----------------------df_test--------------------')
-
-    print(df_test)
-
-    print('-----------------------df_all_data_norm--------------------')
-
-    print(df_all_data_norm)
-
 
     df_test.loc[:, col_target] = np.nan
     df_real_predict = df_test.copy()
@@ -345,15 +316,12 @@ def forecast_LSTM(
 
     predict_values = np.array(predict_values).flatten()
 
-    print(f'predict_values = {predict_values}')
-
     df_real_predict[col_target] = predict_values
     if len(diff_cols) > 0:
         for col in diff_cols:
             df_real_predict[col] = df_true_all_col_skip[col]
 
     df_real_predict[col_target] = predict_values
-    print('is work')
 
     df_evaluetion['second'] = df_evaluetion['second'].fillna(0)
     df_true_all_col['second'] = df_true_all_col['second'].fillna(0)

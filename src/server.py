@@ -173,21 +173,11 @@ async def get_concepts(body: Annotated[
         df_all_data_norm = pd.DataFrame(json_list_df_all_data_norm)
         type=body.type
         norm_values = body.norm_values
-        print('================= norm_values===========')
-        print(norm_values)
-        # print(type(norm_values))
-
-        # norm_values = eval(norm_values)
-
 
         if norm_values:
             df_all_data_norm['second'] = df_all_data_norm['second'].astype('int64')
 
-        print('I work')
-
-
         if not df_all_data_norm.empty:
-            print('I work')
 
             df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage = forecast_XGBoost(
                 col_target=col_target,
