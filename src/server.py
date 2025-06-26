@@ -945,5 +945,5 @@ def read_root():
 if __name__ == "__main__":
     port = 7078
     print(f'🚀 Документация http://0.0.0.0:{port}{docs_url}')
-    uvicorn.run("server:app", host="0.0.0.0", port=port, workers=4, log_level="debug")
+    uvicorn.run("server:app", host="0.0.0.0", port=port, workers=2, log_level="debug")
 
