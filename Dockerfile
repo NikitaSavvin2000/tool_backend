@@ -1,11 +1,9 @@
 FROM python:3.9.16-slim-buster
 
-
 COPY . /app
 WORKDIR /app
 
 ENV PYTHONPATH=/app
-ENV CUDA_VISIBLE_DEVICES=""
 
 ENV PYTHONPATH=/app
 
