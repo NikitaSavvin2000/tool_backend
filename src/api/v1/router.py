@@ -10,7 +10,7 @@
 - /analytics — аналитика по входным данным
 - /col_update — обновление списка колонок для обучения
 - /user_predict — пользовательские прогнозы
-
+- /benchmark_metrics — структура метрик моделей на разных датасетах
 """
 
 from fastapi import APIRouter
@@ -22,6 +22,7 @@ from src.api.v1 import (
     analytics,
     col_update,
     user_predict,
+    benchmark_metrics
 )
 
 router = APIRouter(prefix="")
@@ -33,3 +34,4 @@ router.include_router(pipeline.router, prefix="/pipeline")
 router.include_router(analytics.router, prefix="/analytics")
 router.include_router(col_update.router, prefix="/col_update")
 router.include_router(user_predict.router, prefix="/user_predict")
+router.include_router(benchmark_metrics.router, prefix="/benchmark_metrics")
