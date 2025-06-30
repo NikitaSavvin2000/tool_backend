@@ -21,51 +21,6 @@ class BenchmarkResponse(BaseModel):
     datasets: List[DatasetBenchmark]
     colab_links: Dict[str, HttpUrl]
 
-    class Config:
-        schema_extra = {
-            "example": {
-                "datasets": [
-                    {
-                        "name": "consumption",
-                        "source_url": "https://example.com/dataset/consumption",
-                        "models": [
-                            {
-                                "name": "Horizon",
-                                "metrics": {
-                                    "MAE": 5.8,
-                                    "RMSE": 6.1,
-                                    "MAPE": 12.0
-                                },
-                                "relative_to_horizon": {
-                                    "MAE": 0.0,
-                                    "RMSE": 0.0,
-                                    "MAPE": 0.0
-                                }
-                            },
-                            {
-                                "name": "CatBoost",
-                                "metrics": {
-                                    "MAE": 6.8,
-                                    "RMSE": 7.2,
-                                    "MAPE": 14.0
-                                },
-                                "relative_to_horizon": {
-                                    "MAE": -15.0,
-                                    "RMSE": -18.0,
-                                    "MAPE": -16.6
-                                }
-                            }
-                        ]
-                    }
-                ],
-                "colab_links": {
-                    "Horizon": "https://colab.research.google.com/horizon",
-                    "CatBoost": "https://colab.research.google.com/catboost"
-                }
-            }
-        }
-
-
 @router.get("/", response_model=BenchmarkResponse, tags=["Benchmark"])
 async def get_benchmark_metrics():
     """
