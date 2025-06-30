@@ -1,2 +1,12 @@
 col_for_train:
 - year
+- month
+- day
+- day_of_year
+- week
+- day_of_week
+- hour
+- minute
+- second
+- part_of_day
+- is_night
