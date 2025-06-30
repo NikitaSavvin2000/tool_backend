@@ -124,6 +124,8 @@ def forecast_XGBoost_sistem(
         tuple: (df_train, df_real_predict) DataFrames with true and predicted values.
     """
 
+    print(df_all_data_norm)
+
     df_all_data_norm[time_column] = pd.to_datetime(df_all_data_norm[time_column], errors='coerce')
     df_all_data_norm = df_all_data_norm.sort_values(by=time_column).reset_index(drop=True)
 
@@ -140,6 +142,7 @@ def forecast_XGBoost_sistem(
     df_test[col_target] = np.nan
     df_real_predict = df_test.copy()
 
+    print(df_train)
     # Prepare data for XGBoost
     values = df_train[col_for_train].values
     x_input = create_x_input(df_train, lag)
@@ -775,7 +778,7 @@ def user_predict_XGBoost(
 #     "Morocco Zone 2": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQT1DfqAB5Yec8MIQ_E5A8w-SXNcRmTwbXsv2W-ZT1ZcXN_G83BHlb6QBgnWkO-MpH3oVgfLoE0SnLx/pub?gid=1952392108&single=true&output=csv",
 #     "Morocco Zone 3": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSHw5k7n3_RM6ksGbvdQJsa1i9-zF-18CFLCFnXFkCxQwqLcQ4Wu2_8EF2H1lF02ih2NLL9BDecFzQ/pub?gid=1952392108&single=true&output=csv",
 #
-df_data = pd.read_csv("/Users/nikitasavvin/Downloads/Прошлые данные - TSLA.csv")
+df_data = pd.read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vQJrlRwIHeCwf3DUiu_WkG_bwgKcyOmXKv8aKN5GSjTbqCvae9OiTSkHoaMpMfOstTvRvGnj6-3gtRk/pub?gid=1448488998&single=true&output=csv")
 
 def fetch_data_from_db():
     table_name = 'load_consumption'
@@ -818,22 +821,22 @@ def clean_column(val):
     except:
         return None
 
-cols_to_convert = ['Откр.', 'Макс.', 'Мин.', 'Цена', 'Объём', 'Изм. %']
-df_data[cols_to_convert] = df_data[cols_to_convert].applymap(clean_column)
-df_data['Дата'] = pd.to_datetime(df_data['Дата'], format='%d.%m.%Y')
-df_data['Дата'] = df_data['Дата'].dt.strftime('%Y-%m-%d %H:%M:%S')
 
+time_column = 'День'
+col_target = 'Сумма заказов минус комиссия WB, руб.'
+df_data = df_data[[time_column, col_target]]
+df_data = df_data.dropna()
+df_data[time_column] = pd.to_datetime(df_data[time_column], format="%m/%d/%Y")
+df_data[time_column] = df_data[time_column].dt.strftime("%Y-%m-%d %H:%M:%S")
+df_data[col_target] = df_data[col_target].str.replace(",", ".").astype(float)
 
 print(df_data)
-time_column = 'Дата'
-col_target = 'Цена'
-forecast_horizon_time = '2025-06-05 00:00:00'
 
-df_to_predict = df_data.iloc[:-30]
-df_test = df_data.iloc[-30:]
+forecast_horizon_time = '2025-06-16 00:00:00'
 
-#
-#
+df_to_predict = df_data.iloc[:-90]
+df_test = df_data.iloc[-90:]
+
 predict_dict = user_predict_XGBoost(
     df=df_to_predict,
     time_column=time_column,

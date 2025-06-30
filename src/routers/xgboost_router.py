@@ -1,8 +1,14 @@
 # src/routers/xgboost_router.py
 
+import pandas as pd
+import logging
 from fastapi import APIRouter, Body
 from pydantic import BaseModel
 from typing import List, Dict
+from src.xgboost_selection_of_parameters.main import user_predict_XGBoost
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -43,18 +49,23 @@ async def predict_xgboost(request: PredictRequest = Body(...,
                 - title (str): Заголовок графика
                 - legend (dict): Легенда графика
     """
-    from src.xgboost_selection_of_parameters.main import user_predict_XGBoost
-    import pandas as pd
 
-    # Преобразование входных данных в DataFrame
-    df = pd.DataFrame(request.df)
+    logger.info("Received request for prediction")
+    
+    try:
+            # Преобразование входных данных в DataFrame
+            df = pd.DataFrame(request.df)
 
-    # Выполнение прогнозирования
-    result = user_predict_XGBoost(
-        df=df,
-        time_column=request.time_column,
-        col_target=request.col_target,
-        forecast_horizon_time=request.forecast_horizon_time
-    )
+            # Выполнение прогнозирования
+            result = user_predict_XGBoost(
+                df=df,
+                time_column=request.time_column,
+                col_target=request.col_target,
+                forecast_horizon_time=request.forecast_horizon_time
+            )
 
-    return result
+            return result
+    except Exception as e:
+        # Логирование ошибки и возврат понятного сообщения
+        print(f"Error during prediction: {e}")
+        return {"error": "An error occurred during prediction. Please check the input data."}
