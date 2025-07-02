@@ -29,7 +29,9 @@ def calculate_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> tuple:
     mae = mean_absolute_error(y_true, y_pred)
     
     # Mean Absolute Percentage Error (MAPE)
-    mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100 if np.all(y_true != 0) else np.nan
+    # mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100 if np.all(y_true != 0) else np.nan
+    smape = 100 * np.mean(2 * np.abs(y_pred - y_true) / (np.abs(y_pred) + np.abs(y_true)))
+    mape = smape
     
     # Weighted Mean Absolute Percentage Error (WMAPE)
     wmape = (np.sum(np.abs(y_true - y_pred)) / np.sum(np.abs(y_true))) * 100 if np.sum(np.abs(y_true)) != 0 else np.nan
