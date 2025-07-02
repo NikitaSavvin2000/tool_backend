@@ -27,8 +27,8 @@ def mock_dataframe():
     url = (
         "https://docs.google.com/spreadsheets/d/e/2PACX-1vSgwB47qVFZcr1Aq--UWxZ6fDi9CGLZm-1i8QoMgfdaHUbV8EqSli3ayPxYYxD8kqfYYHD41uuNxbjZ/pub?gid=1952392108&single=true&output=csv"
     )
-    # df = pd.read_csv(url)
-    df = pd.read_csv("tests/data/morocco_zone1.csv")
+    df = pd.read_csv(url)
+    # df = pd.read_csv("tests/data/morocco_zone1.csv")
     df['Datetime'] = pd.to_datetime(df['Datetime'])
     return df
 

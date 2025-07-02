@@ -2,7 +2,7 @@
 import pandas as pd
 import optuna
 from typing import Dict, List
-
+from xgboost import XGBRegressor
 from src.processing.data_processing import split_sequence
 from src.normalization.time2vec import Time2Vec
 from src.utils.metrics import calculate_metrics
