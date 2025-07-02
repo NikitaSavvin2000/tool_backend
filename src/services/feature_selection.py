@@ -1,4 +1,4 @@
-#src/services/feature_selection.py
+#src/services/feature_selection
 import pandas as pd
 import numpy as np
 import yaml
@@ -12,7 +12,9 @@ from src.models.xgboost_model import forecast_XGBoost_sistem
 from src.utils.metrics import calculate_metrics
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # Корень проекта
-CONFIG_DIR = PROJECT_ROOT / "src" / "config"
+CONFIG_DIR = PROJECT_ROOT / "src" / "configuration"
+
+MAX_SEARCH_LAG = 21  # Максимальный лаг для поиска
 
 def load_possible_cols():
     config_path = CONFIG_DIR / "possible_cols.yaml"
@@ -24,7 +26,7 @@ def load_possible_cols():
         raise FileNotFoundError(f"Config file not found at {config_path}")
     except yaml.YAMLError as e:
         raise ValueError(f"Error parsing YAML file: {e}")
-    
+
 def col_selection_xgboots(
         df_init: pd.DataFrame,
         time_column: str,
@@ -40,15 +42,13 @@ def col_selection_xgboots(
     :param lag: Количество временных шагов для лаговых признаков.
     :return: Словарь с выбранными признаками и значением MAPE.
     """
-    all_possible_cols = load_possible_cols()  # Используем функцию load_possible_cols
+    all_possible_cols = load_possible_cols()
 
-    # Остальной код остается неизменным
     original_column = df_init[time_column].copy()
     df_init[time_column] = pd.to_datetime(df_init[time_column], errors='coerce')
     df_init = df_init.sort_values(by=time_column).reset_index(drop=True)
     df_init[time_column] = original_column[df_init.index]
 
-    # Определение размера тестовой выборки
     last_value = df_init[col_target].iloc[0]
     optimal_evaluation_points = 300
     if len(df_init) < optimal_evaluation_points / 0.1:
@@ -58,19 +58,17 @@ def col_selection_xgboots(
     df_empty = df_evaluation.copy()
     df_empty[col_target] = None
 
-    # Объединение данных для нормализации
     df_all_data = pd.concat([df, df_empty], ignore_index=True).sort_values(by=time_column).reset_index(drop=True)
     last_known_index = len(df_all_data) - optimal_evaluation_points
 
-    # Нормализация данных
     t2v = Time2Vec(col_time=time_column, col_target=col_target)
     df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
     df_all_data_norm = df_all_data_norm.sort_values(by=time_column).reset_index(drop=True)
 
-    # Поиск лучших признаков
     col_for_train = []
     best_mape = float('inf')
-    df_evaluation[time_column] = pd.to_datetime(df_evaluation[time_column], errors='coerce')
+
+    df_evaluation.loc[:, time_column] = pd.to_datetime(df_evaluation[time_column], errors='coerce')
     df_evaluation = df_evaluation.sort_values(by=time_column).reset_index(drop=True)
 
     for col in tqdm(all_possible_cols):
@@ -109,41 +107,35 @@ def lag_selection_xgboots(
     """
     Выполняет подбор оптимального значения лага для прогнозирования.
     """
-    # Проверка минимального количества строк
     if len(df_init) < 2:
         raise ValueError("Для подбора лага требуется минимум 2 строки во входных данных.")
 
-    # Преобразование временной колонки
     df_init.loc[:, time_column] = pd.to_datetime(df_init[time_column], errors="coerce")
     df_init = df_init.sort_values(by=time_column).reset_index(drop=True)
 
-    # Определение размера тестовой выборки
     optimal_evaluation_points = min(300, len(df_init) // 2)
     if len(df_init) <= optimal_evaluation_points:
         raise ValueError("Недостаточно данных для разделения на обучающую и тестовую выборки.")
-    
+
     df_evaluation = df_init[-optimal_evaluation_points:].copy()
     df = df_init[:-optimal_evaluation_points].copy()
 
-    # Создание пустой тестовой выборки
     df_empty = df_evaluation.copy()
     df_empty[col_target] = None
 
-    # Объединение данных для нормализации
     df_all_data = pd.concat([df, df_empty.dropna(how="all")], ignore_index=True)
     df_all_data = df_all_data.sort_values(by=time_column).reset_index(drop=True)
 
-    # Нормализация данных
     t2v = Time2Vec(col_time=time_column, col_target=col_target)
     df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
 
-    # Поиск оптимального значения лага
     best_lag = None
     best_mape = float('inf')
+
     df_evaluation.loc[:, time_column] = pd.to_datetime(df_evaluation[time_column], errors="coerce")
     df_evaluation = df_evaluation.sort_values(by=time_column).reset_index(drop=True)
 
-    max_lag = min(len(df) - 1, 21)
+    max_lag = min(len(df) - 1, MAX_SEARCH_LAG)
     for lag in tqdm(range(1, max_lag + 1)):
         df_true_all, df_pred_vector = forecast_XGBoost_sistem(
             col_target=col_target,
@@ -155,7 +147,6 @@ def lag_selection_xgboots(
             col_for_train=cols
         )
 
-        # Проверка на пустые данные
         if df_pred_vector.size == 0:
             raise ValueError("Forecast returned empty predictions. Check the input data and model configuration.")
 

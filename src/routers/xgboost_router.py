@@ -2,7 +2,7 @@
 
 import pandas as pd
 import logging
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict
 from src.xgboost_selection_of_parameters.main import user_predict_XGBoost
@@ -65,7 +65,15 @@ async def predict_xgboost(request: PredictRequest = Body(...,
             )
 
             return result
+    # except Exception as e:
+    #     # Логирование ошибки и возврат понятного сообщения
+    #     print(f"Error during prediction: {e}")
+    #     return {"error": "An error occurred during prediction. Please check the input data."}
     except Exception as e:
-        # Логирование ошибки и возврат понятного сообщения
-        print(f"Error during prediction: {e}")
-        return {"error": "An error occurred during prediction. Please check the input data."}
+        import traceback
+        print("🔥 Ошибка во время предсказания:")
+        traceback.print_exc()
+        print("📋 Сообщение:", str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+
+
