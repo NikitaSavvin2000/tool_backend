@@ -815,7 +815,7 @@ async def func_generate_possible_date(body: Annotated[
 
 
 def new_generate_forecast(df_json, time_column, col_target, forecast_horizon_time):
-    base_url = "http://0.0.0.0:7071"
+    base_url = "http://77.37.136.11:7071/api/v1"
 
     url = f"{base_url}/predict-xgboost"
     data = {
