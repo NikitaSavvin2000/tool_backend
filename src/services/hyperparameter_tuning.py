@@ -49,6 +49,36 @@ def _make_xgboost_predictions(
         x_input = x_input.reshape((1, lag, n_features))
     return predict_values
 
+def make_predictions(x_input, x_future, n_features, model, lag):
+    """
+    Generate predictions for a future horizon using an iterative approach.
+
+    Parameters:
+        x_input (np.ndarray): Initial input data.
+        x_future (np.ndarray): Future data.
+        n_features (int): Number of features in the data.
+        model (tf.keras.Model): Trained prediction model.
+        lag (int): Number of time steps used for predictions.
+
+    Returns:
+        list: Predicted values.
+    """
+    predict_values = []
+    for _ in range(len(x_future)):
+        x_input_tensor = tf.convert_to_tensor(x_input.reshape((1, -1)), dtype=tf.float32)
+        y_predict = model.predict(x_input_tensor)
+        predict_values.append(y_predict)
+
+        x_input = np.delete(x_input, 0, axis=1)
+        future_lag = x_future[0]
+        x_future = np.delete(x_future, 0, axis=0)
+        future_lag[0] = y_predict
+        x_input = np.append(x_input, future_lag.reshape(1, 1, -1), axis=1)
+        x_input = x_input.reshape((1, lag, n_features))
+
+    return predict_values
+
+
 
 def params_selection_xgboots(
     df_init: pd.DataFrame,
@@ -112,7 +142,14 @@ def params_selection_xgboots(
 
         # Прогнозирование
         df_test = df_all_data_norm.iloc[last_known_index:].copy()
-        predict_values = _make_xgboost_predictions(X_train, df_test.values, len(cols) + 1, xgb_model, lag)
+        # predict_values = _make_xgboost_predictions(X_train, df_test.values, len(cols) + 1, xgb_model, lag)
+        predict_values = make_predictions(
+            x_input=X_train,
+            x_future=df_test.values,
+            n_features=len(cols) + 1,
+            model=xgb_model,
+            lag=lag
+        )
 
         # Обратная нормализация прогнозов
         df_real_predict = t2v.light_reverse_vectorization(predict_values, min_val, max_val)
