@@ -16,6 +16,8 @@ from src.configuration.constants import (
     MIN_TEST_FRACTION, OPTIMAL_EVALUATION_POINTS
 )
 import numpy as np
+import tensorflow as tf
+
 
 def _make_xgboost_predictions(
         x_input: np.ndarray,
