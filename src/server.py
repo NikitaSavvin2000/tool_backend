@@ -932,7 +932,7 @@ async def func_generate_forecast(body: Annotated[
         col_target = body.col_target
         forecast_horizon_time = body.forecast_horizon_time
 
-        response = func_generate_forecast(
+        response = new_generate_forecast(
             df_json=json_df,
             time_column=time_column,
             col_target=col_target,
