@@ -81,6 +81,19 @@ def make_predictions(x_input, x_future, n_features, model, lag):
     return predict_values
 
 
+def create_x_input(df_train, n_steps):
+    """
+    Create the input array for predictions from the training DataFrame.
+
+    Parameters:
+        df_train (pd.DataFrame): Training data.
+        n_steps (int): Number of steps to look back.
+
+    Returns:
+        np.ndarray: Input array for predictions.
+    """
+    return df_train.iloc[-n_steps:].values
+
 
 
 def params_selection_xgboots(
@@ -142,12 +155,11 @@ def params_selection_xgboots(
         # Обучение модели
         xgb_model = XGBRegressor(**params)
         xgb_model.fit(X_train, y)
-
+        x_input = df_train.iloc[-lag:].values
         # Прогнозирование
         df_test = df_all_data_norm.iloc[last_known_index:].copy()
         # predict_values = _make_xgboost_predictions(X_train, df_test.values, len(cols) + 1, xgb_model, lag)
-
-        x_input = X_train.reshape((1, lag, len(cols) + 1))
+        x_input = x_input.reshape((1, lag, len(cols) + 1))
 
         predict_values = make_predictions(
             x_input=x_input,
