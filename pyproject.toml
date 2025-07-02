@@ -22,7 +22,7 @@ dependencies = [
     "tensorflow>=2.16.2",
     "holidays>=0.57",
     "scikit-learn>=1.5.2",
-    "xgboost>=2.1.1",
+    "xgboost>=3.0.2",
     "ephem>=4.2",
     "python-dateutil>=2.9.0.post0",
     "tqdm>=4.67.1",
@@ -30,6 +30,9 @@ dependencies = [
     "optuna>=4.3.0",
     "plotly>=6.1.2",
     "requests>=2.32.3",
+    "setuptools>=80.9.0",
+    "pyyaml>=6.0.2",
+    "pytest-timeout>=2.4.0",
 ]
 requires-python = "==3.12.*"
 readme = "README.md"

@@ -1,3 +1,4 @@
+#tests/indicators/test_scripts
 import requests
 import pandas as pd
 

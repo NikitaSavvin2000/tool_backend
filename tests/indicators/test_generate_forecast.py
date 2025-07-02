@@ -1,10 +1,12 @@
+#tests/indicators/test_generate_forecast
 import requests
 import pandas as pd
 import time
 import pytest
 
 # URL = "http://localhost:7071/backend/v1/generate_forecast"
-URL = "http://localhost:7071/backend/v1/pipeline/generate_forecast"
+# URL = "http://localhost:7071/backend/v1/pipeline/generate_forecast"
+URL = "http://localhost:7071/api/v1/predict-xgboost/"
 
 
 # Фикстура: ждёт, пока сервер запустится
@@ -23,11 +25,10 @@ def wait_for_server():
 @pytest.fixture
 def mock_dataframe():
     url = (
-        "https://docs.google.com/spreadsheets/d/e/" 
-        "2PACX-1vSgwB47qVFZcr1Aq--UWxZ6fDi9CGLZm-1i8QoMgfdaHUbV8EqSli3ayPxYYxD8kqfYYHD41uuNxbjZ/pub?"
-        "gid=1952392108&single=true&output=csv"
+        "https://docs.google.com/spreadsheets/d/e/2PACX-1vSgwB47qVFZcr1Aq--UWxZ6fDi9CGLZm-1i8QoMgfdaHUbV8EqSli3ayPxYYxD8kqfYYHD41uuNxbjZ/pub?gid=1952392108&single=true&output=csv"
     )
     df = pd.read_csv(url)
+    # df = pd.read_csv("tests/data/morocco_zone1.csv")
     df['Datetime'] = pd.to_datetime(df['Datetime'])
     return df
 
@@ -120,7 +121,9 @@ def test_missing_time_column(mock_dataframe):
         bad_df,
         time_column='Datetime',
         col_target='consumption',
-        forecast_horizon_time='2018-01-10 05:00:00'
+        # forecast_horizon_time='2018-01-10 05:00:00'
+        forecast_horizon_time='2018-01-13 00:00:00'
+
     )
 
     response = requests.post(URL, json=payload)
@@ -130,9 +133,10 @@ def test_missing_time_column(mock_dataframe):
 
 # Параметризованный тест: разные горизонты прогноза
 @pytest.mark.parametrize("forecast_time", [
-    "2018-01-10 05:00:00",
-    "2018-01-10 12:00:00",
+    "2018-01-12 00:00:00", 
+    "2018-01-13 12:00:00",  
 ])
+
 def test_generate_forecast_with_different_times(mock_dataframe, forecast_time):
     payload = prepare_payload(
         mock_dataframe,
@@ -147,5 +151,5 @@ def test_generate_forecast_with_different_times(mock_dataframe, forecast_time):
     data = response.json()
     predictions = data['map_data']['data']['predictions']
     assert len(predictions) > 0, "Predictions should not be empty"
-
+    
     print(f"Test passed for forecast time: {forecast_time}")
