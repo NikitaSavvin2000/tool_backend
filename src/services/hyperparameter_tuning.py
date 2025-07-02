@@ -51,35 +51,55 @@ def _make_xgboost_predictions(
         x_input = x_input.reshape((1, lag, n_features))
     return predict_values
 
+# def make_predictions(x_input, x_future, n_features, model, lag):
+#     """
+#     Generate predictions for a future horizon using an iterative approach.
+#
+#     Parameters:
+#         x_input (np.ndarray): Initial input data.
+#         x_future (np.ndarray): Future data.
+#         n_features (int): Number of features in the data.
+#         model (tf.keras.Model): Trained prediction model.
+#         lag (int): Number of time steps used for predictions.
+#
+#     Returns:
+#         list: Predicted values.
+#     """
+#     predict_values = []
+#     for _ in range(len(x_future)):
+#         x_input_tensor = tf.convert_to_tensor(x_input.reshape((1, -1)), dtype=tf.float32)
+#         y_predict = model.predict(x_input_tensor)
+#         predict_values.append(y_predict)
+#
+#         x_input = np.delete(x_input, 0, axis=1)
+#         future_lag = x_future[0]
+#         x_future = np.delete(x_future, 0, axis=0)
+#         future_lag[0] = y_predict
+#         x_input = np.append(x_input, future_lag.reshape(1, 1, -1), axis=1)
+#         x_input = x_input.reshape((1, lag, n_features))
+#
+#     return predict_values
+
+
 def make_predictions(x_input, x_future, n_features, model, lag):
-    """
-    Generate predictions for a future horizon using an iterative approach.
-
-    Parameters:
-        x_input (np.ndarray): Initial input data.
-        x_future (np.ndarray): Future data.
-        n_features (int): Number of features in the data.
-        model (tf.keras.Model): Trained prediction model.
-        lag (int): Number of time steps used for predictions.
-
-    Returns:
-        list: Predicted values.
-    """
     predict_values = []
-    for _ in range(len(x_future)):
-        x_input_tensor = tf.convert_to_tensor(x_input.reshape((1, -1)), dtype=tf.float32)
-        y_predict = model.predict(x_input_tensor)
-        predict_values.append(y_predict)
+    x_input = x_input.reshape((1, lag, n_features))
 
-        x_input = np.delete(x_input, 0, axis=1)
-        future_lag = x_future[0]
-        x_future = np.delete(x_future, 0, axis=0)
-        future_lag[0] = y_predict
-        x_input = np.append(x_input, future_lag.reshape(1, 1, -1), axis=1)
-        x_input = x_input.reshape((1, lag, n_features))
+    for _ in range(len(x_future)):
+        y_predict = model.predict(x_input)  # форма (1, 1)
+        y_scalar = y_predict[0, 0]
+        predict_values.append(y_scalar)
+
+        x_input = x_input[:, 1:, :]  # убираем первый временной шаг (lag-1)
+        future_step = x_future[0].copy()
+        x_future = x_future[1:]
+
+        future_step[0] = y_scalar  # подставляем предсказание
+        future_step = future_step.reshape((1, 1, n_features))
+
+        x_input = np.concatenate([x_input, future_step], axis=1)
 
     return predict_values
-
 
 
 def params_selection_xgboots(
