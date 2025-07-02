@@ -16,6 +16,38 @@ from src.configuration.constants import (
     MIN_TEST_FRACTION, OPTIMAL_EVALUATION_POINTS
 )
 
+def _make_xgboost_predictions(
+        x_input: np.ndarray,
+        df_test: np.ndarray,
+        n_features: int,
+        model: XGBRegressor,
+        lag: int
+) -> List[float]:
+    """
+    Генерирует прогнозы для будущего горизонта с использованием обученной модели XGBoost.
+
+    :param x_input: Исходные входные данные.
+    :param df_test: Массив тестовых данных.
+    :param n_features: Количество признаков.
+    :param model: Обученная модель XGBoost.
+    :param lag: Количество временных шагов.
+    :return: Список прогнозируемых значений.
+    """
+    predict_values = []
+    for _ in range(len(df_test)):
+        # Предсказание следующего значения
+        y_predict = model.predict(x_input.reshape(1, -1))[0]
+        predict_values.append(y_predict)
+
+        # Обновление входных данных
+        x_input = np.delete(x_input, 0, axis=1)
+        future_lag = df_test[0]
+        df_test = np.delete(df_test, 0, axis=0)
+        future_lag[0] = y_predict
+        x_input = np.append(x_input, future_lag.reshape(1, 1, -1), axis=1)
+        x_input = x_input.reshape((1, lag, n_features))
+    return predict_values
+
 
 def params_selection_xgboots(
     df_init: pd.DataFrame,
@@ -42,7 +74,7 @@ def params_selection_xgboots(
     df_init[time_column] = original_column[df_init.index]
 
     # Определение размера тестовой выборки
-    optimal_evaluation_points = min(len(df_init) * MIN_TEST_FRACTION, OPTIMAL_EVALUATION_POINTS)
+    optimal_evaluation_points = int(min(len(df_init) * MIN_TEST_FRACTION, OPTIMAL_EVALUATION_POINTS))
 
     # Создание пустого DataFrame для тестовых данных
     df_all_data = pd.concat([df_init, df_init[-optimal_evaluation_points:].copy()], ignore_index=True).sort_values(by=time_column).reset_index(drop=True)
@@ -58,6 +90,7 @@ def params_selection_xgboots(
     values = df_train[[col_target] + cols].values
     X, y = split_sequence(values, lag)
     X_train = X.reshape(X.shape[0], -1)
+
 
     # Определение функции для подбора гиперпараметров
     def objective(trial):
