@@ -15,6 +15,7 @@ from src.configuration.constants import (
     MIN_CHILD_WEIGHT_MIN, MIN_CHILD_WEIGHT_MAX,
     MIN_TEST_FRACTION, OPTIMAL_EVALUATION_POINTS
 )
+import numpy as np
 
 def _make_xgboost_predictions(
         x_input: np.ndarray,
