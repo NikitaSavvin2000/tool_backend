@@ -5,7 +5,7 @@ import os
 from typing import Annotated, List
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
-
+import requests
 from src.backend.metrix import metrix_all
 from src.backend.forecast import forecast
 from src.backend.lstm import forecast_LSTM
@@ -813,6 +813,24 @@ async def func_generate_possible_date(body: Annotated[
         )
 
 
+
+def new_generate_forecast(df_json, time_column, col_target, forecast_horizon_time):
+    base_url = "http://0.0.0.0:7071"
+
+    url = f"{base_url}/predict-xgboost"
+    data = {
+        "df": df_json,
+        "time_column": time_column,
+        "col_target": col_target,
+        "forecast_horizon_time": forecast_horizon_time
+    }
+    response = requests.post(url, json=data)
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=f"Ошибка при запросе: {response.text}")
+    return response.json()
+
+
+
 @app.post("/backend/v1/generate_forecast")
 async def func_generate_forecast(body: Annotated[
     PredictRequest, Body(
@@ -909,12 +927,16 @@ async def func_generate_forecast(body: Annotated[
 
     try:
         json_df = body.df
-        df = pd.DataFrame(json_df)
+        # df = pd.DataFrame(json_df)
         time_column = body.time_column
         col_target = body.col_target
         forecast_horizon_time = body.forecast_horizon_time
 
-        response = all_available_forecast(df, time_column, col_target, forecast_horizon_time)
+        response = func_generate_forecast(
+            df_json=json_df,
+            time_column=time_column,
+            col_target=col_target,
+            forecast_horizon_time=forecast_horizon_time)
         return response
 
     except Exception as ApplicationError:
