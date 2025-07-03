@@ -3,7 +3,7 @@
 import pandas as pd
 from src.normalization.time2vec import Time2Vec
 from src.processing.data_processing import calculate_time_interval
-from src.services.feature_selection import col_selection_xgboots, lag_selection_xgboots
+from src.services.feature_selection import col_selection_xgboots, lag_selection_xgboots, n_estimators_selection_xgboots, learning_rate_selection_xgboots, max_depth_selection_xgboots
 from src.services.hyperparameter_tuning import params_selection_xgboots
 from src.models.xgboost_model import forecast_XGBoost_sistem
 from src.utils.metrics import calculate_metrics
@@ -28,7 +28,7 @@ def user_predict_XGBoost(
 ) -> dict:
     """
     Генерирует прогноз временного ряда с использованием XGBoost.
-    
+
     :param df: Исходный DataFrame с временным рядом.
     :param time_column: Название колонки с временными метками.
     :param col_target: Название целевой переменной.
@@ -75,22 +75,56 @@ def user_predict_XGBoost(
     best_params = {}
     # model_architecture_params=[{"objective": "reg:squarederror"}],
 
+    model_params = {
+        "objective": "reg:squarederror",
+        "learning_rate": 0.1,
+        "max_depth": 15,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "min_child_weight": 5,
+        "booster": "gbtree",
+        "random_state": 42
+    }
 
-    MODEL_ARCHITECTURE_PARAMS = {
-            "objective": "reg:squarederror",
-            "n_estimators": 1000,
-            "learning_rate": 0.1,
-            "max_depth": 15,
-            "subsample": 0.9,
-            "colsample_bytree": 0.9,
-            "min_child_weight": 5,
-            "booster": "gbtree"
-        }
+    n_estimators = n_estimators_selection_xgboots(
+        df_init=df,
+        time_column=time_column,
+        col_target=col_target,
+        col_for_train=col_for_train,
+        model_params=model_params,
+        lag=lag
+    )["n_estimators"]
 
-    best_params["best_params"] = MODEL_ARCHITECTURE_PARAMS
+    model_params["n_estimators"] = n_estimators
+
+    learning_rate = learning_rate_selection_xgboots(
+        df_init=df,
+        time_column=time_column,
+        col_target=col_target,
+        col_for_train=col_for_train,
+        model_params=model_params,
+        lag=lag
+    )["learning_rate"]
+
+    model_params["learning_rate"] = learning_rate
+
+
+    max_depth = max_depth_selection_xgboots(
+        df_init=df,
+        time_column=time_column,
+        col_target=col_target,
+        col_for_train=col_for_train,
+        model_params=model_params,
+        lag=lag
+    )["max_depth"]
+
+    model_params["max_depth"] = max_depth
+
+    best_params["best_params"] = model_params
 
     print(f"lag = {lag}")
     print(f"col_for_train = {col_for_train}")
+
 
 
     original_format = df[time_column].copy()
@@ -121,7 +155,7 @@ def user_predict_XGBoost(
         raise ValueError(
             f"Время горизонта ({forecast_horizon_time}) должно быть позже последней известной даты ({last_time})"
         )
-    
+
     if df_all_data.empty:
         raise ValueError("Итоговый DataFrame пуст — невозможно построить прогноз.")
 
@@ -156,7 +190,7 @@ def user_predict_XGBoost(
 
     if df_pred_vector.empty or df_pred_vector.shape[0] == 0:
         raise ValueError("Модель не вернула предсказания. Возможно, недостаточно данных после применения лага.")
-    
+
     print(">>> TEST: lag =", lag)
     print(">>> TEST: n_future_points =", n_future_points)
 

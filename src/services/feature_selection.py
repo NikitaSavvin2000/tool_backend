@@ -109,6 +109,218 @@ def col_selection_xgboots(
 
     return {"col_for_train": col_for_train, "best_mape": best_mape}
 
+
+
+def n_estimators_selection_xgboots(
+        df_init: pd.DataFrame,
+        time_column: str,
+        col_target: str,
+        col_for_train: list,
+        model_params: dict,
+        lag: int = 1,
+        min_n_estimators: int = 300,
+        max_n_estimators: int = 3000,
+        start_step: int = 5,
+        max_step: int = 100,
+) -> Dict[str, float]:
+
+    df_init.loc[:, time_column] = pd.to_datetime(df_init[time_column], errors="coerce")
+    df_init = df_init.sort_values(by=time_column).reset_index(drop=True)
+
+    optimal_evaluation_points = min(300, len(df_init) // 2)
+    df_evaluation = df_init[-optimal_evaluation_points:].copy()
+    df = df_init[:-optimal_evaluation_points].copy()
+
+    df_empty = df_evaluation.copy()
+    df_empty[col_target] = None
+
+    df_all_data = pd.concat([df, df_empty.dropna(how="all")], ignore_index=True)
+    df_all_data = df_all_data.sort_values(by=time_column).reset_index(drop=True)
+
+    t2v = Time2Vec(col_time=time_column, col_target=col_target)
+    df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
+
+    df_evaluation.loc[:, time_column] = pd.to_datetime(df_evaluation[time_column], errors="coerce")
+    df_evaluation = df_evaluation.sort_values(by=time_column).reset_index(drop=True)
+
+    n_estimators = min_n_estimators
+    step = start_step
+    best_mape = float('inf')
+    best_n_estimators = n_estimators
+
+    while n_estimators <= max_n_estimators:
+        params = model_params.copy()
+        params["n_estimators"] = n_estimators
+
+        df_true_all, df_pred_vector = forecast_XGBoost_sistem(
+            col_target=col_target,
+            time_column=time_column,
+            df_all_data_norm=df_all_data_norm,
+            last_known_index=len(df_all_data) - optimal_evaluation_points,
+            lag=lag,
+            model_architecture_params=[params],
+            col_for_train=col_for_train
+        )
+
+        df_real_predict = t2v.light_reverse_vectorization(df_pred_vector, min_val, max_val)
+        y_true = df_evaluation[col_target].reset_index(drop=True)
+        y_pred = df_real_predict[col_target].reset_index(drop=True)
+
+        _, _, _, mape, _ = calculate_metrics(y_true=y_true, y_pred=y_pred)
+
+        print(f"n_estimators={n_estimators} | MAPE={mape} | Best MAPE={best_mape} with n_estimators={best_n_estimators}")
+
+        if mape < best_mape:
+            best_mape = mape
+            best_n_estimators = n_estimators
+            step = start_step  # при улучшении сбрасываем шаг в маленький
+        else:
+            step = min(step * 2, max_step)  # при ухудшении увеличиваем шаг
+
+        n_estimators += step
+
+    return {"n_estimators": best_n_estimators, "best_mape": best_mape}
+
+def learning_rate_selection_xgboots(
+        df_init: pd.DataFrame,
+        time_column: str,
+        col_target: str,
+        col_for_train: list,
+        model_params: dict,
+        lag: int = 1,
+        min_lr: float = 0.001,
+        max_lr: float = 0.5,
+        start_step: float = 0.005,
+        max_step: float = 0.05,
+) -> Dict[str, float]:
+
+    df_init.loc[:, time_column] = pd.to_datetime(df_init[time_column], errors="coerce")
+    df_init = df_init.sort_values(by=time_column).reset_index(drop=True)
+
+    optimal_evaluation_points = min(300, len(df_init) // 2)
+    df_evaluation = df_init[-optimal_evaluation_points:].copy()
+    df = df_init[:-optimal_evaluation_points].copy()
+
+    df_empty = df_evaluation.copy()
+    df_empty[col_target] = None
+
+    df_all_data = pd.concat([df, df_empty.dropna(how="all")], ignore_index=True)
+    df_all_data = df_all_data.sort_values(by=time_column).reset_index(drop=True)
+
+    t2v = Time2Vec(col_time=time_column, col_target=col_target)
+    df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
+
+    df_evaluation.loc[:, time_column] = pd.to_datetime(df_evaluation[time_column], errors="coerce")
+    df_evaluation = df_evaluation.sort_values(by=time_column).reset_index(drop=True)
+
+    lr = min_lr
+    step = start_step
+    best_mape = float('inf')
+    best_lr = lr
+
+    while lr <= max_lr:
+        params = model_params.copy()
+        params["learning_rate"] = lr
+
+        df_true_all, df_pred_vector = forecast_XGBoost_sistem(
+            col_target=col_target,
+            time_column=time_column,
+            df_all_data_norm=df_all_data_norm,
+            last_known_index=len(df_all_data) - optimal_evaluation_points,
+            lag=lag,
+            model_architecture_params=[params],
+            col_for_train=col_for_train
+        )
+
+        df_real_predict = t2v.light_reverse_vectorization(df_pred_vector, min_val, max_val)
+        y_true = df_evaluation[col_target].reset_index(drop=True)
+        y_pred = df_real_predict[col_target].reset_index(drop=True)
+
+        _, _, _, mape, _ = calculate_metrics(y_true=y_true, y_pred=y_pred)
+
+        print(f"learning_rate={lr:.5f} | MAPE={mape:.5f} | Best MAPE={best_mape:.5f} with learning_rate={best_lr:.5f}")
+
+        if mape < best_mape:
+            best_mape = mape
+            best_lr = lr
+            step = start_step
+        else:
+            step = min(step * 2, max_step)
+
+        lr += step
+
+    return {"learning_rate": best_lr, "best_mape": best_mape}
+
+
+
+def max_depth_selection_xgboots(
+        df_init: pd.DataFrame,
+        time_column: str,
+        col_target: str,
+        col_for_train: list,
+        model_params: dict,
+        lag: int = 1,
+        min_depth: int = 5,
+        max_depth: int = 30,
+        step: int = 1,
+) -> Dict[str, float]:
+
+    df_init.loc[:, time_column] = pd.to_datetime(df_init[time_column], errors="coerce")
+    df_init = df_init.sort_values(by=time_column).reset_index(drop=True)
+
+    optimal_evaluation_points = min(300, len(df_init) // 2)
+    df_evaluation = df_init[-optimal_evaluation_points:].copy()
+    df = df_init[:-optimal_evaluation_points].copy()
+
+    df_empty = df_evaluation.copy()
+    df_empty[col_target] = None
+
+    df_all_data = pd.concat([df, df_empty.dropna(how="all")], ignore_index=True)
+    df_all_data = df_all_data.sort_values(by=time_column).reset_index(drop=True)
+
+    t2v = Time2Vec(col_time=time_column, col_target=col_target)
+    df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
+
+    df_evaluation.loc[:, time_column] = pd.to_datetime(df_evaluation[time_column], errors="coerce")
+    df_evaluation = df_evaluation.sort_values(by=time_column).reset_index(drop=True)
+
+    best_mape = float('inf')
+    best_depth = min_depth
+
+    d = min_depth
+    while d <= max_depth:
+        params = model_params.copy()
+        params["max_depth"] = int(d)
+
+        df_true_all, df_pred_vector = forecast_XGBoost_sistem(
+            col_target=col_target,
+            time_column=time_column,
+            df_all_data_norm=df_all_data_norm,
+            last_known_index=len(df_all_data) - optimal_evaluation_points,
+            lag=lag,
+            model_architecture_params=[params],
+            col_for_train=col_for_train
+        )
+
+        df_real_predict = t2v.light_reverse_vectorization(df_pred_vector, min_val, max_val)
+        y_true = df_evaluation[col_target].reset_index(drop=True)
+        y_pred = df_real_predict[col_target].reset_index(drop=True)
+
+        _, _, _, mape, _ = calculate_metrics(y_true=y_true, y_pred=y_pred)
+
+        print(f"max_depth={d} | MAPE={mape:.5f} | Best MAPE={best_mape:.5f} with max_depth={best_depth}")
+
+        if mape < best_mape:
+            best_mape = mape
+            best_depth = d
+
+        d += step
+
+    return {"max_depth": best_depth, "best_mape": best_mape}
+
+
+
+
 def lag_selection_xgboots(
         df_init: pd.DataFrame,
         time_column: str,
