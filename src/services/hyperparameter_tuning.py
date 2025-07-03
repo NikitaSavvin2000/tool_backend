@@ -7,6 +7,7 @@ from src.processing.data_processing import split_sequence, create_x_input
 from src.models.xgboost_model import _make_xgboost_predictions
 from src.normalization.time2vec import Time2Vec
 from src.utils.metrics import calculate_metrics
+import numpy as np
 from src.configuration.constants import (
     N_ESTIMATORS_MIN, N_ESTIMATORS_MAX,
     LEARNING_RATE_MIN, LEARNING_RATE_MAX,
@@ -56,7 +57,8 @@ def params_selection_xgboots(
 
     # Подготовка обучающих данных для подбора гиперпараметров
     df_train = df_all_data_norm.iloc[:last_known_index].copy()
-    values = df_train[[col_target] + cols].values
+    df_train = df_train[[col_target] + cols]
+    values = df_train.values
     X, y = split_sequence(values, lag)
     X_train = X.reshape(X.shape[0], -1)
 
@@ -78,16 +80,30 @@ def params_selection_xgboots(
         xgb_model = XGBRegressor(**params)
         xgb_model.fit(X_train, y)
         x_input = create_x_input(df_train, lag)
-        # Прогнозирование
-        df_test = df_all_data_norm.iloc[last_known_index:].copy()
-        n_features = values.shape[1]
-        x_input = x_input.reshape((1, lag, n_features))
-        predict_values = _make_xgboost_predictions(x_input, df_test.values, len(cols) + 1, xgb_model, lag)
+        print(f'x_input = {x_input}')
 
+        print(f'cols = {cols}')
+
+        n_features = values.shape[1]
+
+        print(f'n_features = {n_features}')
+        print(f'lag = {lag}')
+
+        x_input = x_input.reshape((1, lag, n_features))
+
+
+
+    # Прогнозирование
+        df_test = df_all_data_norm.iloc[last_known_index:].copy()
+        df_real_predict = df_test.copy()
+        df_test = df_test[[col_target] + cols]
+
+        predict_values = _make_xgboost_predictions(x_input, df_test.values, len(cols) + 1, xgb_model, lag)
+        df_real_predict[col_target] = np.array(predict_values).flatten()
         # Обратная нормализация прогнозов
-        df_real_predict = t2v.light_reverse_vectorization(predict_values, min_val, max_val)
+        df_real_predict = t2v.light_reverse_vectorization(df_real_predict, min_val, max_val)
         y_true = df_all_data.iloc[last_known_index:][col_target].values
-        y_pred = df_real_predict.flatten()
+        y_pred = df_real_predict[col_target].values
 
         # Расчет метрики MAPE
         _, _, _, mape, _ = calculate_metrics(y_true=y_true, y_pred=y_pred)

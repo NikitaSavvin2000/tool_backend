@@ -40,6 +40,7 @@ def user_predict_XGBoost(
 
     # Стандартизация границ прогнозирования
     forecast_horizon_time = standardize_datetime(forecast_horizon_time)
+    forecast_horizon_time = pd.to_datetime(forecast_horizon_time)
 
     # Выбор оптимальных признаков
     data_cols = col_selection_xgboots(
@@ -80,6 +81,7 @@ def user_predict_XGBoost(
 
     # Создание будущих временных меток
     last_time = df[time_column].iloc[-1]
+
     date_range = pd.date_range(
         start=last_time,
         end=forecast_horizon_time,
@@ -89,6 +91,7 @@ def user_predict_XGBoost(
     df_future = pd.DataFrame({time_column: date_range, col_target: [None] * len(date_range)})
     df_all_data = pd.concat([df, df_future], ignore_index=True).sort_values(by=time_column, ascending=True).reset_index(drop=True)
     last_known_index = len(df_all_data) - len(date_range)
+
 
     if forecast_horizon_time <= last_time:
         raise ValueError(
@@ -106,10 +109,6 @@ def user_predict_XGBoost(
             f"Невозможно построить прогноз: горизонта ('{forecast_horizon_time}') недостаточно после последней известной даты ('{last_time}')."
         )
 
-    print(">>> df_all_data shape:", df_all_data.shape)
-    print(">>> date_range length:", len(date_range))
-    print(">>> df_all_data[time_column].tail():", df_all_data[time_column].tail())
-
     # Нормализация данных
     t2v = Time2Vec(col_time=time_column, col_target=col_target)
     df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
@@ -119,7 +118,6 @@ def user_predict_XGBoost(
         raise ValueError(
             f"Недостаточно данных для прогноза: доступно {n_future_points} точек, но требуется как минимум {lag + 1}."
         )
-
 
     # Прогнозирование
     df_true_all, df_pred_vector = forecast_XGBoost_sistem(
