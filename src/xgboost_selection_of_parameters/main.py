@@ -43,21 +43,26 @@ def user_predict_XGBoost(
     forecast_horizon_time = pd.to_datetime(forecast_horizon_time)
 
     # Выбор оптимальных признаков
-    data_cols = col_selection_xgboots(
-        df_init=df,
-        time_column=time_column,
-        col_target=col_target,
-    )
-    col_for_train = data_cols["col_for_train"]
 
     # Подбор оптимального значения лага
+    default_cols = ['year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
+                    'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
+
     data_lag = lag_selection_xgboots(
         df_init=df,
         time_column=time_column,
         col_target=col_target,
-        cols=col_for_train,
+        cols=default_cols,
     )
     lag = data_lag["best_lag"]
+
+    data_cols = col_selection_xgboots(
+        df_init=df,
+        time_column=time_column,
+        col_target=col_target,
+        lag=lag
+    )
+    col_for_train = data_cols["col_for_train"]
 
     # Автоматический подбор параметров
     # best_params = params_selection_xgboots(
@@ -68,9 +73,10 @@ def user_predict_XGBoost(
     #     lag=lag
     # )
     best_params = {}
+
     MODEL_ARCHITECTURE_PARAMS = {
         "objective": "reg:squarederror",
-        "n_estimators": 500,
+        "n_estimators": 1000,
         "learning_rate": 0.1,
         "max_depth": 15,
         "subsample": 0.9,
@@ -81,7 +87,10 @@ def user_predict_XGBoost(
 
     best_params["best_params"] = MODEL_ARCHITECTURE_PARAMS
 
-    # Сохранение оригинального формата временной колонки
+    print(f"lag = {lag}")
+    print(f"col_for_train = {col_for_train}")
+
+
     original_format = df[time_column].copy()
     df.loc[:, time_column] = pd.to_datetime(df[time_column], errors="coerce")
     df = df.sort_values(by=time_column, ascending=True).reset_index(drop=True)
