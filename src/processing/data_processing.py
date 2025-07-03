@@ -71,3 +71,37 @@ def preprocess_data(df: pd.DataFrame, cols_to_convert: List[str], time_column: s
     df[time_column] = df[time_column].dt.strftime('%Y-%m-%d %H:%M:%S')
     
     return df
+
+
+def _make_xgboost_predictions(
+        x_input: np.ndarray,
+        df_test: np.ndarray,
+        n_features: int,
+        model: XGBRegressor,
+        lag: int
+) -> List[float]:
+    """
+    Генерирует прогнозы для будущего горизонта с использованием обученной модели XGBoost.
+
+    :param x_input: Исходные входные данные.
+    :param df_test: Массив тестовых данных.
+    :param n_features: Количество признаков.
+    :param model: Обученная модель XGBoost.
+    :param lag: Количество временных шагов.
+    :return: Список прогнозируемых значений.
+    """
+    predict_values = []
+    for _ in range(len(df_test)):
+        # Предсказание следующего значения
+        y_predict = model.predict(x_input.reshape(1, -1))[0]
+        predict_values.append(y_predict)
+
+        # Обновление входных данных
+        x_input = np.delete(x_input, 0, axis=1)
+        future_lag = df_test[0]
+        df_test = np.delete(df_test, 0, axis=0)
+        future_lag[0] = y_predict
+        x_input = np.append(x_input, future_lag.reshape(1, 1, -1), axis=1)
+        x_input = x_input.reshape((1, lag, n_features))
+
+    return predict_values
