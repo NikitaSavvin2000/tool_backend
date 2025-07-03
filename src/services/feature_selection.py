@@ -16,6 +16,17 @@ CONFIG_DIR = PROJECT_ROOT / "src" / "configuration"
 
 MAX_SEARCH_LAG = 21  # Максимальный лаг для поиска
 
+model_architecture_params = [{
+    "objective": "reg:squarederror",
+    "n_estimators": 1000,
+    "learning_rate": 0.1,
+    "max_depth": 15,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "min_child_weight": 5,
+    "booster": "gbtree"
+}]
+
 def load_possible_cols():
     config_path = CONFIG_DIR / "possible_cols.yaml"
     try:
@@ -79,7 +90,7 @@ def col_selection_xgboots(
             df_all_data_norm=df_all_data_norm,
             last_known_index=last_known_index,
             lag=lag,
-            model_architecture_params=[{"objective": "reg:squarederror"}],
+            model_architecture_params=model_architecture_params,
             col_for_train=current_cols
         )
         df_real_predict = t2v.light_reverse_vectorization(df_pred_vector, min_val, max_val)
@@ -91,7 +102,7 @@ def col_selection_xgboots(
         y_pred = df_real_predict[col_target].reset_index(drop=True)
         _, _, _, mape, _ = calculate_metrics(y_true=y_true, y_pred=y_pred)
 
-        print(f"CURRENT MAPE = {mape} | BEST MAPE = {best_mape}")
+        print(f" BEST MAPE = {best_mape} BEST COLS = {col_for_train} | CURRENT MAPE = {mape} | CUR COLS =  {current_cols}")
         if mape < best_mape:
             best_mape = mape
             col_for_train.append(col)
@@ -143,7 +154,7 @@ def lag_selection_xgboots(
             df_all_data_norm=df_all_data_norm,
             last_known_index=len(df_all_data) - optimal_evaluation_points,
             lag=lag,
-            model_architecture_params=[{"objective": "reg:squarederror"}],
+            model_architecture_params=model_architecture_params,
             col_for_train=cols
         )
 
@@ -159,7 +170,7 @@ def lag_selection_xgboots(
         y_pred = df_real_predict[col_target].reset_index(drop=True)
 
         _, _, _, mape, _ = calculate_metrics(y_true=y_true, y_pred=y_pred)
-        print(f"CURRENT MAPE = {mape} | BEST LAG = {best_lag}")
+        print(f"BEST MAPE = {best_mape}  BEST LAG = {best_lag} | CURRENT MAPE = {mape} | CURRENT LAG = {lag}")
 
         if mape < best_mape:
             best_mape = mape
