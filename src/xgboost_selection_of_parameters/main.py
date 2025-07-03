@@ -86,40 +86,40 @@ def user_predict_XGBoost(
         "random_state": 42
     }
 
-    n_estimators = n_estimators_selection_xgboots(
-        df_init=df,
-        time_column=time_column,
-        col_target=col_target,
-        col_for_train=col_for_train,
-        model_params=model_params,
-        lag=lag
-    )["n_estimators"]
-
-    model_params["n_estimators"] = n_estimators
-
-    learning_rate = learning_rate_selection_xgboots(
-        df_init=df,
-        time_column=time_column,
-        col_target=col_target,
-        col_for_train=col_for_train,
-        model_params=model_params,
-        lag=lag
-    )["learning_rate"]
-
-    model_params["learning_rate"] = learning_rate
-
-
-    max_depth = max_depth_selection_xgboots(
-        df_init=df,
-        time_column=time_column,
-        col_target=col_target,
-        col_for_train=col_for_train,
-        model_params=model_params,
-        lag=lag
-    )["max_depth"]
-
-    model_params["max_depth"] = max_depth
-
+    # n_estimators = n_estimators_selection_xgboots(
+    #     df_init=df,
+    #     time_column=time_column,
+    #     col_target=col_target,
+    #     col_for_train=col_for_train,
+    #     model_params=model_params,
+    #     lag=lag
+    # )["n_estimators"]
+    #
+    # model_params["n_estimators"] = n_estimators
+    #
+    # learning_rate = learning_rate_selection_xgboots(
+    #     df_init=df,
+    #     time_column=time_column,
+    #     col_target=col_target,
+    #     col_for_train=col_for_train,
+    #     model_params=model_params,
+    #     lag=lag
+    # )["learning_rate"]
+    #
+    # model_params["learning_rate"] = learning_rate
+    #
+    #
+    # max_depth = max_depth_selection_xgboots(
+    #     df_init=df,
+    #     time_column=time_column,
+    #     col_target=col_target,
+    #     col_for_train=col_for_train,
+    #     model_params=model_params,
+    #     lag=lag
+    # )["max_depth"]
+    #
+    # model_params["max_depth"] = max_depth
+    #
     best_params["best_params"] = model_params
 
     print(f"lag = {lag}")
