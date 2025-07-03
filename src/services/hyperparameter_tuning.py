@@ -3,7 +3,8 @@ import pandas as pd
 import optuna
 from typing import Dict, List
 from xgboost import XGBRegressor
-from src.processing.data_processing import split_sequence, _make_xgboost_predictions, create_x_input
+from src.processing.data_processing import split_sequence, create_x_input
+from src.models.xgboost_model import _make_xgboost_predictions
 from src.normalization.time2vec import Time2Vec
 from src.utils.metrics import calculate_metrics
 from src.configuration.constants import (
