@@ -32,4 +32,4 @@ if __name__ == "__main__":
     import uvicorn
     port = 7071
     print(f'Documentation available at http://0.0.0.0:{port}/backend/v1/')
-    uvicorn.run("src.server:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run("server:app", host="0.0.0.0", port=port, workers=10, log_level="debug")
