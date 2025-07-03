@@ -815,7 +815,9 @@ async def func_generate_possible_date(body: Annotated[
 
 
 def new_generate_forecast(df_json, time_column, col_target, forecast_horizon_time):
-    base_url = "http://77.37.136.11:7071/api/v1"
+    # base_url = "http://77.37.136.11:7071/api/v1"
+    base_url = "http://0.0.0.0:7071/api/v1"
+
 
     url = f"{base_url}/predict-xgboost"
     data = {
@@ -824,7 +826,7 @@ def new_generate_forecast(df_json, time_column, col_target, forecast_horizon_tim
         "col_target": col_target,
         "forecast_horizon_time": forecast_horizon_time
     }
-    response = requests.post(url, json=data)
+    response = requests.post(url, json=data, timeout=600*12)
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail=f"Ошибка при запросе: {response.text}")
     return response.json()
@@ -957,5 +959,5 @@ def read_root():
 if __name__ == "__main__":
     port = 7078
     print(f'🚀 Документация http://0.0.0.0:{port}{docs_url}')
-    uvicorn.run("server:app", host="0.0.0.0", port=port, workers=10, log_level="debug")
+    uvicorn.run("server:app", host="0.0.0.0", port=port, workers=10, log_level="debug", timeout_keep_alive=3600*2)
 
