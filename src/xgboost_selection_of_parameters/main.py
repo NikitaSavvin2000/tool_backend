@@ -74,18 +74,7 @@ def user_predict_XGBoost(
     # )
     best_params = {}
 
-    MODEL_ARCHITECTURE_PARAMS = {
-        "objective": "reg:squarederror",
-        "n_estimators": 1000,
-        "learning_rate": 0.1,
-        "max_depth": 15,
-        "subsample": 0.9,
-        "colsample_bytree": 0.9,
-        "min_child_weight": 5,
-        "booster": "gbtree"
-    }
-
-    best_params["best_params"] = MODEL_ARCHITECTURE_PARAMS
+    best_params["best_params"] = [{"objective": "reg:squarederror"}]
 
     print(f"lag = {lag}")
     print(f"col_for_train = {col_for_train}")
