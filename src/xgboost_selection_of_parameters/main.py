@@ -60,13 +60,26 @@ def user_predict_XGBoost(
     lag = data_lag["best_lag"]
 
     # Автоматический подбор параметров
-    best_params = params_selection_xgboots(
-        df_init=df,
-        time_column=time_column,
-        col_target=col_target,
-        cols=col_for_train,
-        lag=lag
-    )
+    # best_params = params_selection_xgboots(
+    #     df_init=df,
+    #     time_column=time_column,
+    #     col_target=col_target,
+    #     cols=col_for_train,
+    #     lag=lag
+    # )
+    best_params = {}
+    MODEL_ARCHITECTURE_PARAMS = {
+        "objective": "reg:squarederror",
+        "n_estimators": 500,
+        "learning_rate": 0.1,
+        "max_depth": 15,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "min_child_weight": 5,
+        "booster": "gbtree"
+    }
+
+    best_params["best_params"] = MODEL_ARCHITECTURE_PARAMS
 
     # Сохранение оригинального формата временной колонки
     original_format = df[time_column].copy()
