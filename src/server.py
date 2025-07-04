@@ -5,6 +5,8 @@ import os
 from typing import Annotated, List
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import Request
 
 from src.backend.metrix import metrix_all
 from src.backend.forecast import forecast
@@ -28,6 +30,9 @@ from src.examples_fastapi.examples import (
 )
 
 from src.backend.all_available_forecast import cols_to_chose, convert_df_to_datetime, generate_possible_date, all_available_forecast
+from dotenv import load_dotenv
+
+load_dotenv()
 
 home_path = os.getcwd()
 
@@ -60,6 +65,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+tokens_link = os.getenv("TOKEN_LIST")
+
+tokens_df = pd.read_csv(tokens_link)
+
+VALID_TOKENS = tokens_df[tokens_df["source"] == "tool_backend"]["token"].tolist()
+
+class TokenAuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        auth = request.headers.get("Authorization")
+        if not auth or not auth.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        token = auth.split(" ")[1]
+        if token not in VALID_TOKENS:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        response = await call_next(request)
+        return response
+
+app.add_middleware(TokenAuthMiddleware)
+#
 
 @app.post("/backend/v1/analyticsdfs")
 async def get_concepts(body: Annotated[
