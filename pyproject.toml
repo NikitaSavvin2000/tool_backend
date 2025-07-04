@@ -4,8 +4,8 @@ version = "0.1.0"
 description = "forecast_backend"
 authors = [
     {name = "Nikita Savvin", email = "nikita.vsav@gmail.com"},
-    {name = "Anastasia Shahova", email = "nikita.vsav@gmail.com"},
-    {name = "Dmitrii Vasenin", email = "nikita.vsav@gmail.com"},
+    {name = "Dmitrii Vasenin", email = "vasenindmitrij01@gmail.com"},
+    {name = "Anastasia Shahova", email = "anastasia.shakhova1@gmail.com"}
 ]
 dependencies = [
     "pytest>=8.4.0",
