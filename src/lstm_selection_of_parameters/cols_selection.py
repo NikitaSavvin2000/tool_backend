@@ -11,6 +11,8 @@ from tqdm import tqdm
 
 from src.backend.normalization import Time2Vec
 from src.config import logger
+from src.utils.possible_forecast_date import calculate_time_interval
+
 
 
 home_path = os.getcwd()
@@ -85,19 +87,6 @@ def make_predictions(x_input, x_future, points_per_call, model):
         remaining_horizon -= current_points_to_predict
 
     return predict_values
-
-
-def calculate_time_interval(df: pd.DataFrame, time_column: str) -> int:
-    """
-    Вычисляет средний временной интервал в секундах между записями.
-
-    :param df: DataFrame с временными метками
-    :param time_column: Название колонки с временными метками
-    :return: Средний временной интервал в минутах
-    """
-    df[time_column] = pd.to_datetime(df[time_column])
-    time_interval = df[time_column].diff().dt.total_seconds().mean()
-    return time_interval
 
 
 def forecast_LSTM_user(

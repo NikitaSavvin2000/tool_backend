@@ -1,13 +1,11 @@
 #src/services/feature_selection
 import pandas as pd
-import numpy as np
 import yaml
 
 from tqdm import tqdm
 from typing import List, Dict
 from pathlib import Path
 from src.normalization.time2vec import Time2Vec
-from src.processing.data_processing import calculate_time_interval
 from src.models.xgboost_model import forecast_XGBoost_sistem
 from src.utils.metrics import calculate_metrics
 

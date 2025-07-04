@@ -1,15 +1,13 @@
 import os
 import re
-import numpy as np
 import pandas as pd
-import json
 
-from dateutil import parser
 from src.backend.xgb import forecast_XGBoost
 from src.backend.normalization import Time2Vec
 from datetime import datetime
-from fastapi import HTTPException
 from fastapi.responses import JSONResponse
+from src.utils.possible_forecast_date import calculate_time_interval
+
 
 
 home_path = os.getcwd()
@@ -24,19 +22,6 @@ MODEL_ARCHITECTURE_PARAMS = {
     "min_child_weight": 5,
     "booster": "gbtree"
 }
-
-
-def calculate_time_interval(df: pd.DataFrame, time_column: str) -> int:
-    """
-    Вычисляет средний временной интервал в минутах между записями.
-
-    :param df: DataFrame с временными метками
-    :param time_column: Название колонки с временными метками
-    :return: Средний временной интервал в минутах
-    """
-    df[time_column] = pd.to_datetime(df[time_column])
-    time_interval = df[time_column].diff().dt.total_seconds().mean() / 60
-    return round(time_interval)
 
 
 def all_available_forecast(

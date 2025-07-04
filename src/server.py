@@ -1,17 +1,39 @@
-# src/server.py
-from fastapi import FastAPI
-from src.api.v1.router import router as v1_router
-from routers.xgboost_router import router as xgboost_router
+import os
+import uvicorn
+import pandas as pd
+from dotenv import load_dotenv
+
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
+
 from src.routers import router as api_router
 from src.config import logger, public_or_local
 
-logger.info("Starting microservice indicators")
+load_dotenv()
 
-app = FastAPI(docs_url="/backend/v1/", openapi_url='/backend/v1/openapi.json')
+logger.info("Starting microservice main forecast")
 
-# CORS middleware
-from fastapi.middleware.cors import CORSMiddleware
 origins = ["http://localhost", "http://77.37.136.11"] if public_or_local == "LOCAL" else ["http://77.37.136.11"]
+
+security = HTTPBearer()
+tokens_link = os.getenv("TOKEN_LIST")
+tokens_df = pd.read_csv(tokens_link)
+VALID_TOKENS = tokens_df[tokens_df["source"] == "tool_backend"]["token"].tolist()
+
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    if token not in VALID_TOKENS:
+        raise HTTPException(status_code=401, detail="Unauthorized. To get access, contact @SavvinNikita on Telegram.")
+    return token
+
+docs_url= "/docs"
+app = FastAPI(
+    docs_url=docs_url,
+    dependencies=[Depends(verify_token)]
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -20,16 +42,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Подключаем маршруты
-# app.include_router(v1_router, prefix="/backend/v1")
 app.include_router(api_router)
+
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the indicators System API"}
+    return {"message": "Welcome to the Horizon System API"}
+
 
 if __name__ == "__main__":
-    import uvicorn
     port = 7071
-    print(f'Documentation available at http://0.0.0.0:{port}/backend/v1/')
-    uvicorn.run("server:app", host="0.0.0.0", port=port, workers=1, log_level="debug", timeout_keep_alive=3600*2)
+    print(f'Documentation available at http://0.0.0.0:{port}{docs_url}')
+    uvicorn.run("server:app", host="0.0.0.0", port=port, workers=2, log_level="debug")
