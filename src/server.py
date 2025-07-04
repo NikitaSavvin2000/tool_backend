@@ -7,6 +7,9 @@ from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import Request
+from starlette.responses import JSONResponse
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from src.backend.metrix import metrix_all
 from src.backend.forecast import forecast
@@ -45,8 +48,6 @@ example_df_json_short = example_df_short.to_dict(orient="records")
 example_df_json_long = example_df_long.to_dict(orient="records")
 
 
-
-
 if public_or_local == 'LOCAL':
     url = 'http://localhost'
 else:
@@ -56,14 +57,8 @@ origins = [
     url
 ]
 docs_url = "/backend/v1/"
-app = FastAPI(docs_url=docs_url, openapi_url='/backend/v1/openapi.json')
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+openapi_url = '/backend/v1/openapi.json'
+
 
 tokens_link = os.getenv("TOKEN_LIST")
 
@@ -71,19 +66,25 @@ tokens_df = pd.read_csv(tokens_link)
 
 VALID_TOKENS = tokens_df[tokens_df["source"] == "tool_backend"]["token"].tolist()
 
-class TokenAuthMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        auth = request.headers.get("Authorization")
-        if not auth or not auth.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Unauthorized")
-        token = auth.split(" ")[1]
-        if token not in VALID_TOKENS:
-            raise HTTPException(status_code=401, detail="Unauthorized")
-        response = await call_next(request)
-        return response
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+security = HTTPBearer()
 
-app.add_middleware(TokenAuthMiddleware)
-#
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    if token not in VALID_TOKENS:
+        raise HTTPException(status_code=401, detail="Unauthorized. To get access, contact @SavvinNikita on Telegram.")
+    return token
+
+app = FastAPI(docs_url=docs_url, openapi_url=openapi_url, dependencies=[Depends(verify_token)])
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/backend/v1/analyticsdfs")
 async def get_concepts(body: Annotated[
