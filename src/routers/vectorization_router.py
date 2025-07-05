@@ -1,13 +1,28 @@
 import pandas as pd
 from fastapi import APIRouter, Body, HTTPException
-from src.models.schemes import NormalizationRequest
 from src.services.normalization_service import run_normalization
 from src.config import logger
+from src.examples_fastapi.examples import example_not_norm_data
+from pydantic import BaseModel
+from typing import List, Dict
+
 
 router = APIRouter()
 
-@router.post("/normalization")
-async def normalize_data(body: NormalizationRequest = Body(...)):
+class NormalizationRequest(BaseModel):
+    col_time: str
+    col_target: str
+    json_list_df: List[Dict]
+
+
+@router.post("/vectorization")
+async def normalize_data(body: NormalizationRequest = Body(
+    example={
+        "col_time": example_not_norm_data['col_time'],
+        "col_target": example_not_norm_data['col_target'],
+        "json_list_df": example_not_norm_data['json_list_df'],
+    }
+)):
     """
     Эндпоинт для нормализации временного ряда.
 
@@ -63,6 +78,18 @@ async def normalize_data(body: NormalizationRequest = Body(...)):
     try:
         df = pd.DataFrame(body.json_list_df)
         result = run_normalization(df, body.col_time, body.col_target)
+        # TODO:   Когда я писал эту схему видно был не в себе. Такой формат json - это абсурд,
+        #         но на этой схеме уже работает связка с другими микросервисами.
+        #         Позже нужно сделать нормальную схему и поправить ее где она используется.
+        #         Ниже конвертация в нормальный формат.
+
+        # df_like_json = result["df_all_data_norm"]
+        # normalized = []
+        # for i in range(len(next(iter(df_like_json.values())))):
+        #     row = {key: df_like_json[key][i] for key in df_like_json}
+        #     normalized.append(row)
+        # result["df_all_data_norm"] = normalized
+
         return result
     except Exception as e:
         logger.error(e)

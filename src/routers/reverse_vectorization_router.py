@@ -1,13 +1,32 @@
 import pandas as pd
 from fastapi import APIRouter, Body, HTTPException
-from src.models.schemes import NormalizationRequest
-from src.services.normalization_service import run_normalization
+from src.services.normalization_service import run_reverse_normalization
 from src.config import logger
+from src.examples_fastapi.examples import example_reverse_norm_data
+from pydantic import BaseModel
+from typing import List, Dict
+from typing import Annotated, List
+
 
 router = APIRouter()
 
-@router.post("/normalization")
-async def normalize_data(body: NormalizationRequest = Body(...)):
+class ReverseNormalizationRequest(BaseModel):
+    col_time: str
+    col_target: str
+    json_list_norm_df: List[Dict]
+    min_val: float
+    max_val: float
+
+@router.post("/reverse_vectorization")
+async def reverse_vectorization_data(body: Annotated[
+    ReverseNormalizationRequest, Body(
+        example={
+            "col_time": example_reverse_norm_data['col_time'],
+            "col_target": example_reverse_norm_data['col_target'],
+            "json_list_norm_df": example_reverse_norm_data['json_list_norm_df'],
+            "min_val": example_reverse_norm_data['min_val'],
+            "max_val": example_reverse_norm_data['max_val']
+        })]):
     """
     Эндпоинт для нормализации временного ряда.
 
@@ -60,10 +79,29 @@ async def normalize_data(body: NormalizationRequest = Body(...)):
     -------
     - **HTTPException 400**: Если входной DataFrame пустой или произошла ошибка при нормализации.
     """
+
     try:
-        df = pd.DataFrame(body.json_list_df)
-        result = run_normalization(df, body.col_time, body.col_target)
-        return result
-    except Exception as e:
-        logger.error(e)
-        raise HTTPException(status_code=400, detail=str(e))
+        col_time = body.col_time
+        col_target = body.col_target
+        json_list_norm_df = body.json_list_norm_df
+        min_val = body.min_val
+        max_val = body.max_val
+        df = pd.DataFrame(json_list_norm_df)
+
+        if not df.empty:
+            result = run_reverse_normalization(df, col_time, col_target, min_val, max_val)
+            return result
+        else:
+            logger.error("Something happened during creation of the search table")
+            raise HTTPException(
+                status_code=400,
+                detail="Bad Request",
+                headers={"X-Error": "Something happened during creation of the search table"},
+            )
+    except Exception as ApplicationError:
+        logger.error(ApplicationError.__repr__())
+        raise HTTPException(
+            status_code=400,
+            detail="Unknown Error",
+            headers={"X-Error": f"{ApplicationError.__repr__()}"},
+        )

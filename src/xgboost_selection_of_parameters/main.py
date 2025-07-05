@@ -1,12 +1,9 @@
-# src/xgboost_selection_of_parameters/main.py
-
 import pandas as pd
 from src.normalization.time2vec import Time2Vec
-from src.processing.data_processing import calculate_time_interval
-from src.services.feature_selection import col_selection_xgboots, lag_selection_xgboots
+from src.utils.possible_forecast_date import calculate_time_interval
+from src.services.feature_selection import col_selection_xgboots, lag_selection_xgboots, n_estimators_selection_xgboots, learning_rate_selection_xgboots, max_depth_selection_xgboots
 from src.services.hyperparameter_tuning import params_selection_xgboots
 from src.models.xgboost_model import forecast_XGBoost_sistem
-from src.utils.metrics import calculate_metrics
 from src.utils.date_utils import standardize_datetime
 
 # Валидация входных данных
@@ -28,7 +25,7 @@ def user_predict_XGBoost(
 ) -> dict:
     """
     Генерирует прогноз временного ряда с использованием XGBoost.
-    
+
     :param df: Исходный DataFrame с временным рядом.
     :param time_column: Название колонки с временными метками.
     :param col_target: Название целевой переменной.
@@ -40,34 +37,90 @@ def user_predict_XGBoost(
 
     # Стандартизация границ прогнозирования
     forecast_horizon_time = standardize_datetime(forecast_horizon_time)
+    forecast_horizon_time = pd.to_datetime(forecast_horizon_time)
 
     # Выбор оптимальных признаков
-    data_cols = col_selection_xgboots(
-        df_init=df,
-        time_column=time_column,
-        col_target=col_target,
-    )
-    col_for_train = data_cols["col_for_train"]
 
     # Подбор оптимального значения лага
+    default_cols = ['year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
+                    'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
+
     data_lag = lag_selection_xgboots(
         df_init=df,
         time_column=time_column,
         col_target=col_target,
-        cols=col_for_train,
+        cols=default_cols,
     )
     lag = data_lag["best_lag"]
 
-    # Автоматический подбор параметров
-    best_params = params_selection_xgboots(
+    data_cols = col_selection_xgboots(
         df_init=df,
         time_column=time_column,
         col_target=col_target,
-        cols=col_for_train,
         lag=lag
     )
+    col_for_train = data_cols["col_for_train"]
+    best_mape = data_cols["best_mape"]
 
-    # Сохранение оригинального формата временной колонки
+    # Автоматический подбор параметров
+    # best_params = params_selection_xgboots(
+    #     df_init=df,
+    #     time_column=time_column,
+    #     col_target=col_target,
+    #     cols=col_for_train,
+    #     lag=lag
+    # )
+    best_params = {}
+    # model_architecture_params=[{"objective": "reg:squarederror"}],
+
+    model_params = {
+        "objective": "reg:squarederror",
+        "learning_rate": 0.1,
+        "max_depth": 15,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
+        "min_child_weight": 5,
+        "booster": "gbtree",
+        "random_state": 42
+    }
+    # TODO: Блок ниже к доработке, по какой-то причине прогоз становится хуже
+
+    # n_estimators = n_estimators_selection_xgboots(
+    #     df_init=df,
+    #     time_column=time_column,
+    #     col_target=col_target,
+    #     col_for_train=col_for_train,
+    #     model_params=model_params,
+    #     lag=lag
+    # )["n_estimators"]
+    #
+    # model_params["n_estimators"] = n_estimators
+    #
+    # learning_rate = learning_rate_selection_xgboots(
+    #     df_init=df,
+    #     time_column=time_column,
+    #     col_target=col_target,
+    #     col_for_train=col_for_train,
+    #     model_params=model_params,
+    #     lag=lag
+    # )["learning_rate"]
+    #
+    # model_params["learning_rate"] = learning_rate
+    #
+    #
+    # max_depth = max_depth_selection_xgboots(
+    #     df_init=df,
+    #     time_column=time_column,
+    #     col_target=col_target,
+    #     col_for_train=col_for_train,
+    #     model_params=model_params,
+    #     lag=lag
+    # )["max_depth"]
+    #
+    # model_params["max_depth"] = max_depth
+    #
+    best_params["best_params"] = model_params
+
     original_format = df[time_column].copy()
     df.loc[:, time_column] = pd.to_datetime(df[time_column], errors="coerce")
     df = df.sort_values(by=time_column, ascending=True).reset_index(drop=True)
@@ -78,8 +131,8 @@ def user_predict_XGBoost(
     last_known_data = df.iloc[-1][time_column]
     time_point_interval = abs(calculate_time_interval(df, time_column))
 
-    # Создание будущих временных меток
     last_time = df[time_column].iloc[-1]
+
     date_range = pd.date_range(
         start=last_time,
         end=forecast_horizon_time,
@@ -90,11 +143,12 @@ def user_predict_XGBoost(
     df_all_data = pd.concat([df, df_future], ignore_index=True).sort_values(by=time_column, ascending=True).reset_index(drop=True)
     last_known_index = len(df_all_data) - len(date_range)
 
+
     if forecast_horizon_time <= last_time:
         raise ValueError(
             f"Время горизонта ({forecast_horizon_time}) должно быть позже последней известной даты ({last_time})"
         )
-    
+
     if df_all_data.empty:
         raise ValueError("Итоговый DataFrame пуст — невозможно построить прогноз.")
 
@@ -106,11 +160,6 @@ def user_predict_XGBoost(
             f"Невозможно построить прогноз: горизонта ('{forecast_horizon_time}') недостаточно после последней известной даты ('{last_time}')."
         )
 
-    print(">>> df_all_data shape:", df_all_data.shape)
-    print(">>> date_range length:", len(date_range))
-    print(">>> df_all_data[time_column].tail():", df_all_data[time_column].tail())
-
-    # Нормализация данных
     t2v = Time2Vec(col_time=time_column, col_target=col_target)
     df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
 
@@ -120,8 +169,6 @@ def user_predict_XGBoost(
             f"Недостаточно данных для прогноза: доступно {n_future_points} точек, но требуется как минимум {lag + 1}."
         )
 
-
-    # Прогнозирование
     df_true_all, df_pred_vector = forecast_XGBoost_sistem(
         col_target=col_target,
         time_column=time_column,
@@ -134,14 +181,6 @@ def user_predict_XGBoost(
 
     if df_pred_vector.empty or df_pred_vector.shape[0] == 0:
         raise ValueError("Модель не вернула предсказания. Возможно, недостаточно данных после применения лага.")
-    
-    print(">>> TEST: lag =", lag)
-    print(">>> TEST: n_future_points =", n_future_points)
-
-    print(">>> df_pred_vector shape:", df_pred_vector.shape)
-    print(">>> last_known_index:", last_known_index)
-    print(">>> df_all_data_norm shape:", df_all_data_norm.shape)
-
 
     # Обратная нормализация прогнозов
     df_real_predict = t2v.light_reverse_vectorization(df_pred_vector, min_val, max_val)
@@ -155,12 +194,6 @@ def user_predict_XGBoost(
     })
     df_real_predict = pd.concat([new_row, df_real_predict]).reset_index(drop=True)
 
-    print("Last datetime:", last_time)
-    print("Forecast datetime:", forecast_horizon_time)
-    print("Generated date range:", date_range)
-    print("Any NaT in df?", df[time_column].isna().sum())
-
-
     # Стандартизация временных меток
     df[time_column] = df[time_column].apply(lambda x: standardize_datetime(str(x)))
 
@@ -170,6 +203,9 @@ def user_predict_XGBoost(
         "map_data": {
             "data": {
                 "predictions": predictions,
+            },
+            "errors": {
+                "mape": best_mape
             },
             "last_know_data": last_known_data,
             "title": f"Реальный прогноз {col_target}",

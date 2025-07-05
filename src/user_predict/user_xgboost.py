@@ -4,9 +4,7 @@ from src.xgboost_selection_of_parameters.cols_selection import col_selection_xgb
 import numpy as np
 import pandas as pd
 from src.backend.xgb import forecast_XGBoost_user
-
-
-
+from src.utils.possible_forecast_date import calculate_time_interval
 
 
 home_path = os.getcwd()
@@ -93,18 +91,6 @@ def forecast_XGBoost(
             logger.error(f"DataFrame '{name}' contains None values at rows: {none_indices}")
 
     return df_train, df_real_predict
-
-def calculate_time_interval(df: pd.DataFrame, time_column: str) -> int:
-    """
-    Вычисляет средний временной интервал в минутах между записями.
-
-    :param df: DataFrame с временными метками
-    :param time_column: Название колонки с временными метками
-    :return: Средний временной интервал в минутах
-    """
-    df[time_column] = pd.to_datetime(df[time_column])
-    time_interval = df[time_column].diff().dt.total_seconds().mean() / 60
-    return round(time_interval)
 
 
 def all_available_forecast(

@@ -28,17 +28,6 @@ def create_x_input(df_train: pd.DataFrame, n_steps: int) -> np.ndarray:
     """
     return df_train.iloc[-n_steps:].values
 
-def calculate_time_interval(df: pd.DataFrame, time_column: str) -> int:
-    """
-    Вычисляет средний временной интервал в секундах между записями.
-    
-    :param df: DataFrame с временными метками.
-    :param time_column: Название колонки с временными метками.
-    :return: Средний временной интервал в секундах.
-    """
-    df[time_column] = pd.to_datetime(df[time_column])
-    time_interval = df[time_column].diff().dt.total_seconds().mean()
-    return int(time_interval)
 
 def clean_column(val: str) -> float:
     """

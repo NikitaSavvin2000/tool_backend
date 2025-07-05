@@ -12,6 +12,8 @@ import plotly.graph_objects as go
 
 from src.backend.normalization import Time2Vec
 from src.config import logger
+from src.utils.possible_forecast_date import calculate_time_interval
+
 
 
 home_path = os.getcwd()
@@ -298,21 +300,6 @@ def forecast_XGBoost_user(
             logger.error(f"DataFrame '{name}' contains None values at rows: {none_indices}")
 
     return df_train, df_real_predict
-
-
-
-def calculate_time_interval(df: pd.DataFrame, time_column: str) -> int:
-    """
-    Вычисляет средний временной интервал в секундах между записями.
-
-    :param df: DataFrame с временными метками
-    :param time_column: Название колонки с временными метками
-    :return: Средний временной интервал в минутах
-    """
-    df[time_column] = pd.to_datetime(df[time_column])
-    time_interval = df[time_column].diff().dt.total_seconds().mean()
-    return time_interval
-
 
 
 def col_selection_xgboots(

@@ -3,7 +3,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from src.api.v1.benchmark_metrics import router as benchmark_router
+
+from api.v1.benchmark_metrics import router as benchmark_router
 
 app = FastAPI()
 app.include_router(benchmark_router, prefix="/api/v1/benchmark-metrics")
