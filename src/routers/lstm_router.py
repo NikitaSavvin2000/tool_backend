@@ -4,7 +4,7 @@ import logging
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict
-from src.xgboost_selection_of_parameters.main import user_predict_XGBoost
+from src.lstm_selection_of_parameters.main import user_predict_LSTM
 import traceback
 
 logging.basicConfig(level=logging.INFO)
@@ -27,17 +27,17 @@ class PredictRequest(BaseModel):
     forecast_horizon_time: str
 
 
-@router.post("/predict-xgboost", response_model=dict)
+@router.post("/predict-lstm", response_model=dict)
 async def predict_xgboost(request: PredictRequest = Body(...,
-     example={
-         "time_column": "time",
-         "col_target": "load_consumption",
-         "forecast_horizon_time": "2022-09-10 05:55:00",
-         "df": example_df_json_long
-     }
-)):
+                                                         example={
+                                                             "time_column": "time",
+                                                             "col_target": "load_consumption",
+                                                             "forecast_horizon_time": "2022-09-10 05:55:00",
+                                                             "df": example_df_json_long
+                                                         }
+                                                         )):
     """
-    Генерирует прогноз временного ряда с использованием pipeline Horizon на базе XGBoost.
+    Генерирует прогноз временного ряда с использованием pipeline Horizon на базе LSTmM.
 
     Описание:
     ----------
@@ -120,11 +120,11 @@ async def predict_xgboost(request: PredictRequest = Body(...,
 
 
     logger.info("Received request for prediction")
-    
+
     try:
         df = pd.DataFrame(request.df)
 
-        result = await user_predict_XGBoost(
+        result = await user_predict_LSTM(
             df=df,
             time_column=request.time_column,
             col_target=request.col_target,

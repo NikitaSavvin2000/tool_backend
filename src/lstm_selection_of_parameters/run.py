@@ -2,7 +2,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import os
 
-from src.lstm_selection_of_parameters.cols_selection import user_predict_LSTM, calculate_metrics
+from src.lstm_selection_of_parameters.feature_selection import user_predict_LSTM, calculate_metrics
 home_path = os.getcwd()
 
 

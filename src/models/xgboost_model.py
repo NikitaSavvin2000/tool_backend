@@ -27,6 +27,7 @@ def forecast_XGBoost_sistem(
     col_target, time_column, df_all_data_norm, last_known_index, lag,
     model_architecture_params, col_for_train
 ):
+
     # Преобразование временной колонки
     df_all_data_norm[time_column] = pd.to_datetime(df_all_data_norm[time_column], errors='coerce')
     df_all_data_norm = df_all_data_norm.sort_values(by=time_column).reset_index(drop=True)
@@ -48,15 +49,9 @@ def forecast_XGBoost_sistem(
     values = df_train[col_for_train].values
     x_input = create_x_input(df_train, lag)
     X, y = split_sequence(values, lag)
-    
-    # Проверка формы данных
-    print(f"Shape of X before reshape: {X.shape}")
-    print(f"Shape of y: {y.shape}")
-    
-    # Исправление формы X
+
     X = X.reshape(X.shape[0], -1)
-    print(f"Shape of X after reshape: {X.shape}")
-    
+
     # Преобразование в числовой тип
     X = np.array(X, dtype=float)
     y = np.array(y, dtype=float)

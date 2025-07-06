@@ -25,7 +25,7 @@ class ConvertRequest(BaseModel):
     time_column: str
 
 
-@router.post("/possible_date/", response_model=dict)
+@router.post("/possible_date", response_model=dict)
 async def func_generate_possible_date(body: Annotated[
     ConvertRequest, Body(
         example={

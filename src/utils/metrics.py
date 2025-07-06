@@ -12,9 +12,6 @@ def calculate_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> tuple:
     """
     # Среднее значение истинных данных
     y_true_mean = np.mean(y_true)
-    
-    print(f"Shape of y_true: {y_true.shape}")
-    print(f"Shape of y_pred: {y_pred.shape}")
     assert len(y_true) == len(y_pred), f"Length mismatch: y_true={len(y_true)}, y_pred={len(y_pred)}"
 
     # Root Mean Squared Error (RMSE)
@@ -27,7 +24,7 @@ def calculate_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> tuple:
     
     # Mean Absolute Error (MAE)
     mae = mean_absolute_error(y_true, y_pred)
-    
+
     # Mean Absolute Percentage Error (MAPE)
     # mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100 if np.all(y_true != 0) else np.nan
     smape = 100 * np.mean(2 * np.abs(y_pred - y_true) / (np.abs(y_pred) + np.abs(y_true)))

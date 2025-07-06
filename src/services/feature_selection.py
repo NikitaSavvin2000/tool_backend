@@ -1,13 +1,17 @@
-#src/services/feature_selection
-import pandas as pd
-import yaml
-
-from tqdm import tqdm
-from typing import List, Dict
+import asyncio
+import logging
 from pathlib import Path
-from src.normalization.time2vec import Time2Vec
+from typing import Dict, List
+
+import pandas as pd
+from tqdm import tqdm
+
 from src.models.xgboost_model import forecast_XGBoost_sistem
+from src.normalization.time2vec import Time2Vec
 from src.utils.metrics import calculate_metrics
+from src.utils.possible_cols import load_possible_cols
+
+logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # Корень проекта
 CONFIG_DIR = PROJECT_ROOT / "src" / "configuration"
@@ -25,18 +29,8 @@ model_architecture_params = [{
     "booster": "gbtree"
 }]
 
-def load_possible_cols():
-    config_path = CONFIG_DIR / "possible_cols.yaml"
-    try:
-        with open(config_path, 'r') as file:
-            config = yaml.safe_load(file)
-        return config.get('all_possible_cols', [])
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Config file not found at {config_path}")
-    except yaml.YAMLError as e:
-        raise ValueError(f"Error parsing YAML file: {e}")
 
-def col_selection_xgboots(
+async def col_selection_xgboots(
         df_init: pd.DataFrame,
         time_column: str,
         col_target: str,
@@ -44,7 +38,7 @@ def col_selection_xgboots(
 ) -> Dict[str, List[str]]:
     """
     Выполняет выбор оптимальных признаков для прогнозирования с использованием XGBoost.
-    
+
     :param df_init: Исходный DataFrame.
     :param time_column: Название колонки с временными метками.
     :param col_target: Название целевой переменной.
@@ -80,7 +74,9 @@ def col_selection_xgboots(
     df_evaluation.loc[:, time_column] = pd.to_datetime(df_evaluation[time_column], errors='coerce')
     df_evaluation = df_evaluation.sort_values(by=time_column).reset_index(drop=True)
 
-    for col in tqdm(all_possible_cols):
+    # for col in tqdm(all_possible_cols):
+    best_errors = {}
+    for col in tqdm(all_possible_cols, bar_format='{l_bar}{n_fmt}/{total_fmt} ({percentage:3.0f}%)'):
         current_cols = col_for_train + [col]
         df_true_all, df_pred_vector = forecast_XGBoost_sistem(
             col_target=col_target,
@@ -98,15 +94,21 @@ def col_selection_xgboots(
 
         y_true = df_evaluation[col_target].reset_index(drop=True)
         y_pred = df_real_predict[col_target].reset_index(drop=True)
-        _, _, _, mape, _ = calculate_metrics(y_true=y_true, y_pred=y_pred)
+        rmse, r2, mae, mape, wmape = calculate_metrics(y_true=y_true, y_pred=y_pred)
 
         print(f" BEST MAPE = {best_mape} BEST COLS = {col_for_train} | CURRENT MAPE = {mape} | CUR COLS =  {current_cols}")
         if mape < best_mape:
             best_mape = mape
             col_for_train.append(col)
+            best_errors["RMSE"] = rmse
+            best_errors["R2"] = r2
+            best_errors["MAE"] = mae
+            best_errors["MAPE"] = mape
+            best_errors["WMAPE"] = wmape
 
-    return {"col_for_train": col_for_train, "best_mape": best_mape}
 
+
+    return {"col_for_train": col_for_train, "errors": best_errors}
 
 
 def n_estimators_selection_xgboots(
@@ -317,21 +319,16 @@ def max_depth_selection_xgboots(
     return {"max_depth": best_depth, "best_mape": best_mape}
 
 
-
-
-def lag_selection_xgboots(
+async def lag_selection_xgboots(
         df_init: pd.DataFrame,
         time_column: str,
         col_target: str,
         cols: List[str]
 ) -> Dict[str, int]:
-    """
-    Выполняет подбор оптимального значения лага для прогнозирования.
-    """
     if len(df_init) < 2:
         raise ValueError("Для подбора лага требуется минимум 2 строки во входных данных.")
 
-    df_init.loc[:, time_column] = pd.to_datetime(df_init[time_column], errors="coerce")
+    df_init[time_column] = pd.to_datetime(df_init[time_column], errors="coerce")
     df_init = df_init.sort_values(by=time_column).reset_index(drop=True)
 
     optimal_evaluation_points = min(300, len(df_init) // 2)
@@ -347,29 +344,33 @@ def lag_selection_xgboots(
     df_all_data = pd.concat([df, df_empty.dropna(how="all")], ignore_index=True)
     df_all_data = df_all_data.sort_values(by=time_column).reset_index(drop=True)
 
+    print(f'[INFO] Time2Vec is working')
+
     t2v = Time2Vec(col_time=time_column, col_target=col_target)
     df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
+
+    df_evaluation[time_column] = pd.to_datetime(df_evaluation[time_column], errors="coerce")
+    df_evaluation = df_evaluation.sort_values(by=time_column).reset_index(drop=True)
+
+    max_lag = min(len(df) - 1, MAX_SEARCH_LAG)
 
     best_lag = None
     best_mape = float('inf')
 
-    df_evaluation.loc[:, time_column] = pd.to_datetime(df_evaluation[time_column], errors="coerce")
-    df_evaluation = df_evaluation.sort_values(by=time_column).reset_index(drop=True)
-
-    max_lag = min(len(df) - 1, MAX_SEARCH_LAG)
-    for lag in tqdm(range(1, max_lag + 1)):
-        df_true_all, df_pred_vector = forecast_XGBoost_sistem(
-            col_target=col_target,
-            time_column=time_column,
-            df_all_data_norm=df_all_data_norm,
-            last_known_index=len(df_all_data) - optimal_evaluation_points,
-            lag=lag,
-            model_architecture_params=model_architecture_params,
-            col_for_train=cols
+    async def evaluate_lag(lag: int):
+        df_true_all, df_pred_vector = await asyncio.to_thread(
+            forecast_XGBoost_sistem,
+            col_target,
+            time_column,
+            df_all_data_norm,
+            len(df_all_data) - optimal_evaluation_points,
+            lag,
+            model_architecture_params,
+            cols
         )
 
         if df_pred_vector.size == 0:
-            raise ValueError("Forecast returned empty predictions. Check the input data and model configuration.")
+            raise ValueError("Forecast returned empty predictions.")
 
         df_real_predict = t2v.light_reverse_vectorization(df_pred_vector, min_val, max_val)
         df_real_predict[col_target] = df_real_predict[col_target].astype('float64')
@@ -379,9 +380,19 @@ def lag_selection_xgboots(
         y_true = df_evaluation[col_target].reset_index(drop=True)
         y_pred = df_real_predict[col_target].reset_index(drop=True)
 
-        _, _, _, mape, _ = calculate_metrics(y_true=y_true, y_pred=y_pred)
-        print(f"BEST MAPE = {best_mape}  BEST LAG = {best_lag} | CURRENT MAPE = {mape} | CURRENT LAG = {lag}")
+        _, _, _, mape, _ = await asyncio.to_thread(calculate_metrics, y_true, y_pred)
 
+        print(f"CURRENT MAPE = {mape} | CURRENT LAG = {lag}")
+        logger.info(f"CURRENT MAPE = {mape} | CURRENT LAG = {lag}")
+
+        return lag, mape
+
+    print(f'[INFO] tasks is working')
+
+    tasks = [evaluate_lag(lag) for lag in range(1, max_lag + 1)]
+    results = await asyncio.gather(*tasks)
+
+    for lag, mape in results:
         if mape < best_mape:
             best_mape = mape
             best_lag = lag

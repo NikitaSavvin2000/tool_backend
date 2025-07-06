@@ -78,17 +78,6 @@ async def normalize_data(body: NormalizationRequest = Body(
     try:
         df = pd.DataFrame(body.json_list_df)
         result = run_normalization(df, body.col_time, body.col_target)
-        # TODO:   Когда я писал эту схему видно был не в себе. Такой формат json - это абсурд,
-        #         но на этой схеме уже работает связка с другими микросервисами.
-        #         Позже нужно сделать нормальную схему и поправить ее где она используется.
-        #         Ниже конвертация в нормальный формат.
-
-        # df_like_json = result["df_all_data_norm"]
-        # normalized = []
-        # for i in range(len(next(iter(df_like_json.values())))):
-        #     row = {key: df_like_json[key][i] for key in df_like_json}
-        #     normalized.append(row)
-        # result["df_all_data_norm"] = normalized
 
         return result
     except Exception as e:

@@ -1,18 +1,19 @@
-#src/xgboost_selection_of_parameters/cols_selection
 import os
 
-import pandas as pd
-import psycopg2
 import tensorflow as tf
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from tqdm import tqdm
 from xgboost import XGBRegressor
 
-import plotly.graph_objects as go
 
 from src.backend.normalization import Time2Vec
 from src.config import logger
 from src.utils.possible_forecast_date import calculate_time_interval
+
+import pandas as pd
+import numpy as np
+from xgboost import DMatrix, cv
+import optuna
 
 
 
@@ -338,7 +339,7 @@ def col_selection_xgboots(
         "week_sin", "week_cos", "month_sin", "month_cos",
         "part_of_day", "is_night", "is_weekend", "day_of_year",
         "is_working_hours", "season", "season_sin", "season_cos",
-        "quarter", "quarter_sin", "quarter_cos", "moon_phase",
+        "quarter", "quarter_sin", "quarter_cos"
     ]
     #
     # all_possible_cols = [
@@ -416,28 +417,14 @@ def lag_selection_xgboots(
     df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
     df_all_data_norm = df_all_data_norm.sort_values(by=time_column).reset_index(drop=True)
 
-    # cols = [
-    #     "year", "month", "day", "week", "day_of_week", "hour", "minute", "second",
-    #     "hour_sin", "hour_cos", "day_of_week_sin", "day_of_week_cos",
-    #     "week_sin", "week_cos", "month_sin", "month_cos",
-    #     "part_of_day", "is_night", "is_weekend", "day_of_year",
-    #     "is_working_hours", "season", "season_sin", "season_cos",
-    #     "quarter", "quarter_sin", "quarter_cos", "moon_phase",
-    # ]
     best_lag = None
-    # cols = [
-    #     "year", "month"
-    # ]
 
     lag_list = range(1, 22)
-    # lag_list = range(1, 2)
-
 
     best_mape = float('inf')
 
     df_evaluation[time_column] = pd.to_datetime(df_evaluation[time_column], errors='coerce')
     df_evaluation = df_evaluation.sort_values(by=time_column).reset_index(drop=True)
-
 
     for lag in tqdm(lag_list):
         df_true_all, df_pred_vector = forecast_XGBoost_sistem(
@@ -473,13 +460,6 @@ def lag_selection_xgboots(
     print(result)
 
     return result
-
-
-
-import pandas as pd
-import numpy as np
-from xgboost import DMatrix, cv
-import optuna
 
 def params_selection_xgboots(
         df_init: pd.DataFrame,
@@ -690,7 +670,6 @@ def user_predict_XGBoost(
 
     df_all_data = df_all_data.sort_values(by=time_column, ascending=True).reset_index(drop=True)
 
-
     last_known_index = len(df_all_data) - len(date_range)
 
     t2v = Time2Vec(col_time=time_column, col_target=col_target)
@@ -758,125 +737,3 @@ def user_predict_XGBoost(
             },
         }
     }
-
-
-
-
-# "Morocco Zone 1": "https://docs.google.com/spreadsheets/d/e/2PACX-1vSgwB47qVFZcr1Aq--UWxZ6fDi9CGLZm-1i8QoMgfdaHUbV8EqSli3ayPxYYxD8kqfYYHD41uuNxbjZ/pub?gid=1952392108&single=true&output=csv",
-#     "Morocco Zone 2": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQT1DfqAB5Yec8MIQ_E5A8w-SXNcRmTwbXsv2W-ZT1ZcXN_G83BHlb6QBgnWkO-MpH3oVgfLoE0SnLx/pub?gid=1952392108&single=true&output=csv",
-#     "Morocco Zone 3": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQSHw5k7n3_RM6ksGbvdQJsa1i9-zF-18CFLCFnXFkCxQwqLcQ4Wu2_8EF2H1lF02ih2NLL9BDecFzQ/pub?gid=1952392108&single=true&output=csv",
-#
-df_data = pd.read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vQJrlRwIHeCwf3DUiu_WkG_bwgKcyOmXKv8aKN5GSjTbqCvae9OiTSkHoaMpMfOstTvRvGnj6-3gtRk/pub?gid=1448488998&single=true&output=csv")
-
-def fetch_data_from_db():
-    table_name = 'load_consumption'
-    measurement = 'load_consumption'
-
-    DB_PARAMS = {
-        "dbname": "mydb",
-        "user": "myuser",
-        "password": "mypassword",
-        "host": "77.37.136.11",
-        "port": 8083
-    }
-
-
-    conn = psycopg2.connect(**DB_PARAMS)
-    cur = conn.cursor()
-
-    select_query = f"""
-    SELECT * FROM {table_name} ORDER BY datetime;
-    """
-
-    cur.execute(select_query)
-    rows = cur.fetchall()
-
-    df_result = pd.DataFrame(rows, columns=["datetime", measurement])
-    df_result["datetime"] = df_result["datetime"].dt.tz_localize(None)
-
-    cur.close()
-    conn.close()
-    return df_result
-
-
-# df_data = fetch_data_from_db()
-
-def clean_column(val):
-    if isinstance(val, str):
-        val = val.replace('%', '').replace('M', '').replace(',', '.')
-    try:
-        return float(val)
-    except:
-        return None
-
-
-time_column = 'День'
-col_target = 'Сумма заказов минус комиссия WB, руб.'
-df_data = df_data[[time_column, col_target]]
-df_data = df_data.dropna()
-df_data[time_column] = pd.to_datetime(df_data[time_column], format="%m/%d/%Y")
-df_data[time_column] = df_data[time_column].dt.strftime("%Y-%m-%d %H:%M:%S")
-df_data[col_target] = df_data[col_target].str.replace(",", ".").astype(float)
-
-print(df_data)
-
-forecast_horizon_time = '2025-06-16 00:00:00'
-
-df_to_predict = df_data.iloc[:-90]
-df_test = df_data.iloc[-90:]
-
-predict_dict = user_predict_XGBoost(
-    df=df_to_predict,
-    time_column=time_column,
-    col_target=col_target,
-    forecast_horizon_time=forecast_horizon_time
-)
-#
-predictions= predict_dict["map_data"]["data"]["predictions"]
-df_predictions = pd.DataFrame(predictions)
-df_predictions = df_predictions.iloc[1:]
-
-print('=============================== ИТОГ - df_test')
-print(df_test)
-print('=============================== ИТОГ - df_predictions')
-
-print(df_predictions)
-
-y_true = df_test[col_target].reset_index(drop=True)
-y_pred = df_predictions[col_target].reset_index(drop=True)
-
-rmse, r2, mae, mape, wmape = calculate_metrics(y_true=y_true, y_pred=y_pred)
-
-
-print('=============== METRIX =================')
-print(f'MAPE = {mape}')
-print(f'R2 = {r2}')
-print(f'RMSE = {rmse}')
-print(f'MAE = {mae}')
-print(f'WMAPE = {wmape}')
-print('========================================')
-
-fig = go.Figure()
-
-fig.add_trace(go.Scatter(
-    y=y_true,
-    mode='lines',
-    name='Реальные данные',
-    line=dict(color='blue')
-))
-
-fig.add_trace(go.Scatter(
-    y=y_pred,
-    mode='lines',
-    name='Прогноз',
-    line=dict(color='orange')
-))
-
-fig.update_layout(
-    title='Сравнение прогноза и реальных значений',
-    xaxis_title='Индекс',
-    yaxis_title='Значение',
-    legend=dict(x=0, y=1)
-)
-
-fig.show()

@@ -1,6 +1,6 @@
 import os
 from src.backend.normalization import Time2Vec
-from src.xgboost_selection_of_parameters.cols_selection import col_selection_xgboots
+from src.xgboost_selection_of_parameters.feature_selection import col_selection_xgboots
 import numpy as np
 import pandas as pd
 from src.backend.xgb import forecast_XGBoost_user

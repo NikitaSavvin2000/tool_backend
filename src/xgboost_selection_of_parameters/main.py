@@ -17,7 +17,7 @@ def validate_input_data(df: pd.DataFrame) -> None:
     if len(df) < 2:
         raise ValueError("Входной временной ряд должен содержать минимум 2 наблюдения.")
 
-def user_predict_XGBoost(
+async def user_predict_XGBoost(
     df: pd.DataFrame,
     time_column: str,
     col_target: str,
@@ -44,8 +44,8 @@ def user_predict_XGBoost(
     # Подбор оптимального значения лага
     default_cols = ['year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
                     'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
-
-    data_lag = lag_selection_xgboots(
+    print('[INFO] >>>> lag_selection_xgboots is working')
+    data_lag = await lag_selection_xgboots(
         df_init=df,
         time_column=time_column,
         col_target=col_target,
@@ -53,14 +53,14 @@ def user_predict_XGBoost(
     )
     lag = data_lag["best_lag"]
 
-    data_cols = col_selection_xgboots(
+    data_cols = await col_selection_xgboots(
         df_init=df,
         time_column=time_column,
         col_target=col_target,
         lag=lag
     )
     col_for_train = data_cols["col_for_train"]
-    best_mape = data_cols["best_mape"]
+    errors = data_cols["errors"]
 
     # Автоматический подбор параметров
     # best_params = params_selection_xgboots(
@@ -204,9 +204,7 @@ def user_predict_XGBoost(
             "data": {
                 "predictions": predictions,
             },
-            "errors": {
-                "mape": best_mape
-            },
+            "errors": errors,
             "last_know_data": last_known_data,
             "title": f"Реальный прогноз {col_target}",
             "legend": {

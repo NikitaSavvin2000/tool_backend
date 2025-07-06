@@ -11,7 +11,7 @@ LOG_DIR.mkdir(exist_ok=True)
 FORMAT = "[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s"
 DATE_FMT = "%Y-%m-%d %H:%M:%S"
 
-def setup_logger(name: str = "microservice_indicators", level=logging.INFO) -> logging.Logger:
+def setup_logger(name: str = "horizon_forecast", level=logging.INFO) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(level)
 

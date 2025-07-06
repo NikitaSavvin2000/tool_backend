@@ -1,6 +1,7 @@
 import os
 import uvicorn
 import pandas as pd
+import multiprocessing
 from dotenv import load_dotenv
 
 from fastapi import FastAPI, Depends, HTTPException
@@ -15,6 +16,10 @@ load_dotenv()
 logger.info("Starting microservice main forecast")
 
 origins = ["http://localhost", "http://77.37.136.11"] if public_or_local == "LOCAL" else ["http://77.37.136.11"]
+
+workers = multiprocessing.cpu_count()
+
+print(f"[WORKERS] Count workers = {workers}")
 
 security = HTTPBearer()
 tokens_link = os.getenv("TOKEN_LIST")
@@ -53,4 +58,4 @@ def read_root():
 if __name__ == "__main__":
     port = 7071
     print(f'Documentation available at http://0.0.0.0:{port}{docs_url}')
-    uvicorn.run("server:app", host="0.0.0.0", port=port, workers=2, log_level="debug")
+    uvicorn.run("server:app", host="0.0.0.0", port=port, workers=workers, log_level="debug")
