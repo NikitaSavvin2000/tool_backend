@@ -162,6 +162,7 @@ async def user_predict_XGBoost(
 
     t2v = Time2Vec(col_time=time_column, col_target=col_target)
     df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
+    print(df_all_data)
 
     n_future_points = df_all_data_norm.shape[0] - last_known_index
     if n_future_points <= lag:
@@ -184,6 +185,9 @@ async def user_predict_XGBoost(
 
     # Обратная нормализация прогнозов
     df_real_predict = t2v.light_reverse_vectorization(df_pred_vector, min_val, max_val)
+    print("df_real_predict = t2v.light_reverse_vectorization(df_pred_vector, min_val, max_val)")
+    print(df_all_data)
+
     df_real_predict[time_column] = date_range
     df_real_predict = df_real_predict.reset_index(drop=True)
 
