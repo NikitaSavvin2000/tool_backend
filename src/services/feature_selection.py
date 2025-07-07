@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # Корень проекта
 CONFIG_DIR = PROJECT_ROOT / "src" / "configuration"
 
-MAX_SEARCH_LAG = 21  # Максимальный лаг для поиска
+MAX_SEARCH_LAG = 10  # Максимальный лаг для поиска
 
 model_architecture_params = [{
     "objective": "reg:squarederror",
@@ -96,7 +96,9 @@ def col_selection_xgboots(
         y_pred = df_real_predict[col_target].reset_index(drop=True)
         rmse, r2, mae, mape, wmape = calculate_metrics(y_true=y_true, y_pred=y_pred)
 
-        print(f" BEST MAPE = {best_mape} BEST COLS = {col_for_train} | CURRENT MAPE = {mape} | CUR COLS =  {current_cols}")
+        print(f">>> BEST MAPE = {round(best_mape, 3)} BEST COLS = {col_for_train} | CURRENT MAPE = {round(mape, 3)} | CUR COLS =  {current_cols}")
+        logger.info(f">>> BEST MAPE = {round(best_mape, 3)} BEST COLS = {col_for_train} | CURRENT MAPE = {round(mape, 3)} | CUR COLS =  {current_cols}")
+
         if mape < best_mape:
             best_mape = mape
             col_for_train.append(col)
@@ -463,8 +465,8 @@ def lag_selection_xgboots(
 
         _, _, _, mape, _ = calculate_metrics(y_true, y_pred)
 
-        print(f"CURRENT MAPE = {mape}  CURRENT LAG = {lag} | BEST MAPE = {best_mape} BEST LAG = {best_lag}")
-        logger.info(f"CURRENT MAPE = {mape} | CURRENT LAG = {lag}")
+        print(f">>> CURRENT MAPE = {round(mape, 3)}  CURRENT LAG = {lag} | BEST MAPE = {round(best_mape, 3)} BEST LAG = {best_lag}")
+        logger.info(f">>> CURRENT MAPE = {round(mape, 3)}  CURRENT LAG = {lag} | BEST MAPE = {round(best_mape, 3)} BEST LAG = {best_lag}")
 
         if mape < best_mape:
             best_mape = mape

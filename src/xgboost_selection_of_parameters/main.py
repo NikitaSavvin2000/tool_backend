@@ -5,6 +5,8 @@ from src.services.feature_selection import col_selection_xgboots, lag_selection_
 from src.services.hyperparameter_tuning import params_selection_xgboots
 from src.models.xgboost_model import forecast_XGBoost_sistem
 from src.utils.date_utils import standardize_datetime
+from src.utils.possible_cols import load_possible_cols
+
 
 # Валидация входных данных
 def validate_input_data(df: pd.DataFrame) -> None:
@@ -43,8 +45,10 @@ def user_predict_XGBoost(
     # Выбор оптимальных признаков
 
     # Подбор оптимального значения лага
-    default_cols = ['year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
-                    'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
+    # default_cols = ['year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
+    #                 'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
+    default_cols = load_possible_cols()
+
     print('[INFO] >>>> lag_selection_xgboots is working')
     data_lag = lag_selection_xgboots(
         df_init=df,
@@ -54,14 +58,17 @@ def user_predict_XGBoost(
     )
     lag = data_lag["best_lag"]
 
-    data_cols = col_selection_xgboots(
-        df_init=df,
-        time_column=time_column,
-        col_target=col_target,
-        lag=lag
-    )
-    col_for_train = data_cols["col_for_train"]
-    errors = data_cols["errors"]
+    # data_cols = col_selection_xgboots(
+    #     df_init=df,
+    #     time_column=time_column,
+    #     col_target=col_target,
+    #     lag=lag
+    # )
+    # col_for_train = data_cols["col_for_train"]
+    # errors = data_cols["errors"]
+    errors = {"mape": data_lag["best_mape"]}
+    col_for_train = default_cols
+
 
     # Автоматический подбор параметров
     # best_params = params_selection_xgboots(
@@ -141,9 +148,6 @@ def user_predict_XGBoost(
     )
     date_range = date_range[1:]
     df_future = pd.DataFrame({time_column: date_range, col_target: [None] * len(date_range)})
-
-    print('>>>>>>>>>>>>> df_future df_future df_future df_future')
-    print(df_future)
 
 
     df_all_data = pd.concat([df, df_future], ignore_index=True).sort_values(by=time_column, ascending=True).reset_index(drop=True)

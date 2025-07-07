@@ -5,6 +5,7 @@ from src.normalization.time2vec import Time2Vec
 from src.utils.possible_forecast_date import calculate_time_interval
 from src.lstm_selection_of_parameters.feature_selection import (get_lstm_lag, get_points_per_call,
                                                                 col_selection_lstm, forecast_LSTM_user)
+from src.utils.possible_cols import load_possible_cols
 
 home_path = os.getcwd()
 
@@ -22,10 +23,10 @@ def validate_input_data(df: pd.DataFrame) -> None:
 
 
 model_architecture_params= {
-    "architecture": [{"layer": 1, "type": "Bi-LSTM", "neurons": 30},
-                     {"layer": 2, "type": "Bi-LSTM", "neurons": 20},
-                     {"layer": 3, "type": "Bi-LSTM", "neurons": 10}],
-    "dropout_count": 0.01,
+    "architecture": [{"layer": 1, "type": "Bi-LSTM", "neurons": 6},
+                     {"layer": 2, "type": "Bi-LSTM", "neurons": 4},
+                     {"layer": 3, "type": "Bi-LSTM", "neurons": 2}],
+    "dropout_count": 0.1,
     "activation": "relu",
     "optimizer": "adam"
 }
@@ -56,16 +57,17 @@ async def user_predict_LSTM(
 
     points_per_call = res["best_points_per_call"]
 
-    res = col_selection_lstm(df_init=df,
-                                       col_target=col_target,
-                                       time_column=time_column,
-                                       lag=lag,
-                                       points_per_call=points_per_call,
-                                       debag=debag
-                                       )
-
-    col_for_train = res["col_for_train"]
-    errors = res["errors"]
+    # res = col_selection_lstm(df_init=df,
+    #                                    col_target=col_target,
+    #                                    time_column=time_column,
+    #                                    lag=lag,
+    #                                    points_per_call=points_per_call,
+    #                                    debag=debag
+    #                                    )
+    #
+    # col_for_train = res["col_for_train"]
+    col_for_train = load_possible_cols()
+    errors = {"mape": res["best_mape"]}
 
     original_format = df[time_column].copy()
     df[time_column] = pd.to_datetime(df[time_column], errors='coerce')
@@ -93,7 +95,8 @@ async def user_predict_LSTM(
 
     df_all_data = df_all_data.sort_values(by=time_column, ascending=True).reset_index(drop=True)
 
-
+    print(f"df_all_data-"*12)
+    print(f"df_all_data = {df_all_data}")
     last_known_index = len(df_all_data) - len(date_range)
 
     t2v = Time2Vec(col_time=time_column, col_target=col_target)
@@ -120,6 +123,8 @@ async def user_predict_LSTM(
     df_real_predict[time_column] = date_range
 
     df_real_predict = df_real_predict.reset_index(drop=True)
+
+    print(df_real_predict)
 
     new_row = pd.DataFrame({
         time_column: [pd.to_datetime(last_value[time_column])],
