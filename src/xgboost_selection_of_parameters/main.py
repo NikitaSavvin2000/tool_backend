@@ -17,7 +17,8 @@ def validate_input_data(df: pd.DataFrame) -> None:
     if len(df) < 2:
         raise ValueError("Входной временной ряд должен содержать минимум 2 наблюдения.")
 
-async def user_predict_XGBoost(
+
+def user_predict_XGBoost(
     df: pd.DataFrame,
     time_column: str,
     col_target: str,
@@ -45,7 +46,7 @@ async def user_predict_XGBoost(
     default_cols = ['year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
                     'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
     print('[INFO] >>>> lag_selection_xgboots is working')
-    data_lag = await lag_selection_xgboots(
+    data_lag = lag_selection_xgboots(
         df_init=df,
         time_column=time_column,
         col_target=col_target,
@@ -53,7 +54,7 @@ async def user_predict_XGBoost(
     )
     lag = data_lag["best_lag"]
 
-    data_cols = await col_selection_xgboots(
+    data_cols = col_selection_xgboots(
         df_init=df,
         time_column=time_column,
         col_target=col_target,
@@ -140,6 +141,11 @@ async def user_predict_XGBoost(
     )
     date_range = date_range[1:]
     df_future = pd.DataFrame({time_column: date_range, col_target: [None] * len(date_range)})
+
+    print('>>>>>>>>>>>>> df_future df_future df_future df_future')
+    print(df_future)
+
+
     df_all_data = pd.concat([df, df_future], ignore_index=True).sort_values(by=time_column, ascending=True).reset_index(drop=True)
     last_known_index = len(df_all_data) - len(date_range)
 

@@ -124,7 +124,7 @@ async def predict_xgboost(request: PredictRequest = Body(...,
     try:
         df = pd.DataFrame(request.df)
 
-        result = await user_predict_XGBoost(
+        result = user_predict_XGBoost(
             df=df,
             time_column=request.time_column,
             col_target=request.col_target,

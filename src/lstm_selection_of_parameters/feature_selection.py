@@ -259,7 +259,7 @@ def forecast_LSTM_sistem(
 
 """########################################## Блок подбора параметров #############################################"""
 
-def get_lstm_lag(df_init, time_column, col_target):
+def get_lstm_lag(df_init, time_column, col_target, debag=False):
 
     col_for_train = ['year', 'month', 'day', 'week', 'day_of_week',
                      'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
@@ -293,8 +293,12 @@ def get_lstm_lag(df_init, time_column, col_target):
 
     best_lag = None
 
-    lag_list = range(1, 22)
-    # lag_list = range(1, 2)
+    if debag:
+        max_range = 2
+    else:
+        max_range = 22
+
+    lag_list = range(1, max_range)
 
     best_mape = float('inf')
 
@@ -340,7 +344,7 @@ def get_lstm_lag(df_init, time_column, col_target):
 def get_model_architecture_params_lstm():
     pass
 
-def col_selection_lstm(df_init, col_target, time_column, lag, points_per_call):
+def col_selection_lstm(df_init, col_target, time_column, lag, points_per_call, debag=False):
 
     """
     Выполняет выбор оптимальных признаков для прогнозирования с использованием XGBoost.
@@ -382,6 +386,12 @@ def col_selection_lstm(df_init, col_target, time_column, lag, points_per_call):
     df_evaluation = df_evaluation.sort_values(by=time_column).reset_index(drop=True)
 
     # for col in tqdm(all_possible_cols):
+
+    if debag:
+        all_possible_cols = all_possible_cols[:1]
+    else:
+        all_possible_cols = all_possible_cols
+
     best_errors = {}
     for col in tqdm(all_possible_cols, bar_format='{l_bar}{n_fmt}/{total_fmt} ({percentage:3.0f}%)'):
         current_cols = col_for_train + [col]
@@ -419,7 +429,7 @@ def col_selection_lstm(df_init, col_target, time_column, lag, points_per_call):
 
     return {"col_for_train": col_for_train, "errors": best_errors}
 
-def get_points_per_call(df_init, time_column, col_target, lag):
+def get_points_per_call(df_init, time_column, col_target, lag, debag=False):
 
     col_for_train = ['year', 'month', 'day', 'week', 'day_of_week',
                      'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
@@ -453,7 +463,13 @@ def get_points_per_call(df_init, time_column, col_target, lag):
 
     best_points_per_call = None
 
-    points_per_call_list = range(1, 22)
+    if debag:
+        max_range = 2
+    else:
+        max_range = 22
+
+    points_per_call_list = range(1, max_range)
+
 
     best_mape = float('inf')
 
@@ -482,9 +498,12 @@ def get_points_per_call(df_init, time_column, col_target, lag):
 
 
         df_real_predict[time_column] = df_evaluation[time_column]
-
+        print(df_real_predict)
         y_true = df_evaluation[col_target].reset_index(drop=True)
         y_pred = df_real_predict[col_target].reset_index(drop=True)
+        print(f'y_true = {y_true}')
+        print(f'y_pred = {y_pred}')
+
 
         _, _, _, mape, _ = calculate_metrics(y_true=y_true, y_pred=y_pred)
 

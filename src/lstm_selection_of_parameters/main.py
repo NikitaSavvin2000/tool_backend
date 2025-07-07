@@ -48,11 +48,11 @@ async def user_predict_LSTM(
     :param norm_values: Флаг нормализации значений
     :return: Словарь с прогнозными данными
     """
-
-    res = get_lstm_lag(df_init=df, time_column=time_column, col_target=col_target)
+    debag = False
+    res = get_lstm_lag(df_init=df, time_column=time_column, col_target=col_target, debag=debag)
     lag = res["best_lag"]
     # lag = 1
-    res = get_points_per_call(df_init=df, time_column=time_column, col_target=col_target, lag=lag)
+    res = get_points_per_call(df_init=df, time_column=time_column, col_target=col_target, lag=lag, debag=debag)
 
     points_per_call = res["best_points_per_call"]
 
@@ -60,7 +60,8 @@ async def user_predict_LSTM(
                                        col_target=col_target,
                                        time_column=time_column,
                                        lag=lag,
-                                       points_per_call=points_per_call
+                                       points_per_call=points_per_call,
+                                       debag=debag
                                        )
 
     col_for_train = res["col_for_train"]
