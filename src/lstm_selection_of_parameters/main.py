@@ -111,7 +111,7 @@ async def user_predict_LSTM(
         model_architecture_params_user=model_architecture_params,
         col_for_train=col_for_train,
         points_per_call=points_per_call,
-        epochs=7
+        epochs=3
 
     )
 
