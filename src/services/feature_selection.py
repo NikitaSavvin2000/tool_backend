@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # Корень проекта
 CONFIG_DIR = PROJECT_ROOT / "src" / "configuration"
 
-MAX_SEARCH_LAG = 10  # Максимальный лаг для поиска
 
 model_architecture_params = [{
     "objective": "reg:squarederror",
@@ -405,7 +404,8 @@ def lag_selection_xgboots(
         df_init: pd.DataFrame,
         time_column: str,
         col_target: str,
-        cols: List[str]
+        cols: List[str],
+        lag_search_depth: int
 ) -> Dict[str, int]:
     if len(df_init) < 2:
         raise ValueError("Для подбора лага требуется минимум 2 строки во входных данных.")
@@ -434,7 +434,7 @@ def lag_selection_xgboots(
     df_evaluation[time_column] = pd.to_datetime(df_evaluation[time_column], errors="coerce")
     df_evaluation = df_evaluation.sort_values(by=time_column).reset_index(drop=True)
 
-    max_lag = min(len(df) - 1, MAX_SEARCH_LAG)
+    max_lag = min(len(df) - 1, lag_search_depth)
 
     best_lag = None
     best_mape = float('inf')

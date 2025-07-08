@@ -25,6 +25,7 @@ def user_predict_XGBoost(
     time_column: str,
     col_target: str,
     forecast_horizon_time: str,
+    lag_search_depth: int = 10
 ) -> dict:
     """
     Генерирует прогноз временного ряда с использованием XGBoost.
@@ -50,13 +51,19 @@ def user_predict_XGBoost(
     default_cols = load_possible_cols()
 
     print('[INFO] >>>> lag_selection_xgboots is working')
-    data_lag = lag_selection_xgboots(
-        df_init=df,
-        time_column=time_column,
-        col_target=col_target,
-        cols=default_cols,
-    )
-    lag = data_lag["best_lag"]
+    if lag_search_depth == 1 or lag_search_depth == 0 or lag_search_depth > 21 or lag_search_depth < 0:
+        lag = 1
+        errors = {"mape": "unknown"}
+    else:
+        data_lag = lag_selection_xgboots(
+            df_init=df,
+            time_column=time_column,
+            col_target=col_target,
+            cols=default_cols,
+            lag_search_depth=lag_search_depth,
+        )
+        lag = data_lag["best_lag"]
+        errors = {"mape": data_lag["best_mape"]}
 
     # data_cols = col_selection_xgboots(
     #     df_init=df,
@@ -66,7 +73,6 @@ def user_predict_XGBoost(
     # )
     # col_for_train = data_cols["col_for_train"]
     # errors = data_cols["errors"]
-    errors = {"mape": data_lag["best_mape"]}
     col_for_train = default_cols
 
 

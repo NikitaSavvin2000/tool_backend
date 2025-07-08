@@ -3,7 +3,7 @@ import pandas as pd
 import logging
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
 from src.xgboost_selection_of_parameters.main import user_predict_XGBoost
 import traceback
 
@@ -25,6 +25,7 @@ class PredictRequest(BaseModel):
     time_column: str
     col_target: str
     forecast_horizon_time: str
+    lag_search_depth: Optional[int] = None
 
 
 @router.post("/predict-xgboost", response_model=dict)
@@ -33,6 +34,7 @@ async def predict_xgboost(request: PredictRequest = Body(...,
          "time_column": "time",
          "col_target": "load_consumption",
          "forecast_horizon_time": "2022-09-10 05:55:00",
+         "lag_search_depth": 2,
          "df": example_df_json_long
      }
 )):
@@ -123,12 +125,14 @@ async def predict_xgboost(request: PredictRequest = Body(...,
     
     try:
         df = pd.DataFrame(request.df)
+        lag_search_depth = request.lag_search_depth if request.lag_search_depth is not None else 10
 
         result = user_predict_XGBoost(
             df=df,
             time_column=request.time_column,
             col_target=request.col_target,
-            forecast_horizon_time=request.forecast_horizon_time
+            forecast_horizon_time=request.forecast_horizon_time,
+            lag_search_depth=lag_search_depth
         )
 
         return result
