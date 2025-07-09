@@ -75,6 +75,8 @@ async def user_predict_XGBoost(
 
     model_params = {
         "objective": "reg:squarederror",
+        "device": "cuda",
+        "tree_method": "hist",
         "learning_rate": 0.1,
         "max_depth": 15,
         "subsample": 0.9,

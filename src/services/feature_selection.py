@@ -20,6 +20,8 @@ MAX_SEARCH_LAG = 21  # Максимальный лаг для поиска
 
 model_architecture_params = [{
     "objective": "reg:squarederror",
+    "device": "cuda",
+    "tree_method": "hist",
     "n_estimators": 1000,
     "learning_rate": 0.1,
     "max_depth": 15,
