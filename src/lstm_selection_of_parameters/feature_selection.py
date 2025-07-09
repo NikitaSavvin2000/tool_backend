@@ -19,16 +19,16 @@ model_architecture_params= {
     "architecture": [{"layer": 1, "type": "Bi-LSTM", "neurons": 6},
                      {"layer": 2, "type": "Bi-LSTM", "neurons": 4},
                      {"layer": 3, "type": "Bi-LSTM", "neurons": 2}],
-    "dropout_count": 0.01,
+    "dropout_count": 0.1,
     "activation": "relu",
     "optimizer": "adam"
 }
 
 model_architecture_params_user = {
-    "architecture": [{"layer": 1, "type": "Bi-LSTM", "neurons": 30},
-                     {"layer": 2, "type": "Bi-LSTM", "neurons": 20},
-                     {"layer": 3, "type": "Bi-LSTM", "neurons": 10}],
-    "dropout_count": 0.01,
+    "architecture": [{"layer": 1, "type": "Bi-LSTM", "neurons": 6},
+                     {"layer": 2, "type": "Bi-LSTM", "neurons": 4},
+                     {"layer": 3, "type": "Bi-LSTM", "neurons": 2}],
+    "dropout_count": 0.1,
     "activation": "relu",
     "optimizer": "adam"
 }
@@ -119,7 +119,20 @@ def forecast_LSTM_user(
     values = df_train[col_for_train].values
     x_input = create_x_input(df_train, lag)
 
+
+    print('='*100)
+    print(df_train)
+    print(f'lag = {lag}')
+    print(f'points_per_call = {points_per_call}')
+    print(df_train[df_train.isna().any(axis=1)])
+
+
+
     X, y = split_sequence(sequence=values, n_steps=lag, horizon=points_per_call)
+    print(type(X), X.shape, X.dtype)
+    print(type(y), y.shape, y.dtype)
+    X = np.array(X).astype(np.float32)
+    y = np.array(y).astype(np.float32)
     n_features = values.shape[1]
 
     architecture = model_architecture_params_user["architecture"]
@@ -230,7 +243,14 @@ def forecast_LSTM_sistem(
 
     model = Sequential()
 
-    model.add(Bidirectional(LSTM(int(architecture[0]['neurons']), activation=activation)))
+    model.add(Bidirectional(
+        LSTM(int(architecture[0]['neurons']), activation=activation, return_sequences=True),
+        input_shape=(lag, n_features)))
+    model.add(Dropout(dropout_count))
+    model.add(Bidirectional(
+        LSTM(int(architecture[1]['neurons']), activation=activation, return_sequences=True)))
+    model.add(Dropout(dropout_count))
+    model.add(Bidirectional(LSTM(int(architecture[2]['neurons']), activation=activation)))
     model.add(Dropout(dropout_count))
     model.add(Dense(points_per_call))
 
@@ -259,12 +279,10 @@ def forecast_LSTM_sistem(
 
 """########################################## Блок подбора параметров #############################################"""
 
-def get_lstm_lag(df_init, time_column, col_target):
+def get_lstm_lag(df_init, time_column, col_target, debag=False):
 
-    col_for_train = ['year', 'month', 'day', 'week', 'day_of_week',
-                     'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
-                     'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',
-                     'month_sin', 'month_cos', 'part_of_day', 'is_night', 'is_weekend', 'day_of_year']
+    col_for_train = load_possible_cols()
+
 
 
     original_column = df_init[time_column].copy()
@@ -293,8 +311,12 @@ def get_lstm_lag(df_init, time_column, col_target):
 
     best_lag = None
 
-    lag_list = range(1, 22)
-    # lag_list = range(1, 2)
+    if debag:
+        max_range = 2
+    else:
+        max_range = 10
+
+    lag_list = range(1, max_range)
 
     best_mape = float('inf')
 
@@ -325,7 +347,9 @@ def get_lstm_lag(df_init, time_column, col_target):
 
         _, _, _, mape, _ = calculate_metrics(y_true=y_true, y_pred=y_pred)
 
-        print(f"CURRENT MAPE = {mape} | BEST lag = {best_lag} BEST MAPE = {best_mape}%")
+        print(f">>> CURRENT MAPE = {round(mape, 3)} CURRENT lag = {lag} | BEST lag = {best_lag} BEST MAPE = {round(best_mape, 3)}%")
+        logger.info(f">>> CURRENT MAPE = {round(mape, 3)} CURRENT lag = {lag} | BEST lag = {best_lag} BEST MAPE = {round(best_mape, 3)}%")
+
 
         if mape < best_mape:
             best_mape = mape
@@ -340,7 +364,7 @@ def get_lstm_lag(df_init, time_column, col_target):
 def get_model_architecture_params_lstm():
     pass
 
-def col_selection_lstm(df_init, col_target, time_column, lag, points_per_call):
+def col_selection_lstm(df_init, col_target, time_column, lag, points_per_call, debag=False):
 
     """
     Выполняет выбор оптимальных признаков для прогнозирования с использованием XGBoost.
@@ -382,6 +406,12 @@ def col_selection_lstm(df_init, col_target, time_column, lag, points_per_call):
     df_evaluation = df_evaluation.sort_values(by=time_column).reset_index(drop=True)
 
     # for col in tqdm(all_possible_cols):
+
+    if debag:
+        all_possible_cols = all_possible_cols[:1]
+    else:
+        all_possible_cols = all_possible_cols
+
     best_errors = {}
     for col in tqdm(all_possible_cols, bar_format='{l_bar}{n_fmt}/{total_fmt} ({percentage:3.0f}%)'):
         current_cols = col_for_train + [col]
@@ -406,7 +436,9 @@ def col_selection_lstm(df_init, col_target, time_column, lag, points_per_call):
         y_pred = df_real_predict[col_target].reset_index(drop=True)
         rmse, r2, mae, mape, wmape = calculate_metrics(y_true=y_true, y_pred=y_pred)
 
-        print(f" BEST MAPE = {best_mape} BEST COLS = {col_for_train} | CURRENT MAPE = {mape} | CUR COLS =  {current_cols}")
+        print(f">>> BEST MAPE = {round(best_mape, 3)} BEST COLS = {col_for_train} | CURRENT MAPE = {round(mape, 3)} | CUR COLS =  {current_cols}")
+        logger.info(f">>> BEST MAPE = {round(best_mape, 3)} BEST COLS = {col_for_train} | CURRENT MAPE = {round(mape, 3)} | CUR COLS =  {current_cols}")
+
         if mape < best_mape:
             best_mape = mape
             col_for_train.append(col)
@@ -419,12 +451,14 @@ def col_selection_lstm(df_init, col_target, time_column, lag, points_per_call):
 
     return {"col_for_train": col_for_train, "errors": best_errors}
 
-def get_points_per_call(df_init, time_column, col_target, lag):
+def get_points_per_call(df_init, time_column, col_target, lag, debag=False):
 
-    col_for_train = ['year', 'month', 'day', 'week', 'day_of_week',
-                     'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
-                     'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',
-                     'month_sin', 'month_cos', 'part_of_day', 'is_night', 'is_weekend', 'day_of_year']
+    # col_for_train = ['year', 'month', 'day', 'week', 'day_of_week',
+    #                  'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
+    #                  'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',
+    #                  'month_sin', 'month_cos', 'part_of_day', 'is_night', 'is_weekend', 'day_of_year']
+
+    col_for_train = load_possible_cols()
 
 
     original_column = df_init[time_column].copy()
@@ -453,7 +487,13 @@ def get_points_per_call(df_init, time_column, col_target, lag):
 
     best_points_per_call = None
 
-    points_per_call_list = range(1, 22)
+    if debag:
+        max_range = 2
+    else:
+        max_range = 10
+
+    points_per_call_list = range(1, max_range)
+
 
     best_mape = float('inf')
 
@@ -462,7 +502,6 @@ def get_points_per_call(df_init, time_column, col_target, lag):
 
 
     for points_per_call in tqdm(points_per_call_list, bar_format='{l_bar}{n_fmt}/{total_fmt} ({percentage:3.0f}%)'):
-
 
         df_true_all, df_pred_vector = forecast_LSTM_sistem(
             col_target=col_target,
@@ -480,15 +519,14 @@ def get_points_per_call(df_init, time_column, col_target, lag):
 
         df_real_predict.at[df_real_predict.index[-1], col_target] = last_value
 
-
         df_real_predict[time_column] = df_evaluation[time_column]
-
         y_true = df_evaluation[col_target].reset_index(drop=True)
         y_pred = df_real_predict[col_target].reset_index(drop=True)
 
         _, _, _, mape, _ = calculate_metrics(y_true=y_true, y_pred=y_pred)
 
-        print(f"CURRENT MAPE = {mape} | BEST points_per_call = {best_points_per_call} BEST MAPE = {best_mape}")
+        print(f">>> CURRENT MAPE = {round(mape, 3)} CURRENT points_per_call = {points_per_call} | BEST points_per_call = {best_points_per_call} BEST MAPE = {round(best_mape, 3)}")
+        logger.info(f">>> CURRENT MAPE = {round(mape, 3)} CURRENT points_per_call = {points_per_call} | BEST points_per_call = {best_points_per_call} BEST MAPE = {round(best_mape, 3)}")
 
         if mape < best_mape:
             best_mape = mape

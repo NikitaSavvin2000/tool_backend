@@ -10,7 +10,7 @@ def calculate_time_interval(df: pd.DataFrame, time_column: str) -> int:
     :return: Средний временной интервал в минутах
     """
     df[time_column] = pd.to_datetime(df[time_column])
-    time_interval = df[time_column].diff().dt.total_seconds().mean() / 60
+    time_interval = df[time_column].diff().dt.total_seconds().mean()
     return round(time_interval)
 
 def generate_possible_date(df, time_column):

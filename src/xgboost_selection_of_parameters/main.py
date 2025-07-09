@@ -5,6 +5,8 @@ from src.services.feature_selection import col_selection_xgboots, lag_selection_
 from src.services.hyperparameter_tuning import params_selection_xgboots
 from src.models.xgboost_model import forecast_XGBoost_sistem
 from src.utils.date_utils import standardize_datetime
+from src.utils.possible_cols import load_possible_cols
+
 
 # Валидация входных данных
 def validate_input_data(df: pd.DataFrame) -> None:
@@ -17,11 +19,13 @@ def validate_input_data(df: pd.DataFrame) -> None:
     if len(df) < 2:
         raise ValueError("Входной временной ряд должен содержать минимум 2 наблюдения.")
 
-async def user_predict_XGBoost(
+
+def user_predict_XGBoost(
     df: pd.DataFrame,
     time_column: str,
     col_target: str,
     forecast_horizon_time: str,
+    lag_search_depth: int = 10
 ) -> dict:
     """
     Генерирует прогноз временного ряда с использованием XGBoost.
@@ -42,25 +46,35 @@ async def user_predict_XGBoost(
     # Выбор оптимальных признаков
 
     # Подбор оптимального значения лага
-    default_cols = ['year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
-                    'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
-    print('[INFO] >>>> lag_selection_xgboots is working')
-    data_lag = await lag_selection_xgboots(
-        df_init=df,
-        time_column=time_column,
-        col_target=col_target,
-        cols=default_cols,
-    )
-    lag = data_lag["best_lag"]
+    # default_cols = ['year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
+    #                 'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
+    default_cols = load_possible_cols()
 
-    data_cols = await col_selection_xgboots(
-        df_init=df,
-        time_column=time_column,
-        col_target=col_target,
-        lag=lag
-    )
-    col_for_train = data_cols["col_for_train"]
-    errors = data_cols["errors"]
+    print('[INFO] >>>> lag_selection_xgboots is working')
+    if lag_search_depth == 1 or lag_search_depth == 0 or lag_search_depth > 21 or lag_search_depth < 0:
+        lag = 1
+        errors = {"mape": "unknown"}
+    else:
+        data_lag = lag_selection_xgboots(
+            df_init=df,
+            time_column=time_column,
+            col_target=col_target,
+            cols=default_cols,
+            lag_search_depth=lag_search_depth,
+        )
+        lag = data_lag["best_lag"]
+        errors = {"mape": data_lag["best_mape"]}
+
+    # data_cols = col_selection_xgboots(
+    #     df_init=df,
+    #     time_column=time_column,
+    #     col_target=col_target,
+    #     lag=lag
+    # )
+    # col_for_train = data_cols["col_for_train"]
+    # errors = data_cols["errors"]
+    col_for_train = default_cols
+
 
     # Автоматический подбор параметров
     # best_params = params_selection_xgboots(
@@ -142,6 +156,8 @@ async def user_predict_XGBoost(
     )
     date_range = date_range[1:]
     df_future = pd.DataFrame({time_column: date_range, col_target: [None] * len(date_range)})
+
+
     df_all_data = pd.concat([df, df_future], ignore_index=True).sort_values(by=time_column, ascending=True).reset_index(drop=True)
     last_known_index = len(df_all_data) - len(date_range)
 
@@ -164,6 +180,7 @@ async def user_predict_XGBoost(
 
     t2v = Time2Vec(col_time=time_column, col_target=col_target)
     df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
+    print(df_all_data)
 
     n_future_points = df_all_data_norm.shape[0] - last_known_index
     if n_future_points <= lag:
@@ -186,6 +203,9 @@ async def user_predict_XGBoost(
 
     # Обратная нормализация прогнозов
     df_real_predict = t2v.light_reverse_vectorization(df_pred_vector, min_val, max_val)
+    print("df_real_predict = t2v.light_reverse_vectorization(df_pred_vector, min_val, max_val)")
+    print(df_all_data)
+
     df_real_predict[time_column] = date_range
     df_real_predict = df_real_predict.reset_index(drop=True)
 

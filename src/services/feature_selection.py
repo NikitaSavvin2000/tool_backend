@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # Корень проекта
 CONFIG_DIR = PROJECT_ROOT / "src" / "configuration"
 
-MAX_SEARCH_LAG = 21  # Максимальный лаг для поиска
 
 model_architecture_params = [{
     "objective": "reg:squarederror",
@@ -32,7 +31,7 @@ model_architecture_params = [{
 }]
 
 
-async def col_selection_xgboots(
+def col_selection_xgboots(
         df_init: pd.DataFrame,
         time_column: str,
         col_target: str,
@@ -98,7 +97,9 @@ async def col_selection_xgboots(
         y_pred = df_real_predict[col_target].reset_index(drop=True)
         rmse, r2, mae, mape, wmape = calculate_metrics(y_true=y_true, y_pred=y_pred)
 
-        print(f" BEST MAPE = {best_mape} BEST COLS = {col_for_train} | CURRENT MAPE = {mape} | CUR COLS =  {current_cols}")
+        print(f">>> BEST MAPE = {round(best_mape, 3)} BEST COLS = {col_for_train} | CURRENT MAPE = {round(mape, 3)} | CUR COLS =  {current_cols}")
+        logger.info(f">>> BEST MAPE = {round(best_mape, 3)} BEST COLS = {col_for_train} | CURRENT MAPE = {round(mape, 3)} | CUR COLS =  {current_cols}")
+
         if mape < best_mape:
             best_mape = mape
             col_for_train.append(col)
@@ -320,12 +321,93 @@ def max_depth_selection_xgboots(
 
     return {"max_depth": best_depth, "best_mape": best_mape}
 
+#
+#  def lag_selection_xgboots(
+#         df_init: pd.DataFrame,
+#         time_column: str,
+#         col_target: str,
+#         cols: List[str]
+# ) -> Dict[str, int]:
+#     if len(df_init) < 2:
+#         raise ValueError("Для подбора лага требуется минимум 2 строки во входных данных.")
+#
+#     df_init[time_column] = pd.to_datetime(df_init[time_column], errors="coerce")
+#     df_init = df_init.sort_values(by=time_column).reset_index(drop=True)
+#
+#     optimal_evaluation_points = min(300, len(df_init) // 2)
+#     if len(df_init) <= optimal_evaluation_points:
+#         raise ValueError("Недостаточно данных для разделения на обучающую и тестовую выборки.")
+#
+#     df_evaluation = df_init[-optimal_evaluation_points:].copy()
+#     df = df_init[:-optimal_evaluation_points].copy()
+#
+#     df_empty = df_evaluation.copy()
+#     df_empty[col_target] = None
+#
+#     df_all_data = pd.concat([df, df_empty.dropna(how="all")], ignore_index=True)
+#     df_all_data = df_all_data.sort_values(by=time_column).reset_index(drop=True)
+#
+#     print(f'[INFO] Time2Vec is working')
+#
+#     t2v = Time2Vec(col_time=time_column, col_target=col_target)
+#     df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
+#
+#     df_evaluation[time_column] = pd.to_datetime(df_evaluation[time_column], errors="coerce")
+#     df_evaluation = df_evaluation.sort_values(by=time_column).reset_index(drop=True)
+#
+#     max_lag = min(len(df) - 1, MAX_SEARCH_LAG)
+#
+#     best_lag = None
+#     best_mape = float('inf')
+#
+#     async def evaluate_lag(lag: int):
+#         df_true_all, df_pred_vector = await asyncio.to_thread(
+#             forecast_XGBoost_sistem,
+#             col_target,
+#             time_column,
+#             df_all_data_norm,
+#             len(df_all_data) - optimal_evaluation_points,
+#             lag,
+#             model_architecture_params,
+#             cols
+#         )
+#
+#         if df_pred_vector.size == 0:
+#             raise ValueError("Forecast returned empty predictions.")
+#
+#         df_real_predict = t2v.light_reverse_vectorization(df_pred_vector, min_val, max_val)
+#         df_real_predict[col_target] = df_real_predict[col_target].astype('float64')
+#         df_real_predict.at[df_real_predict.index[-1], col_target] = df_init[col_target].iloc[0]
+#         df_real_predict[time_column] = df_evaluation[time_column]
+#
+#         y_true = df_evaluation[col_target].reset_index(drop=True)
+#         y_pred = df_real_predict[col_target].reset_index(drop=True)
+#
+#         _, _, _, mape, _ = await asyncio.to_thread(calculate_metrics, y_true, y_pred)
+#
+#         print(f"CURRENT MAPE = {mape} | CURRENT LAG = {lag}")
+#         logger.info(f"CURRENT MAPE = {mape} | CURRENT LAG = {lag}")
+#
+#         return lag, mape
+#
+#     print(f'[INFO] tasks is working')
+#
+#     tasks = [evaluate_lag(lag) for lag in range(1, max_lag + 1)]
+#     results = await asyncio.gather(*tasks)
+#
+#     for lag, mape in results:
+#         if mape < best_mape:
+#             best_mape = mape
+#             best_lag = lag
+#
+#     return {"best_lag": best_lag, "best_mape": best_mape}
 
-async def lag_selection_xgboots(
+def lag_selection_xgboots(
         df_init: pd.DataFrame,
         time_column: str,
         col_target: str,
-        cols: List[str]
+        cols: List[str],
+        lag_search_depth: int
 ) -> Dict[str, int]:
     if len(df_init) < 2:
         raise ValueError("Для подбора лага требуется минимум 2 строки во входных данных.")
@@ -354,14 +436,15 @@ async def lag_selection_xgboots(
     df_evaluation[time_column] = pd.to_datetime(df_evaluation[time_column], errors="coerce")
     df_evaluation = df_evaluation.sort_values(by=time_column).reset_index(drop=True)
 
-    max_lag = min(len(df) - 1, MAX_SEARCH_LAG)
+    max_lag = min(len(df) - 1, lag_search_depth)
 
     best_lag = None
     best_mape = float('inf')
 
-    async def evaluate_lag(lag: int):
-        df_true_all, df_pred_vector = await asyncio.to_thread(
-            forecast_XGBoost_sistem,
+    print(f'[INFO] lag evaluation is working')
+
+    for lag in tqdm(range(1, max_lag + 1), bar_format='{l_bar}{n_fmt}/{total_fmt} ({percentage:3.0f}%)'):
+        df_true_all, df_pred_vector = forecast_XGBoost_sistem(
             col_target,
             time_column,
             df_all_data_norm,
@@ -382,19 +465,11 @@ async def lag_selection_xgboots(
         y_true = df_evaluation[col_target].reset_index(drop=True)
         y_pred = df_real_predict[col_target].reset_index(drop=True)
 
-        _, _, _, mape, _ = await asyncio.to_thread(calculate_metrics, y_true, y_pred)
+        _, _, _, mape, _ = calculate_metrics(y_true, y_pred)
 
-        print(f"CURRENT MAPE = {mape} | CURRENT LAG = {lag}")
-        logger.info(f"CURRENT MAPE = {mape} | CURRENT LAG = {lag}")
+        print(f">>> CURRENT MAPE = {round(mape, 3)}  CURRENT LAG = {lag} | BEST MAPE = {round(best_mape, 3)} BEST LAG = {best_lag}")
+        logger.info(f">>> CURRENT MAPE = {round(mape, 3)}  CURRENT LAG = {lag} | BEST MAPE = {round(best_mape, 3)} BEST LAG = {best_lag}")
 
-        return lag, mape
-
-    print(f'[INFO] tasks is working')
-
-    tasks = [evaluate_lag(lag) for lag in range(1, max_lag + 1)]
-    results = await asyncio.gather(*tasks)
-
-    for lag, mape in results:
         if mape < best_mape:
             best_mape = mape
             best_lag = lag
