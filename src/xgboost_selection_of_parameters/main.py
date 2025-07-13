@@ -89,16 +89,24 @@ def user_predict_XGBoost(
 
     model_params = {
         "objective": "reg:squarederror",
-        "device": "cuda",
-        "tree_method": "hist",
+        "tree_method": "gpu_hist",
+        "gpu_id": 0,
         "learning_rate": 0.1,
         "max_depth": 15,
         "subsample": 0.9,
         "colsample_bytree": 0.9,
         "min_child_weight": 5,
         "booster": "gbtree",
-        "random_state": 42
+        "random_state": 42,
+        "lambda": 1,       # L2-регуляризация (можно повышать)
+        "alpha": 0,        # L1-регуляризация (особенно полезна при большом числе фичей),
+        "max_delta_step": 1,  # по умолчанию 0, можно 1–10 для стабильности
+        "max_bin": 1024,
+        "num_parallel_tree": 3,
+        "predictor": "gpu_predictor",# больше бинов — потенциально лучше качество, но дольше обучение
     }
+
+
     # TODO: Блок ниже к доработке, по какой-то причине прогоз становится хуже
 
     # n_estimators = n_estimators_selection_xgboots(
