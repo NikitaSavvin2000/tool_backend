@@ -25,7 +25,7 @@ def user_predict_XGBoost(
     time_column: str,
     col_target: str,
     forecast_horizon_time: str,
-    lag_search_depth: int = 10
+    lag_search_depth: int = 1
 ) -> dict:
     """
     Генерирует прогноз временного ряда с использованием XGBoost.

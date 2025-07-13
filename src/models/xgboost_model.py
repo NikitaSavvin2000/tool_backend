@@ -1,10 +1,11 @@
 #src/models/xgboost_model.py
 import numpy as np
 import pandas as pd
-from xgboost import XGBRegressor
+from xgboost import XGBRegressor, DMatrix, train
 from typing import List, Tuple
 from src.processing.data_processing import split_sequence, create_x_input
 from src.utils.metrics import calculate_metrics
+
 
 def train_xgboost_model(
     X_train: np.ndarray,
@@ -23,65 +24,119 @@ def train_xgboost_model(
     xgb_model.fit(X_train, y_train)
     return xgb_model
 
-def forecast_XGBoost_sistem(
-    col_target, time_column, df_all_data_norm, last_known_index, lag,
-    model_architecture_params, col_for_train
-):
+# def forecast_XGBoost_sistem(
+#     col_target, time_column, df_all_data_norm, last_known_index, lag,
+#     model_architecture_params, col_for_train
+# ):
+#
+#     # Преобразование временной колонки
+#     df_all_data_norm[time_column] = pd.to_datetime(df_all_data_norm[time_column], errors='coerce')
+#     df_all_data_norm = df_all_data_norm.sort_values(by=time_column).reset_index(drop=True)
+#
+#     # Убедиться, что целевая колонка включена в обучающие признаки
+#     col_for_train = [col_target] + col_for_train
+#     df_all_data_norm = df_all_data_norm[col_for_train].copy()
+#
+#     # Преобразование целевой колонки в числовой формат
+#     df_all_data_norm[col_target] = df_all_data_norm[col_target].replace('None', None).astype(float)
+#
+#     # Разделение данных на обучающую и тестовую выборки
+#     df_train = df_all_data_norm.iloc[:last_known_index].dropna(subset=[col_target])
+#     df_test = df_all_data_norm.iloc[last_known_index:].copy()
+#     df_test[col_target] = np.nan
+#     df_real_predict = df_test.copy()
+#
+#     # Подготовка данных для XGBoost
+#     values = df_train[col_for_train].values
+#     x_input = create_x_input(df_train, lag)
+#     X, y = split_sequence(values, lag)
+#
+#     X = X.reshape(X.shape[0], -1)
+#
+#     # Преобразование в числовой тип
+#     X = np.array(X, dtype=float)
+#     y = np.array(y, dtype=float)
+#
+#     # Исключение строк с NaN
+#     valid_mask = ~np.isnan(X).any(axis=1) & ~np.isnan(y)
+#     X = X[valid_mask]
+#     y = y[valid_mask]
+#
+#     if np.isnan(X).sum() > 0 or np.isnan(y).sum() > 0:
+#         raise ValueError("X or y contains NaN values.")
+#
+#     n_features = values.shape[1]
+#
+#     # Обучение модели XGBoost
+#     if isinstance(model_architecture_params, list):
+#         model_params = model_architecture_params[0]  # Берем первый элемент списка
+#     else:
+#         model_params = model_architecture_params
+#
+#     xgb_model = XGBRegressor(**model_params)
+#     X_reshaped = X.reshape(X.shape[0], -1)
+#     xgb_model.fit(X_reshaped, y)
+#
+#     # Генерация прогнозов
+#     x_input = x_input.reshape((1, lag, n_features))
+#     predict_values = _make_xgboost_predictions(x_input, df_test.values, n_features, xgb_model, lag)
+#     df_real_predict[col_target] = np.array(predict_values).flatten()
+#
+#     return df_train, df_real_predict
 
-    # Преобразование временной колонки
+
+def forecast_XGBoost_sistem(
+        col_target, time_column, df_all_data_norm, last_known_index, lag,
+        model_architecture_params, col_for_train
+):
     df_all_data_norm[time_column] = pd.to_datetime(df_all_data_norm[time_column], errors='coerce')
     df_all_data_norm = df_all_data_norm.sort_values(by=time_column).reset_index(drop=True)
-    
-    # Убедиться, что целевая колонка включена в обучающие признаки
+
     col_for_train = [col_target] + col_for_train
     df_all_data_norm = df_all_data_norm[col_for_train].copy()
-    
-    # Преобразование целевой колонки в числовой формат
     df_all_data_norm[col_target] = df_all_data_norm[col_target].replace('None', None).astype(float)
-    
-    # Разделение данных на обучающую и тестовую выборки
+
     df_train = df_all_data_norm.iloc[:last_known_index].dropna(subset=[col_target])
     df_test = df_all_data_norm.iloc[last_known_index:].copy()
     df_test[col_target] = np.nan
     df_real_predict = df_test.copy()
-    
-    # Подготовка данных для XGBoost
+
     values = df_train[col_for_train].values
     x_input = create_x_input(df_train, lag)
     X, y = split_sequence(values, lag)
-
     X = X.reshape(X.shape[0], -1)
+    X = np.array(X, dtype=np.float32)
+    y = np.array(y, dtype=np.float32)
 
-    # Преобразование в числовой тип
-    X = np.array(X, dtype=float)
-    y = np.array(y, dtype=float)
-    
-    # Исключение строк с NaN
     valid_mask = ~np.isnan(X).any(axis=1) & ~np.isnan(y)
     X = X[valid_mask]
     y = y[valid_mask]
-    
+
     if np.isnan(X).sum() > 0 or np.isnan(y).sum() > 0:
         raise ValueError("X or y contains NaN values.")
-    
+
     n_features = values.shape[1]
-    
-    # Обучение модели XGBoost
+
     if isinstance(model_architecture_params, list):
-        model_params = model_architecture_params[0]  # Берем первый элемент списка
+        model_params = model_architecture_params[0]
     else:
         model_params = model_architecture_params
-    
-    xgb_model = XGBRegressor(**model_params)
-    X_reshaped = X.reshape(X.shape[0], -1)
-    xgb_model.fit(X_reshaped, y)
-    
-    # Генерация прогнозов
+
+    model_params = model_params.copy()
+    model_params["tree_method"] = "hist"
+    model_params["device"] = "cuda"
+
+    dtrain = DMatrix(X, label=y, device='cuda')
+    booster = train(model_params, dtrain, num_boost_round=100)
+
     x_input = x_input.reshape((1, lag, n_features))
-    predict_values = _make_xgboost_predictions(x_input, df_test.values, n_features, xgb_model, lag)
+    x_input = np.array(x_input, dtype=np.float32)
+
+    predict_values = _make_xgboost_predictions(x_input, df_test.values, n_features, booster, lag)
     df_real_predict[col_target] = np.array(predict_values).flatten()
-    
+
     return df_train, df_real_predict
+
 
 def _make_xgboost_predictions(
     x_input: np.ndarray,
