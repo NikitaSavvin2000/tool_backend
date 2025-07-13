@@ -87,10 +87,27 @@ def user_predict_XGBoost(
     best_params = {}
     # model_architecture_params=[{"objective": "reg:squarederror"}],
 
+    # model_params = {
+    #     "objective": "reg:squarederror",
+    #     "tree_method": "hist",
+    #     "device": "cuda",
+    #     "learning_rate": 0.1,
+    #     "max_depth": 15,
+    #     "subsample": 0.9,
+    #     "colsample_bytree": 0.9,
+    #     "min_child_weight": 5,
+    #     "booster": "gbtree",
+    #     "random_state": 42,
+    #     "lambda": 1,
+    #     "alpha": 0,
+    #     "max_delta_step": 1,
+    #     "max_bin": 1024,
+    #     "num_parallel_tree": 3
+    # }
     model_params = {
         "objective": "reg:squarederror",
-        "tree_method": "hist",
-        "device": "cuda",
+        "tree_method": "hist",           # Быстрый алгоритм для CPU
+        "device": "cpu",                 # Явно указываем CPU
         "learning_rate": 0.1,
         "max_depth": 15,
         "subsample": 0.9,
@@ -104,6 +121,7 @@ def user_predict_XGBoost(
         "max_bin": 1024,
         "num_parallel_tree": 3
     }
+
 
 
 
