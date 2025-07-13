@@ -89,8 +89,8 @@ def user_predict_XGBoost(
 
     model_params = {
         "objective": "reg:squarederror",
-        "tree_method": "gpu_hist",
-        "gpu_id": 0,
+        "tree_method": "hist",
+        "device": "cuda",
         "learning_rate": 0.1,
         "max_depth": 15,
         "subsample": 0.9,
@@ -98,13 +98,13 @@ def user_predict_XGBoost(
         "min_child_weight": 5,
         "booster": "gbtree",
         "random_state": 42,
-        "lambda": 1,       # L2-регуляризация (можно повышать)
-        "alpha": 0,        # L1-регуляризация (особенно полезна при большом числе фичей),
-        "max_delta_step": 1,  # по умолчанию 0, можно 1–10 для стабильности
+        "lambda": 1,
+        "alpha": 0,
+        "max_delta_step": 1,
         "max_bin": 1024,
-        "num_parallel_tree": 3,
-        "predictor": "gpu_predictor",# больше бинов — потенциально лучше качество, но дольше обучение
+        "num_parallel_tree": 3
     }
+
 
 
     # TODO: Блок ниже к доработке, по какой-то причине прогоз становится хуже
