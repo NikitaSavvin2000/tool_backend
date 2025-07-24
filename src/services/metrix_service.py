@@ -1,6 +1,6 @@
 import pandas as pd
 from src.backend.metrix import metrix_all
-from src.config import logger
+from src.core.logger import logger
 
 def run_metrix_all(col_time, col_target, df_evaluation, df_comparative):
     try:

@@ -8,7 +8,7 @@ from tensorflow.keras.models import Sequential
 from tqdm import tqdm
 
 from src.backend.normalization import Time2Vec
-from src.config import logger
+from src.core.logger import logger
 from src.utils.metrics import calculate_metrics
 from src.utils.possible_cols import load_possible_cols
 

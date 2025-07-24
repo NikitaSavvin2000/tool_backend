@@ -9,13 +9,15 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.routers import router as api_router
-from src.config import logger, public_or_local
+from src.core.logger import logger
+from src.config import settings
+from src.core.utils import log_endpoint
 
 load_dotenv()
 
 logger.info("Starting microservice main forecast")
 
-origins = ["http://localhost", "http://77.37.136.11"] if public_or_local == "LOCAL" else ["http://77.37.136.11"]
+origins = ["http://localhost", "http://77.37.136.11"] if settings.PUBLIC_OR_LOCAL == "LOCAL" else ["http://77.37.136.11"]
 
 workers = multiprocessing.cpu_count()
 
@@ -56,6 +58,6 @@ def read_root():
 
 
 if __name__ == "__main__":
-    port = 7070
+    port = 8000
     print(f'Documentation available at http://0.0.0.0:{port}{docs_url}')
     uvicorn.run("server:app", host="0.0.0.0", port=port, workers=4, log_level="debug")

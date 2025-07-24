@@ -8,7 +8,7 @@ from src.backend.xgb import forecast_XGBoost
 from src.backend.lstm import forecast_LSTM
 from src.backend.new_network import forecast_neural_networks
 
-from src.config import logger
+from src.core.logger import logger
 
 
 def run_forecast(col_target, df_all_data_norm, evaluation_index, last_know_index, epochs, lag, activation, optimizer, dropout_count, model_architecture_params):

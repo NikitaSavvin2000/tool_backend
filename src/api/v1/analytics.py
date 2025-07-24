@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Body, HTTPException
 from src.models.schemes import AnalyticsDFsRequest
-from src.config import logger
+from src.core.logger import logger
 
 router = APIRouter()
 

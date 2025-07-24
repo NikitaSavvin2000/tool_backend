@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body, HTTPException
 from src.models.schemes import PredictRequest
 from src.services.user_predict_service import user_forecast
-from src.config import logger
+from src.core.logger import logger
 
 router = APIRouter()
 

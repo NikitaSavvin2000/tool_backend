@@ -4,7 +4,7 @@ from src.backend.all_available_forecast import convert_df_to_datetime as backend
 from src.backend.all_available_forecast import generate_possible_date as backend_generate_possible_date
 from src.backend.all_available_forecast import all_available_forecast as backend_all_available_forecast
 
-from src.config import logger
+from src.core.logger import logger
 import pandas as pd
 
 def cols_to_chose(df):

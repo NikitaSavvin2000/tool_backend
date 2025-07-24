@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 from src.models.schemes import ForecastRequest
 from src.services.forecast_service import run_forecast
-from src.config import logger
+from src.core.logger import logger
 
 router = APIRouter()
 

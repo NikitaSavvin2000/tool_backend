@@ -7,7 +7,7 @@ from xgboost import XGBRegressor
 
 
 from src.backend.normalization import Time2Vec
-from src.config import logger
+from src.core.logger import logger
 from src.utils.possible_forecast_date import calculate_time_interval
 from src.utils.possible_cols import load_possible_cols
 

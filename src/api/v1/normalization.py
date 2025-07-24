@@ -2,7 +2,7 @@ import pandas as pd
 from fastapi import APIRouter, Body, HTTPException
 from src.models.schemes import NormalizationRequest
 from src.services.normalization_service import run_normalization
-from src.config import logger
+from src.core.logger import logger
 
 router = APIRouter()
 
