@@ -1,3 +1,4 @@
+# src/examples_fastapi/examples.py
 example_dfs_1 = {
     "09:00:00": 10,
     "09:01:00": 12,

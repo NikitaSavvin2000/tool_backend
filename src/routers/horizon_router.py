@@ -1,33 +1,36 @@
-# src/api/v1/user_predict.py
+# src/api/v1/horizon_router.py
 
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
-from typing import List, Dict
-from src.models.schemes import UserPredictRequest
-from src.services.user_predict_service import run_user_forecast
+from typing import List, Dict, Optional
+from src.models.schemes import PredictRequest
+from src.services.horizon_service import run_horizon_forecast
 from src.config import logger
+import traceback
 
 router = APIRouter()
 
-@router.post("/user_forecast")
-async def user_predict(body: UserPredictRequest = Body(...)) -> Dict[str, Any]:
+@router.post("/predict-horizon", response_model=dict)
+async def predict_horizon(body: PredictRequest = Body(...)) -> Dict[str, Any]:
     """
-    Эндпоинт для пользовательского прогнозирования временных рядов.
+    Эндпоинт для прогнозирования временного ряда с использованием Horizon.
     
     Description:
-    - Принимает данные в формате JSON и выполняет прогнозирование с использованием выбранных параметров.
-    - Возвращает результаты прогноза, включая последние известные данные и предсказания.
+    - Принимает временной ряд, нормализует данные, формирует будущий интервал времени
+      и выполняет прогнозирование.
+    - Возвращает результат в формате JSON, который включает последние известные данные
+      и предсказания.
     
     Parameters:
-    - **body (UserPredictRequest)**: Схема запроса, содержащая следующие поля:
+    - **body (PredictRequest)**: Схема запроса, содержащая следующие поля:
         - df (List[Dict]): Входной DataFrame в формате JSON.
         - time_column (str): Название временной колонки.
         - col_target (str): Название целевой колонки.
-        - forecast_horizon_time (str): Горизонт прогнозирования в формате `YYYY-MM-DD HH:MM:SS`.
-        - col_for_train (List[str]): Список колонок для обучения модели.
+        - forecast_horizon_time (str): Горизонт прогнозирования.
+        - lag_search_depth (Optional[int]): Глубина поиска лагов.
     
     Returns:
-    - **dict**: Словарь с результатами прогноза:
+    - **dict**: Результат прогнозирования, содержащий:
         - map_data (dict): Данные для отрисовки графика.
         - last_know_data (str): Последнее известное значение.
         - title (str): Заголовок графика.
@@ -37,13 +40,13 @@ async def user_predict(body: UserPredictRequest = Body(...)) -> Dict[str, Any]:
     ```json
     {
         "df": [
-            {"Datetime": "2017-01-01 00:00:00", "Temperature": 6.4865, "Humidity": 74.15},
-            {"Datetime": "2017-01-01 00:15:00", "Temperature": 6.5, "Humidity": 73.9}
+            {"Datetime": "2017-01-01 00:00:00", "Temperature": 6.4865},
+            {"Datetime": "2017-01-01 00:15:00", "Temperature": 6.5}
         ],
         "time_column": "Datetime",
         "col_target": "Temperature",
         "forecast_horizon_time": "2017-01-01 01:00:00",
-        "col_for_train": ["Datetime", "Humidity"]
+        "lag_search_depth": 2
     }
     ```
     
@@ -53,10 +56,10 @@ async def user_predict(body: UserPredictRequest = Body(...)) -> Dict[str, Any]:
         "map_data": {
             "data": {
                 "last_real_data": [
-                    {"Datetime": "2017-01-01 00:15:00", "Temperature": 6.5, "Humidity": 73.9}
+                    {"Datetime": "2017-01-01 00:15:00", "Temperature": 6.5}
                 ],
                 "predictions": [
-                    {"Datetime": "2017-01-01 00:30:00", "Temperature": 6.55, "Humidity": 73.8}
+                    {"Datetime": "2017-01-01 00:30:00", "Temperature": 6.55}
                 ]
             },
             "last_know_data": "2017-01-01 00:15:00",
@@ -80,27 +83,28 @@ async def user_predict(body: UserPredictRequest = Body(...)) -> Dict[str, Any]:
     ```
     
     Raises:
-    - **HTTPException 400**: Если входные данные некорректны или произошла ошибка при прогнозировании.
+    - **HTTPException 400**: Если переданы некорректные данные или произошла ошибка при прогнозировании.
     """
     try:
+        # Логирование входного запроса
+        logger.info("Received request for Horizon prediction")
+
         # Преобразование входных данных в DataFrame
         df = pd.DataFrame(body.df)
-        
-        # Проверка на пустые данные
-        if df.empty:
-            raise HTTPException(status_code=400, detail="Входной DataFrame не может быть пустым.")
-        
-        # Выполнение пользовательского прогноза
-        result = run_user_forecast(
+
+        # Выполнение прогноза
+        result = run_horizon_forecast(
             df=df,
             time_column=body.time_column,
             col_target=body.col_target,
             forecast_horizon_time=body.forecast_horizon_time,
-            col_for_train=body.col_for_train,
+            lag_search_depth=body.lag_search_depth,
         )
-        
+
         return result
 
     except Exception as e:
-        logger.error(f"Ошибка в эндпоинте /user_forecast: {e}")
+        logger.error("🔥 Ошибка во время Horizon предсказания:")
+        traceback.print_exc()
+        logger.error(f"📋 Сообщение: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))

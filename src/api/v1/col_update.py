@@ -1,3 +1,4 @@
+#src/api/v1/col_update.py
 from fastapi import APIRouter, Body, HTTPException
 from src.models.schemes import UpdateColRequest
 from src.services.col_update_service import update_col_for_train, update_col_for_train_lstm
