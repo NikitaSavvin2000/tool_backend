@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from tensorflow.keras.layers import Bidirectional, Dense, Dropout, LSTM
+from tensorflow.keras.layers import LSTM, Bidirectional, Dense, Dropout
 from tensorflow.keras.models import Sequential
 from tqdm import tqdm
 
@@ -12,7 +12,6 @@ from src.backend.normalization import Time2Vec
 from src.core.logger import logger
 from src.utils.metrics import calculate_metrics
 from src.utils.possible_cols import load_possible_cols
-
 
 home_path = os.getcwd()
 
@@ -178,7 +177,6 @@ def forecast_LSTM_user(
 
     model.compile(optimizer=optimizer, loss='mse')
 
-    history = model.fit(X, y, epochs=epochs, verbose=1,)
     x_input = x_input.reshape((1, lag, n_features))
 
     predict_values = make_predictions(x_input=x_input, x_future=df_test.values, points_per_call=points_per_call, model=model)
@@ -257,14 +255,11 @@ def forecast_LSTM_sistem(
 
     model.compile(optimizer=optimizer, loss='mse')
 
-    epochs = 2
 
-    history = model.fit(X, y, epochs=epochs, verbose=0)
 
     # Make predictions
     x_input = x_input.reshape((1, lag, n_features))
 
-    # predict_values = make_predictions(x_input, df_test.values, n_features, model, lag)
     predict_values = make_predictions(x_input=x_input, x_future=df_test.values, points_per_call=points_per_call, model=model)
 
 

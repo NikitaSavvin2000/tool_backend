@@ -1,13 +1,13 @@
 # src/routers/reverse_vectorization_router.py
+from typing import Annotated, Dict, List
+
 import pandas as pd
 from fastapi import APIRouter, Body, HTTPException
-from src.services.normalization_service import run_reverse_normalization
+from pydantic import BaseModel
+
 from src.core.logger import logger
 from src.examples_fastapi.examples import example_reverse_norm_data
-from pydantic import BaseModel
-from typing import List, Dict
-from typing import Annotated, List
-
+from src.services.normalization_service import run_reverse_normalization
 
 router = APIRouter()
 

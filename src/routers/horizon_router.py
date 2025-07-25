@@ -1,12 +1,14 @@
 # src/api/v1/horizon_router.py
 
+import traceback
+from typing import Any, Dict
+
+import pandas as pd
 from fastapi import APIRouter, Body, HTTPException
-from pydantic import BaseModel
-from typing import List, Dict, Optional
+
+from src.core.logger import logger
 from src.models.schemes import PredictRequest
 from src.services.horizon_service import run_horizon_forecast
-from src.core.logger import logger
-import traceback
 
 router = APIRouter()
 

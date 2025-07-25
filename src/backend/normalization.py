@@ -1,10 +1,11 @@
 # src/backend/normalization.py
 import math
+
+import ephem
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
-import ephem
 from scipy.fftpack import fft
+from sklearn.preprocessing import MinMaxScaler
 
 
 class Time2Vec:

@@ -1,11 +1,9 @@
 # src/api/v1/benchmark_metrics.py
+from fastapi import APIRouter, HTTPException
 
-from fastapi import APIRouter
-from pydantic import BaseModel, HttpUrl
-from typing import List, Dict
-from src.models.schemes import BenchmarkResponse, DatasetBenchmark, ModelMetric
-from src.services.benchmark_metrics_service import get_mock_benchmark_data
 from src.core.logger import logger
+from src.models.schemes import BenchmarkResponse
+from src.services.benchmark_metrics_service import get_mock_benchmark_data
 
 router = APIRouter()
 

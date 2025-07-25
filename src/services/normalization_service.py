@@ -1,9 +1,12 @@
 # src/services/normalization_service.py
 
 from typing import Any, Dict
+
 import pandas as pd
+
 from src.backend.normalization import Time2Vec
 from src.core.logger import logger
+
 
 def run_normalization(
     df: pd.DataFrame, col_time: str, col_target: str

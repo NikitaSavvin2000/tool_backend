@@ -1,10 +1,14 @@
 # services/forecast_service.py
 
+from typing import Any, Dict, List
+
 import pandas as pd
-from typing import Dict, Any, List
-from src.utils.lstm_utils import split_sequence, create_x_input, make_predictions, inverse_transform_output
-from src.services.model_handler import ModelHandler
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+
 from src.core.logger import logger
+from src.services.model_handler import ModelHandler
+from src.utils.lstm_utils import inverse_transform_output, split_sequence
 
 
 def run_forecast(

@@ -2,6 +2,7 @@
 
 from src.models.schemes import BenchmarkResponse, DatasetBenchmark, ModelMetric
 
+
 def get_mock_benchmark_data() -> BenchmarkResponse:
     """
     Формирует моковые данные для бенчмарков.

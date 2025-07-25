@@ -1,10 +1,11 @@
 #src/models/xgboost_model.py
+from typing import List
+
 import numpy as np
 import pandas as pd
-from xgboost import XGBRegressor, DMatrix, train
-from typing import List, Tuple
-from src.processing.data_processing import split_sequence, create_x_input
-from src.core.utils.metrics import calculate_metrics
+from xgboost import XGBRegressor
+
+from src.processing.data_processing import create_x_input, split_sequence
 
 
 def train_xgboost_model(

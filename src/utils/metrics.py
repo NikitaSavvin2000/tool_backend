@@ -3,6 +3,7 @@
 import numpy as np
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
+
 def mean_absolute_percentage_error(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     """
     Вычисляет среднюю абсолютную процентную ошибку (MAPE).

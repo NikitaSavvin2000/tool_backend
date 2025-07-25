@@ -2,11 +2,11 @@
 import os
 
 import pandas as pd
+
+from src.lstm_selection_of_parameters.feature_selection import forecast_LSTM_user, get_lstm_lag, get_points_per_call
 from src.normalization.time2vec import Time2Vec
-from src.utils.possible_forecast_date import calculate_time_interval
-from src.lstm_selection_of_parameters.feature_selection import (get_lstm_lag, get_points_per_call,
-                                                                col_selection_lstm, forecast_LSTM_user)
 from src.utils.possible_cols import load_possible_cols
+from src.utils.possible_forecast_date import calculate_time_interval
 
 home_path = os.getcwd()
 
@@ -96,15 +96,15 @@ async def user_predict_LSTM(
 
     df_all_data = df_all_data.sort_values(by=time_column, ascending=True).reset_index(drop=True)
 
-    print(f"df_all_data-"*12)
-    print(f"df_all_data = {df_all_data}")
+    print("df_all_data-"*12)
+    print("df_all_data = {df_all_data}")
     last_known_index = len(df_all_data) - len(date_range)
 
     t2v = Time2Vec(col_time=time_column, col_target=col_target)
     df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
 
-    print(f"="*120)
-    print(f"points_per_call = {points_per_call}")
+    print("="*120)
+    print("points_per_call = {points_per_call}")
 
     df_true_all, df_pred_vector = forecast_LSTM_user(
         col_target=col_target,

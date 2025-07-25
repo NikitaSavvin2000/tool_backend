@@ -1,8 +1,10 @@
 # src/utils/possible_cols.py
 
 from pathlib import Path
-import yaml
 from typing import List
+
+import yaml
+
 from src.core.logger import logger
 
 # Определение корневой директории проекта

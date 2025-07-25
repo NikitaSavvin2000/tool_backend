@@ -1,7 +1,9 @@
 # src/core/decorators/exception_decorators.py
 from functools import wraps
-from fastapi import HTTPException
 from typing import Callable
+
+from fastapi import HTTPException
+
 from src.core.logger import logger
 
 

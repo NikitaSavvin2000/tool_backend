@@ -1,14 +1,13 @@
 # src/backend/xgb.py
-import tensorflow as tf
-
-from src.core.logger import logger
-import yaml
 import os
 
 import numpy as np
 import pandas as pd
+import yaml
 from xgboost import XGBRegressor
-from utils.lstm_utils import split_sequence, create_x_input, make_predictions
+
+from src.core.logger import logger
+from utils.lstm_utils import create_x_input, make_predictions, split_sequence
 
 home_path = os.getcwd()
 

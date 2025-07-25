@@ -1,10 +1,13 @@
 # src/core/decorators/log_decorators.py
 import time
 from functools import wraps
-from fastapi import Request
 from typing import Callable, Coroutine
-from src.core.logger import logger
+
+from fastapi import Request
 from starlette.requests import Request as StarletteRequest
+
+from src.core.logger import logger
+
 
 def log_endpoint(logger=logger):
     def decorator(func: Callable) -> Callable:

@@ -1,7 +1,12 @@
 # src/services/pipeline_service.py
 
-from src.utils.pipeline_utils import generate_possible_date, prepare_data_for_pipeline
+from typing import Dict, List
+
+import pandas as pd
+
 from src.core.logger import logger
+from src.utils.pipeline_utils import generate_possible_date, prepare_data_for_pipeline
+
 
 def cols_to_chose(all_possible_cols: List[str]) -> List[str]:
     """

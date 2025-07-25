@@ -1,27 +1,27 @@
 # src/services/hyperparameter_tuning.py
+from typing import Any, Dict
 
-import pandas as pd
 import numpy as np
-from typing import Dict, Any
 import optuna
-from xgboost import XGBRegressor
 from sklearn.metrics import mean_absolute_percentage_error
-from src.utils.metrics import calculate_metrics
+from xgboost import XGBRegressor
+
 from src.core.constants.constants import (
-    N_ESTIMATORS_MIN,
-    N_ESTIMATORS_MAX,
-    LEARNING_RATE_MIN,
-    LEARNING_RATE_MAX,
-    MAX_DEPTH_MIN,
-    MAX_DEPTH_MAX,
-    SUBSAMPLE_MIN,
-    SUBSAMPLE_MAX,
-    COLSAMPLE_BYTREE_MIN,
     COLSAMPLE_BYTREE_MAX,
-    MIN_CHILD_WEIGHT_MIN,
+    COLSAMPLE_BYTREE_MIN,
+    LEARNING_RATE_MAX,
+    LEARNING_RATE_MIN,
+    MAX_DEPTH_MAX,
+    MAX_DEPTH_MIN,
     MIN_CHILD_WEIGHT_MAX,
+    MIN_CHILD_WEIGHT_MIN,
+    N_ESTIMATORS_MAX,
+    N_ESTIMATORS_MIN,
+    SUBSAMPLE_MAX,
+    SUBSAMPLE_MIN,
 )
 from src.core.logger import logger
+from src.utils.metrics import calculate_metrics
 
 
 def objective(

@@ -1,12 +1,12 @@
 # services/model_handler.py
 
+from typing import Dict, List
+
 import numpy as np
-import pandas as pd
-from typing import Dict, Any, List
-from xgboost import XGBRegressor
+from tensorflow.keras.layers import LSTM, Bidirectional, Dense, Dropout
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Bidirectional, Dropout
-from sklearn.preprocessing import MinMaxScaler
+from xgboost import XGBRegressor
+
 from src.core.logger import logger
 
 
@@ -40,7 +40,6 @@ class ModelHandler:
         """
         try:
             model = Sequential()
-            n_features = input_shape[-1]
 
             for i, layer in enumerate(architecture):
                 neurons = layer["neurons"]
