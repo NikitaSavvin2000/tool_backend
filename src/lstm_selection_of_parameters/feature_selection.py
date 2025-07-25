@@ -10,8 +10,8 @@ from tqdm import tqdm
 
 from src.backend.normalization import Time2Vec
 from src.core.logger import logger
-from src.core.utils.metrics import calculate_metrics
-from src.core.utils.possible_cols import load_possible_cols
+from src.utils.metrics import calculate_metrics
+from src.utils.possible_cols import load_possible_cols
 
 
 home_path = os.getcwd()

@@ -1,8 +1,7 @@
 # src/routers/xgboost_router.py
 
 from fastapi import APIRouter, Body, HTTPException
-from pydantic import BaseModel
-from typing import List, Dict, Optional
+from typing import Any, Dict
 from src.models.schemes import PredictRequest
 from src.services.xgboost_service import run_xgboost_forecast
 from src.core.logger import logger

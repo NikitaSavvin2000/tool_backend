@@ -1,12 +1,12 @@
 # src/xgboost_selection_of_parameters/main.py
 import pandas as pd
 from src.normalization.time2vec import Time2Vec
-from src.core.utils.possible_forecast_date import calculate_time_interval
+from src.utils.possible_forecast_date import calculate_time_interval
 from src.services.feature_selection import col_selection_xgboots, lag_selection_xgboots, n_estimators_selection_xgboots, learning_rate_selection_xgboots, max_depth_selection_xgboots
 from src.services.hyperparameter_tuning import params_selection_xgboots
 from src.models.xgboost_model import forecast_XGBoost_sistem
-from src.core.utils.date_utils import standardize_datetime
-from src.core.utils.possible_cols import load_possible_cols
+from src.utils.date_utils import standardize_datetime
+from src.utils.possible_cols import load_possible_cols
 
 
 # Валидация входных данных

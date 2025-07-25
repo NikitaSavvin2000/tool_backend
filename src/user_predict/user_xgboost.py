@@ -5,8 +5,8 @@ from src.xgboost_selection_of_parameters.feature_selection import col_selection_
 import numpy as np
 import pandas as pd
 from src.backend.xgb import forecast_XGBoost_user
-from src.core.utils.possible_forecast_date import calculate_time_interval
-from src.configuration.xgboost_constants import MODEL_ARCHITECTURE_PARAMS
+from src.utils.possible_forecast_date import calculate_time_interval
+from src.core.constants.xgboost_constants import MODEL_ARCHITECTURE_PARAMS
 
 
 home_path = os.getcwd()
