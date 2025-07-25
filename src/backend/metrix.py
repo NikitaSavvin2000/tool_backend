@@ -1,62 +1,61 @@
+# src/backend/metrix.py
+
 import numpy as np
 import pandas as pd
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+def calculate_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
+    """
+    Вычисляет метрики качества прогноза.
+    
+    :param y_true: Массив истинных значений.
+    :param y_pred: Массив предсказанных значений.
+    :return: Словарь с метриками качества.
+    """
+    # Root Mean Squared Error (RMSE)
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
 
+    # Mean Absolute Error (MAE)
+    mae = mean_absolute_error(y_true, y_pred)
 
-def mean_absolute_percentage_error(y_true, y_pred):
-    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+    # Mean Absolute Percentage Error (MAPE)
+    mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100
 
-
-def symmetric_mean_absolute_percentage_error(y_true, y_pred):
-    return 100 * np.mean(2 * np.abs(y_pred - y_true) / (np.abs(y_true) + np.abs(y_pred)))
-
-
-def normalized_root_mean_squared_error(y_true, y_pred):
-    return np.sqrt(mean_squared_error(y_true, y_pred)) / (np.max(y_true) - np.min(y_true))
-
-
-def mean_absolute_range_normalized_error(y_true, y_pred):
-    return mean_absolute_error(y_true, y_pred) / (np.max(y_true) - np.min(y_true))
-
-
-def mean_absolute_scaled_error(y_true, y_pred):
-    naive_forecast = y_true.shift(1).dropna()
-    return mean_absolute_error(y_true[1:], y_pred[1:]) / mean_absolute_error(y_true[1:], naive_forecast)
-
-
-def weighted_mean_absolute_percentage_error(y_true, y_pred):
-    return np.sum(np.abs(y_true - y_pred)) / np.sum(np.abs(y_true)) * 100
-
-
-def metrix_all(col_time, col_target, df_evaluetion, df_comparative):
-    y_true = df_comparative[col_target].values
-    min_non_zero = np.min(y_true[y_true != 0])
-
-    # Заменяем нули на минимальное ненулевое значение
-    y_true = np.where(y_true == 0, min_non_zero, y_true)
-    y_pred = df_evaluetion[col_target].values
-
-    metrics = {
-        'MAE': mean_absolute_error(y_true, y_pred),
-        'MSE': mean_squared_error(y_true, y_pred),
-        'RMSE': np.sqrt(mean_squared_error(y_true, y_pred)),
-        'MAPE': mean_absolute_percentage_error(y_true, y_pred),
-        'R2': r2_score(y_true, y_pred),
-        'sMAPE': symmetric_mean_absolute_percentage_error(y_true, y_pred),
-        'NRMSE': normalized_root_mean_squared_error(y_true, y_pred),
-        'MARNE': mean_absolute_range_normalized_error(y_true, y_pred),
-        'WMAPE': weighted_mean_absolute_percentage_error(y_true, y_pred)
+    return {
+        "RMSE": round(rmse, 3),
+        "MAE": round(mae, 3),
+        "MAPE": round(mape, 3),
     }
-    df_metrics = pd.DataFrame({
-        col_time: df_comparative[col_time],
-        'MAE': np.abs(y_true - y_pred),
-        'MSE': (y_true - y_pred) ** 2,
-        'RMSE': np.sqrt((y_true - y_pred) ** 2),
-        'MAPE': np.abs((y_true - y_pred) / y_true) * 100,
-        'sMAPE': 100 * 2 * np.abs(y_true - y_pred) / (np.abs(y_true) + np.abs(y_pred)),
-        'NRMSE': np.sqrt((y_true - y_pred) ** 2) / (np.max(y_true) - np.min(y_true)),
-        'MARNE': np.abs(y_true - y_pred) / (np.max(y_true) - np.min(y_true)),
-        'WMAPE': np.abs(y_true - y_pred) / np.abs(y_true) * 100
-    })
-    return metrics, df_metrics
+
+
+def metrix_all(
+    col_time: str,
+    col_target: str,
+    df_evaluation: pd.DataFrame,
+    df_comparative: pd.DataFrame
+) -> tuple:
+    """
+    Выполняет расчёт метрик между двумя DataFrame'ами.
+    
+    :param col_time: Название временной колонки.
+    :param col_target: Название целевой колонки.
+    :param df_evaluation: Основной DataFrame.
+    :param df_comparative: Сравнительный DataFrame.
+    :return: Кортеж с метриками и DataFrame с детализацией.
+    """
+    # Объединение данных по временной колонке
+    merged_df = pd.merge(
+        df_evaluation[[col_time, col_target]],
+        df_comparative[[col_time, col_target]],
+        on=col_time,
+        suffixes=("_true", "_pred")
+    )
+
+    # Извлечение истинных и предсказанных значений
+    y_true = merged_df[f"{col_target}_true"].values
+    y_pred = merged_df[f"{col_target}_pred"].values
+
+    # Расчёт метрик
+    metrics = calculate_metrics(y_true, y_pred)
+
+    return metrics, merged_df

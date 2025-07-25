@@ -1,26 +1,23 @@
-# src/services/user_predict_service.py
+# src/services/lstm_service.py
 
 import pandas as pd
-from src.backend.xgb import forecast_XGBoost_user
 from src.backend.lstm import forecast_LSTM_user
 from src.utils.date_utils import standardize_datetime
 from src.config import logger
 
-def run_user_forecast(
+def run_lstm_forecast(
     df: pd.DataFrame,
     time_column: str,
     col_target: str,
     forecast_horizon_time: str,
-    col_for_train: List[str],
 ) -> Dict[str, Any]:
     """
-    Выполняет пользовательское прогнозирование временных рядов.
+    Выполняет прогнозирование временных рядов с использованием LSTM.
     
     :param df: Исходный DataFrame.
     :param time_column: Название временной колонки.
     :param col_target: Название целевой колонки.
     :param forecast_horizon_time: Горизонт прогнозирования.
-    :param col_for_train: Список колонок для обучения модели.
     :return: Словарь с результатами прогноза.
     """
     try:
@@ -31,15 +28,15 @@ def run_user_forecast(
         # Определение последнего известного индекса
         last_known_index = len(df) - 1
 
-        # Пример использования XGBoost для прогнозирования
-        df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage = (
-            forecast_XGBoost_user(
+        # Пример использования LSTM для прогнозирования
+        df_evaluetion, df_true_all_col, loss_list, df_real_predict = (
+            forecast_LSTM_user(
                 col_target=col_target,
                 time_column=time_column,
-                df_all_data_norm=df[col_for_train],
+                df_all_data_norm=df,
                 last_known_index=last_known_index,
                 lag=12,  # Пример значения лага
-                model_architecture_params={"objective": "reg:squarederror"},
+                model_architecture_params={"architecture": [{"neurons": 32}]},
                 forecast_type="predictions",
                 norm_values=True,
             )
@@ -75,5 +72,5 @@ def run_user_forecast(
         }
 
     except Exception as e:
-        logger.error(f"Ошибка в run_user_forecast: {e}")
+        logger.error(f"Ошибка в run_lstm_forecast: {e}")
         raise

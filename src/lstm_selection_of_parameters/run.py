@@ -1,3 +1,4 @@
+# src/lstm_selection_of_parameters/run.py
 import plotly.graph_objects as go
 import pandas as pd
 import os

@@ -1,3 +1,4 @@
+# src/backend/forecast.py
 from tensorflow.keras.callbacks import Callback
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Bidirectional, Dropout
@@ -307,4 +308,3 @@ def forecast(
 
     response_code, response_massage = 200, 'The training was successful'
     return df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage
-

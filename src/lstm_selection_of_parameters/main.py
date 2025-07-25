@@ -1,3 +1,4 @@
+# src/lstm_selection_of_parameters/main.py
 import os
 
 import pandas as pd

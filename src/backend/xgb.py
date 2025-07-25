@@ -1,4 +1,4 @@
-
+# src/backend/xgb.py
 import tensorflow as tf
 
 from src.config import logger
@@ -8,71 +8,9 @@ import os
 import numpy as np
 import pandas as pd
 from xgboost import XGBRegressor
+from utils.lstm_utils import split_sequence, create_x_input, make_predictions
 
 home_path = os.getcwd()
-
-def split_sequence(sequence, n_steps):
-    """
-    Split a univariate sequence into samples for supervised learning.
-
-    Parameters:
-        sequence (np.ndarray): Input sequence.
-        n_steps (int): Number of steps to look back.
-
-    Returns:
-        tuple: Arrays of input samples (X) and targets (y).
-    """
-    X, y = [], []
-    for i in range(len(sequence) - n_steps):
-        seq_x, seq_y = sequence[i:i + n_steps, :], sequence[i + n_steps, 0]
-        X.append(seq_x)
-        y.append(seq_y)
-    return np.array(X), np.array(y)
-
-
-def create_x_input(df_train, n_steps):
-    """
-    Create the input array for predictions from the training DataFrame.
-
-    Parameters:
-        df_train (pd.DataFrame): Training data.
-        n_steps (int): Number of steps to look back.
-
-    Returns:
-        np.ndarray: Input array for predictions.
-    """
-    return df_train.iloc[-n_steps:].values
-
-
-def make_predictions(x_input, x_future, n_features, model, lag):
-    """
-    Generate predictions for a future horizon using an iterative approach.
-
-    Parameters:
-        x_input (np.ndarray): Initial input data.
-        x_future (np.ndarray): Future data.
-        n_features (int): Number of features in the data.
-        model (tf.keras.Model): Trained prediction model.
-        lag (int): Number of time steps used for predictions.
-
-    Returns:
-        list: Predicted values.
-    """
-    predict_values = []
-    for _ in range(len(x_future)):
-        x_input_tensor = tf.convert_to_tensor(x_input.reshape((1, -1)), dtype=tf.float32)
-        y_predict = model.predict(x_input_tensor)
-        predict_values.append(y_predict)
-
-        x_input = np.delete(x_input, 0, axis=1)
-        future_lag = x_future[0]
-        x_future = np.delete(x_future, 0, axis=0)
-        future_lag[0] = y_predict
-        x_input = np.append(x_input, future_lag.reshape(1, 1, -1), axis=1)
-        x_input = x_input.reshape((1, lag, n_features))
-
-    return predict_values
-
 
 def forecast_XGBoost(
         col_target, df_all_data_norm, evaluation_index, last_known_index, lag,
