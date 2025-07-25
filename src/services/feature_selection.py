@@ -8,8 +8,8 @@ from tqdm import tqdm
 
 from src.models.xgboost_model import forecast_XGBoost_sistem
 from src.normalization.time2vec import Time2Vec
-from src.utils.metrics import calculate_metrics
-from src.utils.possible_cols import load_possible_cols
+from src.core.utils.metrics import calculate_metrics
+from src.core.utils.possible_cols import load_possible_cols
 
 logger = logging.getLogger(__name__)
 

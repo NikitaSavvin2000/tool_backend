@@ -8,8 +8,9 @@ from xgboost import XGBRegressor
 
 from src.backend.normalization import Time2Vec
 from src.core.logger import logger
-from src.utils.possible_forecast_date import calculate_time_interval
-from src.utils.possible_cols import load_possible_cols
+from src.core.utils.possible_forecast_date import calculate_time_interval
+from src.core.utils.possible_cols import load_possible_cols
+from src.configuration.xgboost_constants import MODEL_ARCHITECTURE_PARAMS
 
 
 import pandas as pd
@@ -82,19 +83,6 @@ def make_predictions(x_input, x_future, n_features, model, lag):
         x_input = x_input.reshape((1, lag, n_features))
 
     return predict_values
-
-
-MODEL_ARCHITECTURE_PARAMS = {
-    "objective": "reg:squarederror",
-    "n_estimators": 500,
-    "learning_rate": 0.1,
-    "max_depth": 15,
-    "subsample": 0.9,
-    "colsample_bytree": 0.9,
-    "min_child_weight": 5,
-    "booster": "gbtree"
-}
-
 
 def calculate_metrics(y_true, y_pred):
     y_true_mean = y_true.mean()

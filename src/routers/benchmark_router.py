@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, HttpUrl
 from typing import List, Dict
-from src.core.utils import log_endpoint
+from src.core.decorators.log_decorators import log_endpoint
 
 router = APIRouter()
 
