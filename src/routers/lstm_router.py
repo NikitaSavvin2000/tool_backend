@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import Any, List, Dict
 from src.services.lstm_service import run_lstm_forecast
 from src.core.logger import logger
 import traceback

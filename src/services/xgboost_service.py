@@ -1,5 +1,6 @@
 # src/services/xgboost_service.py
 
+from typing import Any, Dict, Optional
 import pandas as pd
 from src.backend.xgb import forecast_XGBoost_user
 from src.utils.date_utils import standardize_datetime

@@ -7,7 +7,7 @@ import optuna
 from xgboost import XGBRegressor
 from sklearn.metrics import mean_absolute_percentage_error
 from src.utils.metrics import calculate_metrics
-from src.configuration.constants import (
+from src.core.constants.constants import (
     N_ESTIMATORS_MIN,
     N_ESTIMATORS_MAX,
     LEARNING_RATE_MIN,

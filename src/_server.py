@@ -12,7 +12,7 @@ from src.backend.forecast import forecast
 from src.backend.lstm import forecast_LSTM
 from src.backend.xgb import forecast_XGBoost
 from src.core.logger import logger
-from src.config import settings
+from core.configuration.config import settings
 from src.processing.processing import to_float
 from src.backend.normalization import Time2Vec
 from src.backend.new_network import forecast_neural_networks

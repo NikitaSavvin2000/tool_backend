@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.routers import router as api_router
 from src.core.logger import logger
-from src.config import settings
+from src.core.configuration.config import settings
 
 load_dotenv()
 

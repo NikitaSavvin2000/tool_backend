@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from src.backend.xgb import forecast_XGBoost_user
 from src.utils.possible_forecast_date import calculate_time_interval
-from src.configuration.xgboost_constants import MODEL_ARCHITECTURE_PARAMS
+from src.core.constants.xgboost_constants import MODEL_ARCHITECTURE_PARAMS
 
 
 home_path = os.getcwd()
