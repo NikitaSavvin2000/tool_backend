@@ -1,7 +1,8 @@
 # src/models/schemes.py
-from typing import Optional
+from typing import Dict, List, Optional
+
 from pydantic import BaseModel
-from typing import List, Dict, Optional
+
 
 class PredictRequest(BaseModel):
     df: List[Dict]

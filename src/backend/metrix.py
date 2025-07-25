@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
+
 def calculate_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     """
     Вычисляет метрики качества прогноза.

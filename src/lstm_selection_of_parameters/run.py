@@ -1,9 +1,11 @@
 # src/lstm_selection_of_parameters/run.py
-import plotly.graph_objects as go
-import pandas as pd
 import os
 
-from src.lstm_selection_of_parameters.feature_selection import user_predict_LSTM, calculate_metrics
+import pandas as pd
+import plotly.graph_objects as go
+
+from src.lstm_selection_of_parameters.feature_selection import calculate_metrics, user_predict_LSTM
+
 home_path = os.getcwd()
 
 

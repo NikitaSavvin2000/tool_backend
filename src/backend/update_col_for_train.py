@@ -1,7 +1,7 @@
 # src/backend/update_col_for_train.py
 import os
-import yaml
 
+import yaml
 
 home_path = os.getcwd()
 

@@ -1,7 +1,11 @@
 # src/services/analytics_service.py
 
+from typing import Dict, List
+
 import pandas as pd
+
 from src.core.logger import logger
+
 
 def run_analytics_dfs(dfs_json_list: List[Dict]) -> Dict[str, str]:
     """

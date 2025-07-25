@@ -1,9 +1,7 @@
 # utils/lstm_utils.py
 
 import numpy as np
-import pandas as pd
 import tensorflow as tf
-from sklearn.preprocessing import MinMaxScaler
 
 
 def split_sequence(sequence, n_steps):

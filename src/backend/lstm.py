@@ -1,13 +1,13 @@
 # src/backend/lstm.py
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Bidirectional, Dropout
-import tensorflow as tf
-import numpy as np
-import pandas as pd
-from tensorflow.keras import regularizers
-import yaml
 import os
 
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+import yaml
+from tensorflow.keras import regularizers
+from tensorflow.keras.layers import LSTM, Bidirectional, Dense, Dropout
+from tensorflow.keras.models import Sequential
 
 home_path = os.getcwd()
 
@@ -210,7 +210,6 @@ def forecast_LSTM(
     print('is work2')
 
     if type != 'predictions':
-        history = model.fit(X, y, epochs=epochs, verbose=1,)
         try:
             x_input = x_input.reshape((1, lag, n_features))
         except Exception as e:

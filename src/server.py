@@ -1,17 +1,17 @@
 # src/server.py
-import os
-import uvicorn
-import pandas as pd
 import multiprocessing
+import os
+
+import pandas as pd
+import uvicorn
 from dotenv import load_dotenv
-
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from src.routers import router as api_router
-from src.core.logger import logger
 from src.core.configuration.config import settings
+from src.core.logger import logger
+from src.routers import router as api_router
 
 load_dotenv()
 

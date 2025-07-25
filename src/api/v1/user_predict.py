@@ -1,11 +1,13 @@
 # src/api/v1/user_predict.py
 
+from typing import Any, Dict
+
+import pandas as pd
 from fastapi import APIRouter, Body, HTTPException
-from pydantic import BaseModel
-from typing import List, Dict
+
+from src.core.logger import logger
 from src.models.schemes import UserPredictRequest
 from src.services.user_predict_service import run_user_forecast
-from src.core.logger import logger
 
 router = APIRouter()
 

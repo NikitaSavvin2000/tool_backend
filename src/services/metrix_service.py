@@ -1,9 +1,12 @@
 # src/services/metrix_service.py
 
+from typing import Any, Dict
+
 import pandas as pd
-from src.backend.metrix import metrix_all
+
 from src.core.logger import logger
 from src.utils.metrics import calculate_metrics
+
 
 def run_metrix_all(
     col_time: str,

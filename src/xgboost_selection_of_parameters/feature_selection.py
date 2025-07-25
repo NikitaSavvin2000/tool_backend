@@ -1,25 +1,18 @@
 # src/xgboost_selection_of_parameters/feature_selection.py
 import os
 
+import numpy as np
+import optuna
+import pandas as pd
 import tensorflow as tf
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from tqdm import tqdm
-from xgboost import XGBRegressor
-
+from xgboost import DMatrix, XGBRegressor, cv
 
 from src.backend.normalization import Time2Vec
+from src.core.constants.xgboost_constants import MODEL_ARCHITECTURE_PARAMS
 from src.core.logger import logger
 from src.utils.possible_forecast_date import calculate_time_interval
-from src.utils.possible_cols import load_possible_cols
-from src.core.constants.xgboost_constants import MODEL_ARCHITECTURE_PARAMS
-
-
-import pandas as pd
-import numpy as np
-from xgboost import DMatrix, cv
-import optuna
-
-
 
 home_path = os.getcwd()
 

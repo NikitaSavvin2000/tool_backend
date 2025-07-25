@@ -1,10 +1,13 @@
 # src/services/lstm_service.py
 
 from typing import Any, Dict
+
 import pandas as pd
+
 from src.backend.lstm import forecast_LSTM
-from src.utils.date_utils import standardize_datetime
 from src.core.logger import logger
+from src.utils.date_utils import standardize_datetime
+
 
 def run_lstm_forecast(
     df: pd.DataFrame,
@@ -31,7 +34,7 @@ def run_lstm_forecast(
 
         # Пример использования LSTM для прогнозирования
         df_evaluetion, df_true_all_col, loss_list, df_real_predict = (
-            forecast_LSTM_user(
+            forecast_LSTM(
                 col_target=col_target,
                 time_column=time_column,
                 df_all_data_norm=df,

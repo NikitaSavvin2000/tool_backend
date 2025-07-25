@@ -1,10 +1,13 @@
 # src/services/user_predict_service.py
 
+from typing import Any, Dict, List
+
 import pandas as pd
+
 from src.backend.xgb import forecast_XGBoost_user
-from src.backend.lstm import forecast_LSTM
-from src.utils.date_utils import standardize_datetime
 from src.core.logger import logger
+from src.utils.date_utils import standardize_datetime
+
 
 def run_user_forecast(
     df: pd.DataFrame,

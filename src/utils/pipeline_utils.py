@@ -1,10 +1,13 @@
 # src/utils/pipeline_utils.py
 
+from typing import Dict, List
+
 import pandas as pd
-from typing import List, Dict, Optional
-from src.core.logger import logger
+
 from src.backend.normalization import Time2Vec
+from src.core.logger import logger
 from src.utils.date_utils import standardize_datetime
+
 
 def generate_possible_date(
     df: pd.DataFrame,

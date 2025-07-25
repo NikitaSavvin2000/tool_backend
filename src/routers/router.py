@@ -21,6 +21,7 @@
 Каждый эндпоинт снабжен тегами для удобства навигации в документации Swagger.
 """
 from fastapi import APIRouter
+
 from . import __init__
 
 router = APIRouter(prefix="/api/v1")

@@ -2,6 +2,7 @@
 
 import pandas as pd
 
+
 def process_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """
     Выполняет базовую обработку DataFrame'а.

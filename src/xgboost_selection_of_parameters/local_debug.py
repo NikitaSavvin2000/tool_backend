@@ -1,8 +1,10 @@
 #src/xgboost_selection_of_parameters/local_debug
 import os
+
 import pandas as pd
-from src.xgboost_selection_of_parameters.main import user_predict_XGBoost
+
 from src.utils.date_utils import standardize_datetime
+from src.xgboost_selection_of_parameters.main import user_predict_XGBoost
 
 if __name__ == "__main__":
     # Тестовый случай с 2 строками

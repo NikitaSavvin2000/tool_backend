@@ -1,12 +1,11 @@
 # services/model_service.py
 
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Bidirectional, Dropout
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
+from typing import List
+
 import numpy as np
-import pandas as pd
-from typing import List, Dict, Any
+from tensorflow.keras.layers import LSTM, Bidirectional, Dense, Dropout
+from tensorflow.keras.models import Sequential
+
 from src.core.logger import logger
 
 

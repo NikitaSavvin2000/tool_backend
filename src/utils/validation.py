@@ -1,8 +1,10 @@
 # src/utils/validation.py
 
+from typing import Any, Dict, List
+
 import pandas as pd
-from typing import List, Dict, Any
 from fastapi import HTTPException
+
 
 def validate_input_data(data: List[Dict[str, Any]]) -> None:
     """

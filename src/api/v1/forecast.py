@@ -1,11 +1,12 @@
 # src/api/v1/forecast.py
 
+from typing import Any, Dict
+
 from fastapi import APIRouter, Body, HTTPException
-from pydantic import BaseModel
-from typing import List, Dict, Optional
+
+from src.core.logger import logger
 from src.models.schemes import ForecastRequest
 from src.services.forecast_service import run_forecast
-from src.core.logger import logger
 
 router = APIRouter()
 

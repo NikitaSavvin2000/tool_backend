@@ -1,11 +1,14 @@
 # src/routers/xgboost_router.py
 
-from fastapi import APIRouter, Body, HTTPException
+import traceback
 from typing import Any, Dict
+
+import pandas as pd
+from fastapi import APIRouter, Body, HTTPException
+
+from src.core.logger import logger
 from src.models.schemes import PredictRequest
 from src.services.xgboost_service import run_xgboost_forecast
-from src.core.logger import logger
-import traceback
 
 router = APIRouter()
 

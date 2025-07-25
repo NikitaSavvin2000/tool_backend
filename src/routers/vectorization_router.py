@@ -1,12 +1,13 @@
 # src/routers/vectorization_router.py
+from typing import Dict, List
+
 import pandas as pd
 from fastapi import APIRouter, Body, HTTPException
-from src.services.normalization_service import run_normalization
+from pydantic import BaseModel
+
 from src.core.logger import logger
 from src.examples_fastapi.examples import example_not_norm_data
-from pydantic import BaseModel
-from typing import List, Dict
-
+from src.services.normalization_service import run_normalization
 
 router = APIRouter()
 

@@ -1,16 +1,15 @@
 #src/backend/all_available_forecast.py
 import os
 import re
-import pandas as pd
-
-from src.backend.xgb import forecast_XGBoost
-from src.backend.normalization import Time2Vec
 from datetime import datetime
+
+import pandas as pd
 from fastapi.responses import JSONResponse
-from src.utils.possible_forecast_date import calculate_time_interval
+
+from src.backend.normalization import Time2Vec
+from src.backend.xgb import forecast_XGBoost
 from src.core.constants.xgboost_constants import MODEL_ARCHITECTURE_PARAMS
-
-
+from src.utils.possible_forecast_date import calculate_time_interval
 
 home_path = os.getcwd()
 
@@ -49,8 +48,6 @@ def all_available_forecast(
     df_all_data = pd.concat([df, df_future], ignore_index=True)
 
     df_all_data = df_all_data.sort_values(by=time_column, ascending=True).reset_index(drop=True)
-
-    idx_first_none = df_all_data[col_target].first_valid_index()
 
 
     evaluation_index = df_all_data.index[-1]
@@ -255,7 +252,7 @@ def convert_df_to_datetime(df, time_column):
 
     try:
         df[time_column] = df[time_column].apply(convert_to_standard_datetime)
-    except Exception as e:
+    except Exception:
         return JSONResponse(
             status_code=422,
             content={

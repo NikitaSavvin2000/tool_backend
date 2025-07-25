@@ -1,6 +1,6 @@
 # src/config.py
-import os
 import logging
+import os
 
 
 class Settings:

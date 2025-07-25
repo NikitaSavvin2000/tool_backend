@@ -1,13 +1,13 @@
 # src/backend/forecast.py
-from tensorflow.keras.callbacks import Callback
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Bidirectional, Dropout
-import tensorflow as tf
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+import os
+
 import numpy as np
 import pandas as pd
-import os
+import tensorflow as tf
 import yaml
+from tensorflow.keras.callbacks import Callback, EarlyStopping, ReduceLROnPlateau
+from tensorflow.keras.layers import LSTM, Bidirectional, Dense, Dropout
+from tensorflow.keras.models import Sequential
 
 home_path = os.getcwd()
 
@@ -203,16 +203,14 @@ def forecast(
     early_stopping = EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
     reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=5, min_lr=0.001)
     save_best_weights_callback = SaveBestWeights()
-    print(f'----------------------------model_architecture_params-------------------------------')
+    print('----------------------------model_architecture_params-------------------------------')
     print(f'{model_architecture_params}')
-    print(f'------------------------------------------------------------------------------------')
+    print('------------------------------------------------------------------------------------')
 
     print('is work2')
 
 
     if type != 'predictions':
-        history = model.fit(X, y, epochs=epochs, verbose=1,
-                            callbacks=[early_stopping, reduce_lr, save_best_weights_callback, TerminateOnNaNCallback()])
         try:
             x_input = x_input.reshape((1, lag, n_features))
         except Exception as e:

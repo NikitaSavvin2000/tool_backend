@@ -2,8 +2,9 @@
 import pandas as pd
 import requests
 
+
 def func_generate_possible_date(df: pd.DataFrame, time_column: str, token: str):
-    url_backend =
+    url_backend = ''
     url = url_backend + '/generate_possible_date'
     df_records = df.to_dict(orient='records')
 
