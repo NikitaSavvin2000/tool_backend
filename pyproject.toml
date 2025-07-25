@@ -75,15 +75,13 @@ pythonpath = [
 exclude = [
     "tests/",
     "*.ipynb",
+    "__pycache__",
 ]
 
 line-length = 120
 select = [
-  "F",   # pyflakes
-  "I"
+  "F",  # pyflakes
+  "I",  # isort 
 ]
-ignore = ["E501", "F811"]  # Игнорировать длину строки black при использовании black
 
-
-[tool.ruff.isort]
-known-first-party = ["server"]  # Свои модули в начале импортов
+ignore = ["E501", "F811"]  # Игнорировать длину строки и неиспользуемые функци
