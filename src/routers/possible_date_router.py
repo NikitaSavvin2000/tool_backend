@@ -6,7 +6,7 @@ from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict
 from typing import Annotated, List
-from src.utils.possible_forecast_date import generate_possible_date
+from src.core.utils.possible_forecast_date import generate_possible_date
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

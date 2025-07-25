@@ -3,10 +3,10 @@ import os
 
 import pandas as pd
 from src.normalization.time2vec import Time2Vec
-from src.utils.possible_forecast_date import calculate_time_interval
+from src.core.utils.possible_forecast_date import calculate_time_interval
 from src.lstm_selection_of_parameters.feature_selection import (get_lstm_lag, get_points_per_call,
                                                                 col_selection_lstm, forecast_LSTM_user)
-from src.utils.possible_cols import load_possible_cols
+from src.core.utils.possible_cols import load_possible_cols
 
 home_path = os.getcwd()
 

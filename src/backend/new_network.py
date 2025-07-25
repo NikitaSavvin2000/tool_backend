@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-from src.config import logger
+from src.core.logger import logger
 from tensorflow.keras import regularizers
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.callbacks import Callback

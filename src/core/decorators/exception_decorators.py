@@ -1,8 +1,9 @@
-# src/core/utils.py
+# src/core/decorators/exception_decorators.py
 from functools import wraps
 from fastapi import HTTPException
-from typing import Callable, Any
-from src.config import logger
+from typing import Callable
+from src.core.logger import logger
+
 
 def handle_exceptions(func: Callable) -> Callable:
     @wraps(func)

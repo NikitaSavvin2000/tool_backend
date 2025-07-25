@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import List, Dict, Optional
 from src.models.schemes import PredictRequest
 from src.services.xgboost_service import run_xgboost_forecast
-from src.config import logger
+from src.core.logger import logger
 import traceback
 
 router = APIRouter()

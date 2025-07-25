@@ -2,7 +2,7 @@
 
 import pandas as pd
 from src.backend.normalization import Time2Vec
-from src.config import logger
+from src.core.logger import logger
 
 def run_normalization(
     df: pd.DataFrame, col_time: str, col_target: str

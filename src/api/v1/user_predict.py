@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import List, Dict
 from src.models.schemes import UserPredictRequest
 from src.services.user_predict_service import run_user_forecast
-from src.config import logger
+from src.core.logger import logger
 
 router = APIRouter()
 

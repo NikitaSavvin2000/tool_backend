@@ -8,7 +8,7 @@ from src.services.normalization_service import (
     run_normalization,
     run_reverse_normalization,
 )
-from src.config import logger
+from src.core.logger import logger
 
 router = APIRouter()
 

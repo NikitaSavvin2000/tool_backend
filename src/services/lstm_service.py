@@ -2,8 +2,8 @@
 
 import pandas as pd
 from src.backend.lstm import forecast_LSTM_user
-from src.utils.date_utils import standardize_datetime
-from src.config import logger
+from src.core.utils.date_utils import standardize_datetime
+from src.core.logger import logger
 
 def run_lstm_forecast(
     df: pd.DataFrame,

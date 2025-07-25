@@ -7,23 +7,12 @@ from src.backend.xgb import forecast_XGBoost
 from src.backend.normalization import Time2Vec
 from datetime import datetime
 from fastapi.responses import JSONResponse
-from src.utils.possible_forecast_date import calculate_time_interval
+from src.core.utils.possible_forecast_date import calculate_time_interval
+from src.configuration.xgboost_constants import MODEL_ARCHITECTURE_PARAMS
 
 
 
 home_path = os.getcwd()
-
-MODEL_ARCHITECTURE_PARAMS = {
-    "objective": "reg:squarederror",
-    "n_estimators": 500,
-    "learning_rate": 0.1,
-    "max_depth": 15,
-    "subsample": 0.9,
-    "colsample_bytree": 0.9,
-    "min_child_weight": 5,
-    "booster": "gbtree"
-}
-
 
 def all_available_forecast(
         df: pd.DataFrame,

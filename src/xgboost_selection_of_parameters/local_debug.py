@@ -2,7 +2,7 @@
 import os
 import pandas as pd
 from src.xgboost_selection_of_parameters.main import user_predict_XGBoost
-from src.utils.date_utils import standardize_datetime
+from src.core.utils.date_utils import standardize_datetime
 
 if __name__ == "__main__":
     # Тестовый случай с 2 строками
@@ -83,6 +83,6 @@ if __name__ == "__main__":
     y_true = df_test[col_target].values
     y_pred = df_predictions[col_target].values  # Предполагается, что второй столбец содержит прогнозы
     
-    from src.utils.metrics import calculate_metrics
+    from src.core.utils.metrics import calculate_metrics
     rmse, r2, mae, mape, wmape = calculate_metrics(y_true=y_true, y_pred=y_pred)
     print(f"RMSE: {rmse}, R2: {r2}, MAE: {mae}, MAPE: {mape}, WMAPE: {wmape}")

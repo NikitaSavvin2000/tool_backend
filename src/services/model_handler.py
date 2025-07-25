@@ -7,7 +7,7 @@ from xgboost import XGBRegressor
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Bidirectional, Dropout
 from sklearn.preprocessing import MinMaxScaler
-from src.config import logger
+from src.core.logger import logger
 
 
 class ModelHandler:

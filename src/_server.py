@@ -11,7 +11,8 @@ from src.backend.metrix import metrix_all
 from src.backend.forecast import forecast
 from src.backend.lstm import forecast_LSTM
 from src.backend.xgb import forecast_XGBoost
-from src.config import logger, public_or_local
+from src.core.logger import logger
+from src.config import settings
 from src.processing.processing import to_float
 from src.backend.normalization import Time2Vec
 from src.backend.new_network import forecast_neural_networks
@@ -43,7 +44,7 @@ example_df_json_long = example_df_long.to_dict(orient="records")
 
 
 
-if public_or_local == 'LOCAL':
+if settings.PUBLIC_OR_LOCAL == 'LOCAL':
     url = 'http://localhost'
 else:
     url = 'http://77.37.136.11'
