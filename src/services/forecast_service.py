@@ -2,7 +2,7 @@
 
 import pandas as pd
 from typing import Dict, Any, List
-from src.core.utils.lstm_utils import split_sequence, create_x_input, make_predictions, inverse_transform_output
+from src.utils.lstm_utils import split_sequence, create_x_input, make_predictions, inverse_transform_output
 from src.services.model_handler import ModelHandler
 from src.core.logger import logger
 

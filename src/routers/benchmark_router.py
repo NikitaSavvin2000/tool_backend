@@ -1,5 +1,5 @@
 # src/routers/benchmark_router.py
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, HttpUrl
 from typing import List, Dict
 from src.core.decorators.log_decorators import log_endpoint
