@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import List, Dict
 from src.models.schemes import AnalyticsDFsRequest
 from src.services.analytics_service import run_analytics_dfs
-from src.core.logger import logger
+from src.config import logger
 
 router = APIRouter()
 

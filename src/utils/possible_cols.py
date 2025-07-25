@@ -3,7 +3,7 @@
 from pathlib import Path
 import yaml
 from typing import List
-from src.core.logger import logger
+from src.config import logger
 
 # Определение корневой директории проекта
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # Корень проекта

@@ -4,7 +4,7 @@ import pandas as pd
 from xgboost import XGBRegressor, DMatrix, train
 from typing import List, Tuple
 from src.processing.data_processing import split_sequence, create_x_input
-from src.core.utils.metrics import calculate_metrics
+from src.utils.metrics import calculate_metrics
 
 
 def train_xgboost_model(

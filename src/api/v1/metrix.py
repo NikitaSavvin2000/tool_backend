@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import List, Dict
 from src.models.schemes import MetricsRequest
 from src.services.metrix_service import run_metrix_all
-from src.core.logger import logger
+from src.config import logger
 
 router = APIRouter()
 

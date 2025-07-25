@@ -14,7 +14,7 @@ from src.services.pipeline_service import (
     generate_possible_date,
     all_available_forecast,
 )
-from src.core.logger import logger
+from src.config import logger
 
 router = APIRouter()
 

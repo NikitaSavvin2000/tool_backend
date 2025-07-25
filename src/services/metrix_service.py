@@ -2,8 +2,8 @@
 
 import pandas as pd
 from src.backend.metrix import metrix_all
-from src.core.logger import logger
-from src.core.utils.metrics import calculate_metrics
+from src.config import logger
+from src.utils.metrics import calculate_metrics
 
 def run_metrix_all(
     col_time: str,

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict
 from src.services.lstm_service import run_lstm_forecast
-from src.core.logger import logger
+from src.config import logger
 import traceback
 
 router = APIRouter()

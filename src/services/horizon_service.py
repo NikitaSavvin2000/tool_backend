@@ -2,8 +2,8 @@
 
 import pandas as pd
 from src.backend.horizon import forecast_Horizon_user
-from src.core.utils.date_utils import standardize_datetime
-from src.core.logger import logger
+from src.utils.date_utils import standardize_datetime
+from src.config import logger
 
 def run_horizon_forecast(
     df: pd.DataFrame,

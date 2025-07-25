@@ -10,14 +10,13 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.routers import router as api_router
-from src.core.logger import logger
-from src.config import settings
+from src.config import logger, public_or_local
 
 load_dotenv()
 
 logger.info("Starting microservice main forecast")
 
-origins = ["http://localhost", "http://77.37.136.11"] if settings.PUBLIC_OR_LOCAL == "LOCAL" else ["http://77.37.136.11"]
+origins = ["http://localhost", "http://77.37.136.11"] if public_or_local == "LOCAL" else ["http://77.37.136.11"]
 
 workers = multiprocessing.cpu_count()
 

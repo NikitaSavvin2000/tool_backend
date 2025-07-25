@@ -1,7 +1,7 @@
 # src/backend/xgb.py
 import tensorflow as tf
 
-from src.core.logger import logger
+from src.config import logger
 import yaml
 import os
 

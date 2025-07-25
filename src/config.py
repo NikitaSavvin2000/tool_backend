@@ -1,12 +1,6 @@
 # src/config.py
 import os
-import logging
+from src.core.logger import setup_logger
 
-
-class Settings:
-    def __init__(self):
-        self.LOGGER_LEVEL = logging.DEBUG if os.getenv("DEBUG") == "true" else logging.INFO
-        self.PUBLIC_OR_LOCAL = os.getenv("PUBLIC_OR_LOCAL", "LOCAL")
-
-
-settings = Settings()
+logger = setup_logger()
+public_or_local = os.getenv("PUBLIC_OR_LOCAL", "LOCAL")

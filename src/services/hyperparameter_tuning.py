@@ -6,7 +6,7 @@ from typing import Dict, Any
 import optuna
 from xgboost import XGBRegressor
 from sklearn.metrics import mean_absolute_percentage_error
-from src.core.utils.metrics import calculate_metrics
+from src.utils.metrics import calculate_metrics
 from src.configuration.constants import (
     N_ESTIMATORS_MIN,
     N_ESTIMATORS_MAX,
@@ -21,7 +21,7 @@ from src.configuration.constants import (
     MIN_CHILD_WEIGHT_MIN,
     MIN_CHILD_WEIGHT_MAX,
 )
-from src.core.logger import logger
+from src.config import logger
 
 
 def objective(

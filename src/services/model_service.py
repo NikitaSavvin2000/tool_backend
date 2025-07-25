@@ -7,7 +7,7 @@ from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import pandas as pd
 from typing import List, Dict, Any
-from src.core.logger import logger
+from src.config import logger
 
 
 class ModelHandler:
