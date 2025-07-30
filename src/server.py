@@ -11,7 +11,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.core.configuration.config import settings
 from src.core.logger import logger
-from src.routers import router as api_router
+from src.routers.api_router import api_router
+from src.routers.forecast_router import router as forecast_router
+
 
 load_dotenv()
 
@@ -50,7 +52,6 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
-
 
 @app.get("/")
 def read_root():

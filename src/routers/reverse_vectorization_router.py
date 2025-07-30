@@ -18,7 +18,7 @@ class ReverseNormalizationRequest(BaseModel):
     min_val: float
     max_val: float
 
-@router.post("/reverse_vectorization")
+@router.post("/")
 async def reverse_vectorization_data(body: Annotated[
     ReverseNormalizationRequest, Body(
         example={

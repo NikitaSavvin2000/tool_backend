@@ -28,7 +28,7 @@ class PredictRequest(BaseModel):
     forecast_horizon_time: str
 
 
-@router.post("/predict-lstm", response_model=dict)
+@router.post("/", response_model=dict)
 async def predict_lstm(body: PredictRequest = Body(...)) -> Dict[str, Any]:
     """
     Эндпоинт для прогнозирования временного ряда с использованием LSTM.

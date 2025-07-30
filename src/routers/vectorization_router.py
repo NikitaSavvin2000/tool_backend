@@ -17,7 +17,7 @@ class NormalizationRequest(BaseModel):
     json_list_df: List[Dict]
 
 
-@router.post("/vectorization")
+@router.post("/")
 async def normalize_data(body: NormalizationRequest = Body(
     example={
         "col_time": example_not_norm_data['col_time'],
