@@ -8,6 +8,7 @@ from xgboost import XGBRegressor
 
 from src.core.logger import logger
 from utils.lstm_utils import create_x_input, make_predictions, split_sequence
+from src.utils.xgb_utils import make_predictions_xgb
 
 home_path = os.getcwd()
 
@@ -78,7 +79,8 @@ def forecast_XGBoost(
         ]
 
 
-    model_architecture_params = model_architecture_params[0]
+    xgb_model = XGBRegressor(**model_architecture_params)
+
 
     df_all_data_norm = df_all_data_norm[possible_cols]
 
@@ -112,6 +114,10 @@ def forecast_XGBoost(
 
     xgb_model = XGBRegressor(**model_architecture_params)
 
+    print("x_input shape:", x_input.shape)
+    print("n_features used for training:", n_features)
+
+
     if forecast_type != 'predictions':
         X_reshaped = X.reshape(X.shape[0], -1)
         X_reshaped = np.array(X_reshaped, dtype=float)
@@ -124,7 +130,13 @@ def forecast_XGBoost(
         except Exception as e:
             logger.error(e)
 
-        predict_values = make_predictions(x_input, x_future, n_features, xgb_model, lag)
+        try:
+            y_pred_array = make_predictions_xgb(xgb_model, x_input)
+            # y_pred_array будет массивом, берем первый элемент
+            predict_values = [float(y_pred_array[0])]
+        except Exception as e:
+            logger.error(f"Ошибка при предсказании с XGBoost: {e}")
+            raise
 
         predict_values = np.array(predict_values).flatten()
 
@@ -215,64 +227,91 @@ def forecast_XGBoost_user(
 
     Parameters:
         col_target (str): Target column name.
-        df_all_data_norm (pd.DataFrame): Normalized data.
+        time_column (str): Name of the time column.
+        df_all_data_norm (pd.DataFrame): Normalized data (should include time_column and col_for_train).
         last_known_index (int): Last known data index.
         lag (int): Number of time steps for lagged features.
         model_architecture_params (dict): Parameters for XGBoost model.
-        col_for_train (list): List of feature columns for training.
+        col_for_train (list): List of feature columns for training (might include col_target for autoregression).
 
     Returns:
         tuple: (df_train, df_real_predict) DataFrames with true and predicted values.
     """
 
+    # --- Обработка временной колонки ---
     df_all_data_norm[time_column] = pd.to_datetime(df_all_data_norm[time_column], errors='coerce')
     df_all_data_norm = df_all_data_norm.sort_values(by=time_column).reset_index(drop=True)
 
-    # Ensure col_target is included in training columns
-    col_for_train = [col_target] + col_for_train
-    df_all_data_norm = df_all_data_norm[col_for_train].copy()
 
-    # Convert target column to float, handling 'None' strings
-    df_all_data_norm[col_target] = df_all_data_norm[col_target].replace('None', None).astype(float)
+    col_for_train = list(dict.fromkeys(col_for_train))
 
-    # Split data into training and prediction sets
-    df_train = df_all_data_norm.iloc[:last_known_index]
-    df_test = df_all_data_norm.iloc[last_known_index:].copy()
-    df_test[col_target] = np.nan
+    if col_target not in col_for_train:
+        col_for_train = [col_target] + col_for_train
+    else:
+        pass
+        
+    print("col_for_train после обработки:", col_for_train)
+    print("n_features:", len(col_for_train))
+
+    df_working = df_all_data_norm[[time_column] + col_for_train].copy()
+
+    # --- Обработка целевой переменной ---
+    df_working[col_target] = df_working[col_target].replace('None', np.nan).astype(float)
+
+    # --- Разделение данных ---
+    df_train = df_working.iloc[:last_known_index].copy()
+    df_test = df_working.iloc[last_known_index:].copy()
+    df_test.loc[:, col_target] = np.nan # Используем .loc для избежания предупреждений
     df_real_predict = df_test.copy()
 
+    # --- Проверка NaN ---
     nan_locations = df_train.isna()
     if nan_locations.any().any():
         print("NaN values found in df_train:")
-        # Print rows with NaN values
         nan_rows = df_train[nan_locations.any(axis=1)]
         print(f"Rows with NaN:\n{nan_rows}")
-        # Print which columns have NaN and their counts
         nan_columns = nan_locations.sum()
         print(f"NaN counts per column:\n{nan_columns[nan_columns > 0]}")
     else:
         print("No NaN values found in df_train.")
 
-    # Prepare data for XGBoost
-    values = df_train[col_for_train].values
-    x_input = create_x_input(df_train, lag)
+    values = df_train[col_for_train].values # (n_train_samples, n_features_in_col_for_train)
+
+    x_input = create_x_input(df_train[col_for_train], lag) 
+
+
+    # Генерация последовательностей для обучения модели
     X, y = split_sequence(values, lag)
-    n_features = values.shape[1]
 
-    # Train XGBoost model
-    xgb_model = XGBRegressor(**model_architecture_params[0])
+    n_features = len(col_for_train) # Количество признаков в col_for_train
+
+    # --- Обучение модели XGBoost ---
+    xgb_model = XGBRegressor(**model_architecture_params)
+    # Преобразуем X для XGBoost: из (n_samples, lag, n_features) в (n_samples, lag * n_features)
     X_reshaped = X.reshape(X.shape[0], -1)
-    xgb_model.fit(X_reshaped, y)
 
-    # Make predictions
-    x_input = x_input.reshape((1, lag, n_features))
-    predict_values = make_predictions(x_input, df_test.values, n_features, xgb_model, lag)
-    df_real_predict[col_target] = np.array(predict_values).flatten()
+    y_target = y[:, 0] # Предполагаем, что col_target первый
+    xgb_model.fit(X_reshaped, y_target) # Обучаем на значении col_target
 
-    # Log any remaining None values
+    print("x_input shape:", x_input.shape)
+    print("n_features used for training:", n_features)
+
+
+    try:
+        # make_predictions_xgb сама обрабатывает форму
+        y_pred_array = make_predictions_xgb(xgb_model, x_input) # x_input: (lag, n_features)
+        # y_pred_array будет массивом, берем первый (и скорее всего единственный) элемент
+        predict_value_scalar = float(y_pred_array[0])
+        predict_values = [predict_value_scalar] # Оборачиваем в список, как ожидалось ранее
+    except Exception as pred_error:
+        logger.error(f"Ошибка при генерации прогноза с XGBoost: {pred_error}")
+        raise pred_error
+
+    df_real_predict.loc[df_real_predict.index[0], col_target] = predict_value_scalar 
+
     for name, df in {'df_train': df_train, 'df_real_predict': df_real_predict}.items():
         none_indices = df[df.isnull().any(axis=1)].index.tolist()
         if none_indices:
-            logger.error(f"DataFrame '{name}' contains None values at rows: {none_indices}")
+            print(f"WARNING: DataFrame '{name}' contains None/NaN values at rows: {none_indices}")
 
     return df_train, df_real_predict

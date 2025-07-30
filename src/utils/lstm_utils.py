@@ -64,7 +64,14 @@ def make_predictions(x_input, x_future, n_features, model, lag):
         except Exception as e:
             print('-ERROR-')
             print(e)
-        y_predict = model.predict(x_input_tensor, verbose=1)
+        # --- ИСПРАВЛЕНИЕ: Безопасный вызов model.predict ---
+        # Пытаемся вызвать с verbose=1 (для Keras)
+        try:
+            y_predict = model.predict(x_input_tensor, verbose=1)
+        except TypeError:
+            # Если TypeError (например, для XGBoost), вызываем без verbose
+            y_predict = model.predict(x_input_tensor)
+        # ---------------------------------------------------
         predict_values.append(y_predict)
         x_input = np.delete(x_input, (0), axis=1)
         future_lag = x_future[0]
@@ -72,4 +79,3 @@ def make_predictions(x_input, x_future, n_features, model, lag):
         future_lag[0] = y_predict
         x_input = np.append(x_input, future_lag.reshape(1, 1, -1), axis=1)
     return predict_values
-

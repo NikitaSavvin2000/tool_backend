@@ -71,6 +71,7 @@ class PredictRequest(BaseModel):
         ...,
         description="Нормализованные данные временного ряда"
     )
+    time_column: str
     col_target: str = Field(..., description="Целевая колонка")
     evaluation_index: int = Field(..., ge=1, description="Индекс начала оценки")
     last_know_index: int = Field(..., ge=0, description="Последний известный индекс")
@@ -78,11 +79,7 @@ class PredictRequest(BaseModel):
     lag: int = Field(..., ge=1, description="Количество шагов для lookback")
     activation: str = Field(default="relu", description="Функция активации")
     optimizer: str = Field(default="adam", description="Оптимизатор")
-    dropout_count: float = Field(default=0.2, ge=0.0, le=0.5, description="Dropout rate")
-    model_architecture_params: List[Dict[str, Any]] = Field(
-        ...,
-        description="Архитектура модели (список слоёв)"
-    )
+    dropout_count: float = Field(default=0.2, ge=0.0, le=0.5, description="Dropout rate") 
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -112,11 +109,15 @@ class PredictRequest(BaseModel):
 class UserPredictRequest(PredictRequest):
     """
     Расширенная версия PredictRequest с явным указанием колонок.
-    Используется в /user-forecast.
+    Используется в /user_forecast.
     """
     col_for_train: List[str] = Field(..., description="Колонки, используемые для обучения")
 
-    # Наследуем model_config, но можно переопределить examples
+    forecast_horizon: str = Field(
+        ..., 
+        description="Горизонт прогнозирования, например '7D', '30D', '1H' или конкретная дата"
+    )
+
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
@@ -132,10 +133,8 @@ class UserPredictRequest(PredictRequest):
                     "activation": "relu",
                     "optimizer": "adam",
                     "dropout_count": 0.2,
-                    "model_architecture_params": [
-                        {"layer": 1, "type": "LSTM", "neurons": 64}
-                    ],
-                    "col_for_train": ["year", "month"]
+                    "col_for_train": ["year", "month"],
+                    "forecast_horizon": "1H"
                 }
             ]
         }
