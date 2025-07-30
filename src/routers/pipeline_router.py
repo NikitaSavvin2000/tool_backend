@@ -38,7 +38,7 @@ class PipelineRequest(BaseModel):
         }
 
 
-@router.post("/prepare", response_model=Dict[str, List[Dict[str, Any]]])
+@router.post("/", response_model=Dict[str, List[Dict[str, Any]]])
 async def prepare_pipeline_data(body: PipelineRequest = Body(...)):
     """
     Подготовка данных для пайплайна:

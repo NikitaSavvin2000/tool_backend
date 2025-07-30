@@ -24,7 +24,7 @@ from src.routers.user_forecast_router import router as user_forecast_router
 api_router = APIRouter()
 
 # Подключаем все роутеры с их префиксами и тегами
-api_router.include_router(forecast_router, prefix="/forecast", tags=["Forecast"])
+api_router.include_router(forecast_router, tags=["Forecast"])
 api_router.include_router(normalization_router, prefix="/normalization")
 api_router.include_router(metrix_router, prefix="/metrix", tags=["Metrics"])
 api_router.include_router(pipeline_router, prefix="/pipeline", tags=["Pipeline"])

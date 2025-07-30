@@ -30,7 +30,7 @@ class ConvertRequest(BaseModel):
 @router.post("/", response_model=dict)
 async def func_generate_possible_date(body: Annotated[
     ConvertRequest, Body(
-        example={
+        examples={
             "df": example_df_json_long,
             "time_column": "time"
         })]):

@@ -6,16 +6,16 @@ import traceback
 
 from src.backend.forecast import forecast  
 from src.models.schemes import ForecastRequest 
+from src.models.schemes import PredictRequest
 
 router = APIRouter()
-@router.post("/", response_model=Dict[str, Any])
-async def run_forecast(req: ForecastRequest = Body(...)):
+@router.post("/forecast/", response_model=Dict[str, Any])
+async def run_forecast(req: PredictRequest = Body(...)):
     """
     Запуск LSTM-прогноза на основе входных данных.
     """
     try:
-        # Преобразуем json_list_df_all_data_norm в DataFrame
-        df = pd.DataFrame(req.json_list_df_all_data_norm)  # Используем правильное поле
+        df = pd.DataFrame(req.json_list_df_all_data_norm) 
         # Запуск forecast-функции
         df_eval, df_true, loss_list, df_predict, code, message = forecast(
             col_target=req.col_target,
