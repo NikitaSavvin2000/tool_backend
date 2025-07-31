@@ -35,7 +35,7 @@ def load_valid_tokens():
 async def test_forecast_valid_request():
     # Загрузка допустимых токенов
     valid_tokens = load_valid_tokens()
-    VALID_TOKEN = valid_tokens[0]  # Берем первый допустимый токен
+    VALID_TOKEN = valid_tokens[0] 
 
     # Подготовка валидных тестовых данных
     payload = {

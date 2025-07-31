@@ -10,7 +10,6 @@ from fastapi import status
 from src.server import app
 from typing import Any, List, Dict, Optional
 
-# Функция для загрузки допустимых токенов
 def load_valid_tokens():
     try:
         tokens_link = os.getenv("TOKEN_LIST")
@@ -87,11 +86,9 @@ async def test_user_forecast_valid_request():
 
 @pytest.mark.asyncio
 async def test_user_forecast_invalid_request():
-    # Загрузка допустимых токенов
     valid_tokens = load_valid_tokens()
-    VALID_TOKEN = valid_tokens[0]  # Берем первый допустимый токен
+    VALID_TOKEN = valid_tokens[0]  
 
-    # Подготовка невалидных тестовых данных
     invalid_payload = {
         "df": [],
         "time_column": "",
@@ -100,12 +97,10 @@ async def test_user_forecast_invalid_request():
         "col_for_train": []
     }
 
-    # Создаем асинхронный клиент для тестирования
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://0.0.0.0:7070/") as ac:
         headers = {"Authorization": f"Bearer {VALID_TOKEN}"}
         response = await ac.post("/api/v1/user_forecast/", json=invalid_payload, headers=headers)
 
-    # Проверяем, что получаем ошибку 400
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     error_details = response.json()

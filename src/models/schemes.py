@@ -140,6 +140,28 @@ class UserPredictRequest(PredictRequest):
         }
     )
 
+class UpdateColRequest(BaseModel):
+    """
+    Схема для обновления списка колонок, используемых для обучения.
+    Используется в /update_col_for_train и /update_col_for_train_lstm.
+    """
+    col_for_train: List[str] = Field(
+        ...,
+        description="Список названий колонок, которые будут использоваться для обучения"
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "col_for_train": ["year", "month", "hour", "is_weekend"]
+                },
+                {
+                    "col_for_train": ["temperature", "humidity", "lag_1"]
+                }
+            ]
+        }
+    )
 
 class MetricsResponse(BaseModel):
     RMSE: float

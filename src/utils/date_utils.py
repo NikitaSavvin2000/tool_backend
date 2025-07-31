@@ -65,10 +65,8 @@ def standardize_datetime(input_date: Union[str, int, float, datetime]) -> str:
                     except ValueError:
                         continue
                 else:
-                    # Если ни один формат не подошел, пробуем парсинг через dateutil
                     dt = parse(input_date)
 
-        # Если ни один из форматов не подходит
         if dt is None:
             raise ValueError("Unsupported input type")
 
