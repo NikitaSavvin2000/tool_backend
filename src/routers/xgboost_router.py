@@ -12,7 +12,7 @@ from src.services.xgboost_service import run_xgboost_forecast
 
 router = APIRouter()
 
-@router.post("/predict-xgboost", response_model=dict)
+@router.post("/", response_model=dict)
 async def predict_xgboost(body: PredictRequest = Body(...)) -> Dict[str, Any]:
     """
     Эндпоинт для прогнозирования временного ряда с использованием XGBoost.

@@ -1,125 +1,214 @@
 # src/models/schemes.py
-from typing import Dict, List, Optional
+from typing import List, Dict, Any, Optional
+from pydantic import BaseModel, Field
+from pydantic import ConfigDict  # Только этот способ для V2
 
-from pydantic import BaseModel
 
+class DataFrameRequest(BaseModel):
+    """
+    Базовая модель для передачи списка словарей (аналог DataFrame).
+    Используется в normalization, vectorization и других роутерах.
+    """
+    data: List[Dict[str, Any]] = Field(..., description="Список записей (аналог строк DataFrame)")
+    time_column: str = Field(..., description="Название колонки с временными метками")
+    target_column: str = Field(..., description="Название целевой колонки")
 
-class PredictRequest(BaseModel):
-    df: List[Dict]
-    time_column: str
-    col_target: str
-    forecast_horizon_time: str
-    model_architecture_params: Optional[List[Dict]] = None
-    lag: Optional[int] = None
-    type: Optional[str] = "xgboost"
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "df": [
-                    {"Дата": "2023-01-01", "Цена": 100},
-                    {"Дата": "2023-01-02", "Цена": 105},
-                    {"Дата": "2023-01-03", "Цена": 110}
-                ],
-                "time_column": "Дата",
-                "col_target": "Цена",
-                "forecast_horizon_time": "2024-01-01",
-                "model_architecture_params": [
-                    {"n_estimators": 100, "learning_rate": 0.1}
-                ],
-                "lag": 5,
-                "type": "xgboost"
-            }
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "data": [
+                        {"Дата": "2023-01-01", "Цена": 100},
+                        {"Дата": "2023-01-02", "Цена": 105},
+                        {"Дата": "2023-01-03", "Цена": 110}
+                    ],
+                    "time_column": "Дата",
+                    "target_column": "Цена"
+                }
+            ]
         }
+    )
 
-class AnalyticsDFsRequest(BaseModel):
-    dfs_json_list: list[dict]
-
-class NormalizationRequest(BaseModel):
-    col_time: str
-    col_target: str
-    json_list_df: List[Dict]
 
 class ForecastRequest(BaseModel):
-    col_target: str
-    evaluation_index: int
-    last_know_index: int
-    epochs: int
-    lag: int
-    activation: str
-    optimizer: str
-    dropout_count: float
-    model_architecture_params: List[Dict]
-    json_list_df_all_data_norm: List[Dict]
+    """
+    Запрос для запуска прогноза (используется в /forecast/run).
+    """
+    data: List[Dict[str, Any]] = Field(..., description="Нормализованные данные временного ряда")
+    time_column: str = Field(..., description="Имя временной колонки")
+    target_column: str = Field(..., description="Имя целевой колонки")
+    forecast_horizon: str = Field(..., description="Горизонт прогноза, например '7D', '30D', '1H'")
+    model_type: Optional[str] = Field(default="LSTM", description="Тип модели: LSTM, XGBoost и т.д.")
+    col_for_train: Optional[List[str]] = Field(
+        default=None,
+        description="Дополнительные колонки для обучения"
+    )
 
-
-class ReverseNormalizationRequest(BaseModel):
-    col_time: str
-    col_target: str
-    json_list_norm_df: List[Dict]
-    min_val: float
-    max_val: float
-
-class MenrixAllRequest(BaseModel):
-    col_time: str
-    col_target: str
-    json_list_df_reverse_evaluation: List[Dict]
-    json_list_df_reverse_comparative: List[Dict]
-
-
-class ForecastRequestXGBoost(BaseModel):
-    col_target: str
-    evaluation_index: int
-    last_know_index: int
-    lag: int
-    type: str
-    model_architecture_params: List[Dict]
-    json_list_df_all_data_norm: List[Dict]
-    norm_values: str
-
-
-class ForecastRequestLSTM(BaseModel):
-    col_target: str
-    evaluation_index: int
-    last_know_index: int
-    epochs: int
-    lag: int
-    activation: str
-    optimizer: str
-    dropout_count: float
-    model_architecture_params: List[Dict]
-    json_list_df_all_data_norm: List[Dict]
-    norm_values: str
-    type: str
-
-
-class ForecastRequestNeuralNetworks(BaseModel):
-    col_target: str
-    evaluation_index: int
-    last_know_index: int
-    model_architecture_params: List[Dict]
-    json_list_df_all_data_norm: List[Dict]
-    norm_values: str
-    type: str
-
-
-class UpdateColRequest(BaseModel):
-    col_for_train: List[str]
-
-
-class ColsToChose(BaseModel):
-    df: List[Dict]
-
-
-class ConvertRequest(BaseModel):
-    df: List[Dict]
-    time_column: str
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "data": [
+                        {"temperature": 0.1, "year": 0.5, "month": 0.2},
+                        {"temperature": 0.2, "year": 0.5, "month": 0.3}
+                    ],
+                    "time_column": "timestamp",
+                    "target_column": "temperature",
+                    "forecast_horizon": "7D",
+                    "model_type": "LSTM",
+                    "col_for_train": ["year", "month"]
+                }
+            ]
+        }
+    )
 
 
 class PredictRequest(BaseModel):
-    df: List[Dict]
+    """
+    Модель для запроса прогноза (LSTM/XGBoost/User Forecast).
+    """
+    json_list_df_all_data_norm: List[Dict[str, Any]] = Field(
+        ...,
+        description="Нормализованные данные временного ряда"
+    )
     time_column: str
-    col_target: str
-    forecast_horizon_time: str
+    col_target: str = Field(..., description="Целевая колонка")
+    evaluation_index: int = Field(..., ge=1, description="Индекс начала оценки")
+    last_know_index: int = Field(..., ge=0, description="Последний известный индекс")
+    epochs: int = Field(..., ge=1, le=1000, description="Количество эпох обучения")
+    lag: int = Field(..., ge=1, description="Количество шагов для lookback")
+    activation: str = Field(default="relu", description="Функция активации")
+    optimizer: str = Field(default="adam", description="Оптимизатор")
+    dropout_count: float = Field(default=0.2, ge=0.0, le=0.5, description="Dropout rate") 
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "json_list_df_all_data_norm": [
+                        {"temperature": 0.1, "year": 0.5},
+                        {"temperature": 0.2, "year": 0.5}
+                    ],
+                    "col_target": "temperature",
+                    "evaluation_index": 10,
+                    "last_know_index": 12,
+                    "epochs": 5,
+                    "lag": 2,
+                    "activation": "relu",
+                    "optimizer": "adam",
+                    "dropout_count": 0.2,
+                    "model_architecture_params": [
+                        {"layer": 1, "type": "LSTM", "neurons": 64}
+                    ]
+                }
+            ]
+        }
+    )
 
 
+class UserPredictRequest(PredictRequest):
+    """
+    Расширенная версия PredictRequest с явным указанием колонок.
+    Используется в /user_forecast.
+    """
+    col_for_train: List[str] = Field(..., description="Колонки, используемые для обучения")
+
+    forecast_horizon: str = Field(
+        ..., 
+        description="Горизонт прогнозирования, например '7D', '30D', '1H' или конкретная дата"
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "json_list_df_all_data_norm": [
+                        {"temperature": 0.1, "year": 0.5, "month": 0.2}
+                    ],
+                    "col_target": "temperature",
+                    "evaluation_index": 10,
+                    "last_know_index": 12,
+                    "epochs": 5,
+                    "lag": 2,
+                    "activation": "relu",
+                    "optimizer": "adam",
+                    "dropout_count": 0.2,
+                    "col_for_train": ["year", "month"],
+                    "forecast_horizon": "1H"
+                }
+            ]
+        }
+    )
+
+
+class MetricsResponse(BaseModel):
+    RMSE: float
+    R2: float
+    MAE: float
+    MAPE: float
+    WMAPE: float
+
+
+class ForecastResponse(BaseModel):
+    df_train: List[Dict[str, Any]]
+    df_test: List[Dict[str, Any]]
+    df_predict: List[Dict[str, Any]]
+    metrics: MetricsResponse
+    loss: List[float]
+    response_code: int
+    response_message: str
+
+
+class AnalyticsRequest(BaseModel):
+    dataframes: List[List[Dict[str, Any]]] = Field(..., description="Список DataFrame")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "dataframes": [
+                        [{"x": 1, "y": 2}, {"x": 2, "y": 3}],
+                        [{"a": 10, "b": 20}]
+                    ]
+                }
+            ]
+        }
+    )
+
+
+class AnalyticsResponse(BaseModel):
+    message: str
+    nan_counts: Dict[str, Dict[str, int]] = Field(default={}, description="Количество NaN по колонкам")
+
+
+class BenchmarkRequest(BaseModel):
+    dataset: List[Dict[str, Any]]
+    models: List[str]
+    target_column: str
+    forecast_horizon: str
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "dataset": [{"value": 100}, {"value": 105}],
+                    "models": ["LSTM", "XGBoost"],
+                    "target_column": "value",
+                    "forecast_horizon": "7D"
+                }
+            ]
+        }
+    )
+
+
+class ModelMetric(BaseModel):
+    model: str
+    RMSE: float
+    MAPE: float
+    R2: float
+
+
+class BenchmarkResponse(BaseModel):
+    results: List[ModelMetric]
+    best_model: str
+    timestamp: str

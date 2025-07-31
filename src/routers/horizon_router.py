@@ -12,7 +12,7 @@ from src.services.horizon_service import run_horizon_forecast
 
 router = APIRouter()
 
-@router.post("/predict-horizon", response_model=dict)
+@router.post("/", response_model=dict)
 async def predict_horizon(body: PredictRequest = Body(...)) -> Dict[str, Any]:
     """
     Эндпоинт для прогнозирования временного ряда с использованием Horizon.

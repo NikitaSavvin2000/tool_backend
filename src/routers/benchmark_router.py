@@ -25,7 +25,7 @@ class BenchmarkResponse(BaseModel):
     datasets: List[DatasetBenchmark]
     colab_links: Dict[str, HttpUrl]
 
-@router.get("/benchmarks", response_model=BenchmarkResponse)
+@router.get("/", response_model=BenchmarkResponse)
 @log_endpoint()
 async def get_benchmark_metrics(request: Request):
     """

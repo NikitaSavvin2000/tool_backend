@@ -3,6 +3,7 @@
 from typing import Any, Dict, List
 
 import pandas as pd
+import traceback
 
 from src.backend.xgb import forecast_XGBoost_user
 from src.core.logger import logger
@@ -10,45 +11,33 @@ from src.utils.date_utils import standardize_datetime
 
 
 def run_user_forecast(
-    df: pd.DataFrame,
+    df: List[Dict[str, Any]],
     time_column: str,
     col_target: str,
     forecast_horizon_time: str,
     col_for_train: List[str],
+    lag: int
 ) -> Dict[str, Any]:
-    """
-    Выполняет пользовательское прогнозирование временных рядов.
-    
-    :param df: Исходный DataFrame.
-    :param time_column: Название временной колонки.
-    :param col_target: Название целевой колонки.
-    :param forecast_horizon_time: Горизонт прогнозирования.
-    :param col_for_train: Список колонок для обучения модели.
-    :return: Словарь с результатами прогноза.
-    """
     try:
-        # Преобразование временной колонки в datetime
+        df = pd.DataFrame(df)
+
         df[time_column] = pd.to_datetime(df[time_column], errors='coerce')
         forecast_horizon_time = standardize_datetime(forecast_horizon_time)
 
-        # Определение последнего известного индекса
         last_known_index = len(df) - 1
 
-        # Пример использования XGBoost для прогнозирования
-        df_evaluetion, df_true_all_col, loss_list, df_real_predict, response_code, response_massage = (
-            forecast_XGBoost_user(
-                col_target=col_target,
-                time_column=time_column,
-                df_all_data_norm=df[col_for_train],
-                last_known_index=last_known_index,
-                lag=12,  # Пример значения лага
-                model_architecture_params={"objective": "reg:squarederror"},
-                forecast_type="predictions",
-                norm_values=True,
-            )
+        df_all_data_norm = df[[time_column] + col_for_train]
+
+        df_train, df_real_predict = forecast_XGBoost_user(
+            col_target=col_target,
+            time_column=time_column,
+            df_all_data_norm=df_all_data_norm,
+            last_known_index=last_known_index,
+            lag=lag,
+            model_architecture_params={"objective": "reg:squarederror"},
+            col_for_train=col_for_train,
         )
 
-        # Формирование результата
         last_real_data = df.to_dict(orient="records")
         predictions = df_real_predict.to_dict(orient="records")
 
@@ -79,4 +68,5 @@ def run_user_forecast(
 
     except Exception as e:
         logger.error(f"Ошибка в run_user_forecast: {e}")
+        logger.error(traceback.format_exc()) 
         raise
