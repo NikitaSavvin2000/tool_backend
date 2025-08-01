@@ -6,17 +6,15 @@ import pandas as pd
 from fastapi import APIRouter, Body, HTTPException
 
 from src.core.logger import logger
-from src.models.schemes import (
-    ColsToChoseRequest,
-    ConvertRequest,
-    PredictRequest,
-)
+from src.models.schemes import ColsToChoseRequest
+from src.routers.lstm_router import PredictRequest
+from src.routers.possible_date_router import ConvertRequest
 from src.services.pipeline_service import (
-    all_available_forecast,
     cols_to_chose,
     convert_df_to_datetime,
     generate_possible_date,
 )
+from src.backend.all_available_forecast import all_available_forecast
 
 router = APIRouter()
 

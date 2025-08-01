@@ -2,7 +2,7 @@
 import os
 import pytest
 import pandas as pd
-from src.models.schemes import NormalizationRequest
+from src.routers.normalization_router import NormalizationRequest
 
 
 home_path = os.getcwd()

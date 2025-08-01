@@ -6,7 +6,8 @@ import pandas as pd
 from fastapi import APIRouter, Body, HTTPException
 
 from src.core.logger import logger
-from src.models.schemes import NormalizationRequest, ReverseNormalizationRequest
+from src.routers.normalization_router import NormalizationRequest
+from src.routers.reverse_vectorization_router import ReverseNormalizationRequest
 from src.services.normalization_service import (
     run_normalization,
     run_reverse_normalization,

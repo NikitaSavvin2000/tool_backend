@@ -1,16 +1,13 @@
 # tests/endpoints/test_normalization.py
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from src.api.v1.normalization import router
+from src.server import app
 
 
-app = FastAPI()
-app.include_router(router)
 client = TestClient(app)
 
 
 def test_normalization_response_structure(mock_normalization_data):
-    response = client.post('/normalize', json=mock_normalization_data.model_dump())
+    response = client.post('/api/v1/vectorization', json=mock_normalization_data.model_dump())
     
     assert response.status_code == 200
     data = response.json()
@@ -23,8 +20,8 @@ def test_normalization_response_structure(mock_normalization_data):
 
 def test_normalization_errors():
     # Тест на отсутствие обязательных полей
-    response = client.post('/normalize', json={})
-    assert response.status_code == 422
+    response = client.post('/api/v1/vectorization', json={})
+    assert response.status_code == 400
     assert "field required" in response.text.lower()
     
     # Тест на неверный тип данных
@@ -33,8 +30,8 @@ def test_normalization_errors():
         "col_time": 123,
         "col_target": 456
     }
-    response = client.post('/normalize', json=invalid_data)
-    assert response.status_code == 422
+    response = client.post('/api/v1/vectorization', json=invalid_data)
+    assert response.status_code == 400
     
     # Тест на отсутствие колонок в данных
     missing_col_data = {
@@ -42,7 +39,7 @@ def test_normalization_errors():
         "col_time": "time",
         "col_target": "load_consumption"
     }
-    response = client.post('/normalize', json=missing_col_data)
+    response = client.post('/api/v1/vectorization', json=missing_col_data)
     assert response.status_code == 400
     
     # Тест на пустые данные
@@ -51,13 +48,13 @@ def test_normalization_errors():
         "col_time": "time",
         "col_target": "load_consumption"
     }
-    response = client.post('/normalize', json=empty_data)
+    response = client.post('/api/v1/vectorization', json=empty_data)
     assert response.status_code == 400
     
 
 
 def test_denormalization_response_structure(mock_normalization_data):
-    response_norm = client.post('/normalize', json=mock_normalization_data.model_dump())
+    response_norm = client.post('/api/v1/vectorization', json=mock_normalization_data.model_dump())
     assert response_norm.status_code == 200, f"Normalization failed with status {response_norm.status_code}"
 
     data_norm = response_norm.json()
@@ -69,7 +66,7 @@ def test_denormalization_response_structure(mock_normalization_data):
         'max_val': data_norm['max_val']
     }
 
-    denorm_response = client.post('/denormalize', json=denorm_request)
+    denorm_response = client.post('/api/v1/reverse-vectorization', json=denorm_request)
     assert denorm_response.status_code == 200
 
     data = denorm_response.json()
@@ -86,8 +83,8 @@ def test_denormalization_errors(mock_normalization_data):
         "min_val": "invalid",
         "max_val": 1.0
     }
-    response = client.post('/denormalize', json=invalid_data)
-    assert response.status_code == 422
+    response = client.post('/api/v1/reverse-vectorization', json=invalid_data)
+    assert response.status_code == 400
     
     # Тест на отсутствие колонок
     missing_col_data = {
@@ -97,8 +94,8 @@ def test_denormalization_errors(mock_normalization_data):
         "min_val": 0.0,
         "max_val": 1.0
     }
-    response = client.post('/denormalize', json=missing_col_data)
-    assert response.status_code == 422
+    response = client.post('/api/v1/reverse-vectorization', json=missing_col_data)
+    assert response.status_code == 400
 
     empty_data = {
         "json_list_norm_df": [],
@@ -107,5 +104,5 @@ def test_denormalization_errors(mock_normalization_data):
         "min_val": 0.0,
         "max_val": 1.0
     }
-    response = client.post('/denormalize', json=empty_data)
+    response = client.post('/api/v1/reverse-vectorization', json=empty_data)
     assert response.status_code == 400
