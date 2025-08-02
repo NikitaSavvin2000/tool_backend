@@ -1,13 +1,9 @@
 # src/services/analytics_service.py
-
-from typing import Dict, List
-
+from typing import Dict, List, Any
 import pandas as pd
-
 from src.core.logger import logger
 
-
-def run_analytics_dfs(dfs_json_list: List[Dict]) -> Dict[str, str]:
+def run_analytics_dfs(dfs_json_list: List[List[Dict[str, Any]]]) -> Dict[str, Any]:
     """
     Выполняет анализ множества DataFrame'ов.
     
@@ -15,15 +11,19 @@ def run_analytics_dfs(dfs_json_list: List[Dict]) -> Dict[str, str]:
     :return: Результат анализа в формате JSON.
     """
     try:
-        # Преобразование JSON-списков в DataFrame'ы
+        if not dfs_json_list:
+            logger.warning("Получен пустой список dataframes")
+            return {
+                "message": "Hello Backend",
+                "nan_counts": {},
+            }
+
         dfs = [pd.DataFrame(df) for df in dfs_json_list]
 
-        # Пример анализа: проверка на наличие NaN значений
         nan_counts = {}
         for i, df in enumerate(dfs):
             nan_counts[f"df_{i+1}"] = df.isnull().sum().to_dict()
 
-        # Возвращаем результат
         return {
             "message": "Hello Backend",
             "nan_counts": nan_counts,

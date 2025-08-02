@@ -20,6 +20,7 @@ from src.routers.vectorization_router import router as vectorization_router
 from src.routers.reverse_vectorization_router import router as reverse_vectorization_router
 from src.routers.user_forecast_router import router as user_forecast_router
 from src.routers.col_update_router import router as col_update_router
+from src.routers.analytics_router import router as analytics_router
 
 # Создаём главный роутер с префиксом API
 api_router = APIRouter()
@@ -37,3 +38,4 @@ api_router.include_router(vectorization_router, prefix="/vectorization", tags=["
 api_router.include_router(reverse_vectorization_router, prefix="/reverse-vectorization", tags=["Reverse Vectorization"])
 api_router.include_router(user_forecast_router, prefix="/user_forecast")
 api_router.include_router(col_update_router, prefix="", tags=["Col Update"])
+api_router.include_router(analytics_router, tags=["Analytics"])
