@@ -36,11 +36,10 @@ def load_valid_tokens():
 @pytest.mark.asyncio
 async def test_all_metrics_success():
     """Тест: успешный расчет всех метрик."""
-    # Загрузка токена
     valid_tokens = load_valid_tokens()
     VALID_TOKEN = valid_tokens[0]
 
-    # Подготовка тестовых данных (пример из схемы и документации)
+    # Подготовка тестовых данных
     payload = {
         "col_time": "time",
         "col_target": "value",
@@ -58,7 +57,6 @@ async def test_all_metrics_success():
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://0.0.0.0:7070/") as ac:
         headers = {"Authorization": f"Bearer {VALID_TOKEN}"}
-        # Путь из api_router.py: prefix="/metrix" + route "/all-metrics"
         response = await ac.post("/api/v1/metrix/all-metrics", json=payload, headers=headers)
 
     # 1. Проверка статуса ответа
@@ -87,15 +85,12 @@ async def test_all_metrics_success():
 
     # 6. Проверка структуры 'df_metrics'
     df_metrics = json_response["df_metrics"]
-    # Проверим наличие ключей, соответствующих входным данным
     assert "time" in df_metrics
     assert "value_true" in df_metrics
     assert "value_pred" in df_metrics
-    # Проверим, что это списки
     assert isinstance(df_metrics["time"], list)
     assert isinstance(df_metrics["value_true"], list)
     assert isinstance(df_metrics["value_pred"], list)
-    # Проверим длину (должна совпадать с длиной входных данных)
     expected_length = len(payload["df_evaluation"])
     assert len(df_metrics["time"]) == expected_length
     assert len(df_metrics["value_true"]) == expected_length

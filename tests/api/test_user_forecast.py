@@ -11,6 +11,7 @@ from src.server import app
 from typing import Any, List, Dict, Optional
 
 def load_valid_tokens():
+    """Загружает валидные токены из пути, указанного в переменной окружения TOKEN_LIST."""
     try:
         tokens_link = os.getenv("TOKEN_LIST")
         if not tokens_link:
@@ -34,8 +35,10 @@ def load_valid_tokens():
 
     except Exception as e:
         raise RuntimeError(f"Failed to load tokens: {e}")
+
 @pytest.mark.asyncio
 async def test_user_forecast_valid_request():
+    """Тест: успешный прогноз пользователя с валидными данными."""
     valid_tokens = load_valid_tokens()
     VALID_TOKEN = valid_tokens[0]
 
@@ -86,6 +89,7 @@ async def test_user_forecast_valid_request():
 
 @pytest.mark.asyncio
 async def test_user_forecast_invalid_request():
+    """Тест: прогноз пользователя с невалидными данными."""
     valid_tokens = load_valid_tokens()
     VALID_TOKEN = valid_tokens[0]  
 

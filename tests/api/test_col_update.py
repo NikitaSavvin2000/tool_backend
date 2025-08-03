@@ -9,10 +9,7 @@ from src.server import app
 
 
 def load_valid_tokens():
-    """
-    Загружает валидные токены из пути, указанного в переменной окружения TOKEN_LIST.
-    Используется тот же подход, что и в test_forecast.py.
-    """
+    """Загружает валидные токены из пути, указанного в переменной окружения TOKEN_LIST."""
     try:
         tokens_link = os.getenv("TOKEN_LIST")
         if not tokens_link:
@@ -41,10 +38,7 @@ def load_valid_tokens():
 
 @pytest.mark.asyncio
 async def test_update_col_for_train_success():
-    """
-    Тест: успешное обновление списка колонок для обучения.
-    Проверяет, что возвращаются ожидаемые поля: message и columns.
-    """
+    """Тест: успешное обновление списка колонок для обучения."""
     # Загрузка токена
     valid_tokens = load_valid_tokens()
     VALID_TOKEN = valid_tokens[0]
@@ -70,10 +64,7 @@ async def test_update_col_for_train_success():
 
 @pytest.mark.asyncio
 async def test_update_col_for_train_invalid_columns():
-    """
-    Тест: передача несуществующих колонок.
-    Ожидается ошибка 400 с описанием недопустимых колонок.
-    """
+    """Тест: передача несуществующих колонок."""
     valid_tokens = load_valid_tokens()
     VALID_TOKEN = valid_tokens[0]
     headers = {"Authorization": f"Bearer {VALID_TOKEN}"}
@@ -99,10 +90,7 @@ async def test_update_col_for_train_invalid_columns():
 
 @pytest.mark.asyncio
 async def test_update_col_for_train_empty_list():
-    """
-    Тест: пустой список колонок.
-    Должен вернуть 400, так как список не может быть пустым.
-    """
+    """Тест: пустой список колонок."""
     valid_tokens = load_valid_tokens()
     VALID_TOKEN = valid_tokens[0]
     headers = {"Authorization": f"Bearer {VALID_TOKEN}"}

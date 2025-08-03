@@ -1,3 +1,4 @@
+# tests/api/test_all_metrics.py
 import pytest
 import os
 import yaml
@@ -7,6 +8,7 @@ from src.server import app
 
 
 def load_valid_tokens():
+    """Загружает валидные токены из пути, указанного в переменной окружения TOKEN_LIST."""
     try:
         tokens_link = os.getenv("TOKEN_LIST")
         if not tokens_link:
@@ -35,7 +37,7 @@ def load_valid_tokens():
 
 @pytest.mark.asyncio
 async def test_all_metrics_success():
-    """Базовый тест: успешный расчёт метрик между двумя DataFrame'ами"""
+    """Тест: успешный расчёт метрик между двумя DataFrame'ами."""
     valid_tokens = load_valid_tokens()
     VALID_TOKEN = valid_tokens[0]
 
