@@ -39,6 +39,7 @@ async def test_forecast_valid_request():
     VALID_TOKEN = valid_tokens[0] 
 
     payload = {
+        "time_column": "timestamp",
         "col_target": "temperature",
         "evaluation_index": 10,
         "last_know_index": 12,

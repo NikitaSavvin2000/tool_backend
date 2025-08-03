@@ -34,7 +34,7 @@ class AllMetricsRequest(BaseModel):
             }
         }
 
-@router.post("/all-metrics", response_model=Dict[str, Any], tags=["Metrics"])
+@router.post("/all-metrics/", response_model=Dict[str, Any], tags=["Metrics"])
 async def calculate_all_metrics(body: AllMetricsRequest = Body(...)) -> Dict[str, Any]:
     """
     Эндпоинт для расчёта метрик между двумя наборами данных (df_evaluation и df_comparative).

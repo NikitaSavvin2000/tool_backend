@@ -1,7 +1,7 @@
 # src/models/schemes.py
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
-from pydantic import ConfigDict  # Только этот способ для V2
+from pydantic import ConfigDict 
 
 
 class DataFrameRequest(BaseModel):
@@ -80,6 +80,10 @@ class PredictRequest(BaseModel):
     activation: str = Field(default="relu", description="Функция активации")
     optimizer: str = Field(default="adam", description="Оптимизатор")
     dropout_count: float = Field(default=0.2, ge=0.0, le=0.5, description="Dropout rate") 
+
+    model_architecture_params: Optional[List[Dict[str, Any]]] = Field(
+        default=None, description="Параметры архитектуры модели"
+    )
 
     model_config = ConfigDict(
         json_schema_extra={

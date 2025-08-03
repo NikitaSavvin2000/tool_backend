@@ -56,7 +56,7 @@ async def test_all_metrics_success():
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://0.0.0.0:7070/") as ac:
         headers = {"Authorization": f"Bearer {VALID_TOKEN}"}
-        response = await ac.post("/api/v1/all-metrics", json=payload, headers=headers)
+        response = await ac.post("/api/v1/all-metrics/", json=payload, headers=headers)
 
     assert response.status_code == status.HTTP_200_OK
 
