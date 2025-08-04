@@ -1,13 +1,10 @@
 # tests/endpoints/test_normalization.py
-from fastapi.testclient import TestClient
-
-from src.server import app
-
-client = TestClient(app)
+import pytest
 
 
-def test_normalization_response_structure(mock_normalization_data):
-    response = client.post('/api/v1/vectorization', json=mock_normalization_data.model_dump())
+@pytest.mark.asyncio
+def test_normalization_response_structure(async_client, mock_normalization_data):
+    response = async_client.post('/api/v1/vectorization', json=mock_normalization_data.model_dump())
     
     assert response.status_code == 200
     data = response.json()
@@ -18,43 +15,29 @@ def test_normalization_response_structure(mock_normalization_data):
     assert data['max_val'] >= data['min_val']
 
 
-def test_normalization_errors():
+@pytest.mark.asyncio
+def test_normalization_errors(async_client, test_norm_error_fixture):
     # Тест на отсутствие обязательных полей
-    response = client.post('/api/v1/vectorization', json={})
+    response = async_client.post('/api/v1/vectorization', json={})
     assert response.status_code == 400
     assert "field required" in response.text.lower()
     
     # Тест на неверный тип данных
-    invalid_data = {
-        "json_list_df": "not_a_list",
-        "col_time": 123,
-        "col_target": 456
-    }
-    response = client.post('/api/v1/vectorization', json=invalid_data)
+    response = async_client.post('/api/v1/vectorization', json=test_norm_error_fixture['wrong_df_data_type']['input'])
     assert response.status_code == 400
     
     # Тест на отсутствие колонок в данных
-    missing_col_data = {
-        "json_list_df": [{"wrong_time": "2020-01-01", "value": 10.5}],
-        "col_time": "time",
-        "col_target": "load_consumption"
-    }
-    response = client.post('/api/v1/vectorization', json=missing_col_data)
+    response = async_client.post('/api/v1/vectorization', json=test_norm_error_fixture['missing_col']['input'])
     assert response.status_code == 400
     
     # Тест на пустые данные
-    empty_data = {
-        "json_list_df": [],
-        "col_time": "time",
-        "col_target": "load_consumption"
-    }
-    response = client.post('/api/v1/vectorization', json=empty_data)
+    response = async_client.post('/api/v1/vectorization', json=test_norm_error_fixture['empty_df']['input'])
     assert response.status_code == 400
     
 
-
-def test_denormalization_response_structure(mock_normalization_data):
-    response_norm = client.post('/api/v1/vectorization', json=mock_normalization_data.model_dump())
+@pytest.mark.asyncio
+def test_denormalization_response_structure(async_client, mock_normalization_data):
+    response_norm = async_client.post('/api/v1/vectorization', json=mock_normalization_data.model_dump())
     assert response_norm.status_code == 200, f"Normalization failed with status {response_norm.status_code}"
 
     data_norm = response_norm.json()
@@ -66,7 +49,7 @@ def test_denormalization_response_structure(mock_normalization_data):
         'max_val': data_norm['max_val']
     }
 
-    denorm_response = client.post('/api/v1/reverse-vectorization', json=denorm_request)
+    denorm_response = async_client.post('/api/v1/reverse-vectorization', json=denorm_request)
     assert denorm_response.status_code == 200
 
     data = denorm_response.json()
@@ -74,35 +57,15 @@ def test_denormalization_response_structure(mock_normalization_data):
     assert 'df_all_data_reverse_norm' in data
 
 
-def test_denormalization_errors(mock_normalization_data):
+@pytest.mark.asyncio
+def test_denormalization_errors(async_client, test_denorm_error_fixture):
     # Тест на невалидные min_val/max_val
-    invalid_data = {
-        "json_list_df": [{"time": "2020-01-01", "load_consumption": 0.5}],
-        "col_time": "time",
-        "col_target": "load_consumption",
-        "min_val": "invalid",
-        "max_val": 1.0
-    }
-    response = client.post('/api/v1/reverse-vectorization', json=invalid_data)
+    response = async_client.post('/api/v1/reverse-vectorization', json=test_denorm_error_fixture['invalid_data']['input'])
     assert response.status_code == 400
     
     # Тест на отсутствие колонок
-    missing_col_data = {
-        "json_list_df": [{"wrong_col": "2020-01-01", "value": 0.5}],
-        "col_time": "time",
-        "col_target": "load_consumption",
-        "min_val": 0.0,
-        "max_val": 1.0
-    }
-    response = client.post('/api/v1/reverse-vectorization', json=missing_col_data)
+    response = async_client.post('/api/v1/reverse-vectorization', json=test_denorm_error_fixture['missing_col_data']['input'])
     assert response.status_code == 400
 
-    empty_data = {
-        "json_list_norm_df": [],
-        "col_time": "time",
-        "col_target": "load_consumption",
-        "min_val": 0.0,
-        "max_val": 1.0
-    }
-    response = client.post('/api/v1/reverse-vectorization', json=empty_data)
+    response = async_client.post('/api/v1/reverse-vectorization', json=test_denorm_error_fixture['empty_df']['input'])
     assert response.status_code == 400
