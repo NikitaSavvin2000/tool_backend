@@ -1,7 +1,7 @@
 # tests/endpoints/test_normalization.py
 from fastapi.testclient import TestClient
-from src.server import app
 
+from src.server import app
 
 client = TestClient(app)
 
