@@ -59,7 +59,12 @@ def generate_possible_date(
 
         # Преобразование временной колонки в datetime
         df[time_column] = pd.to_datetime(df[time_column], errors='coerce')
-        forecast_horizon_time = standardize_datetime(forecast_horizon_time)
+        
+        # Преобразование горизонта прогнозирования в Timestamp
+        try:
+            forecast_horizon_time = pd.to_datetime(forecast_horizon_time)
+        except ValueError as e:
+            raise ValueError(f"Неверный формат даты горизонта прогнозирования: {forecast_horizon_time}") from e
 
         # Определение последней известной даты
         last_known_date = df[time_column].max()

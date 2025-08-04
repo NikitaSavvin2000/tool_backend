@@ -4,6 +4,10 @@ from pydantic import BaseModel, Field
 from pydantic import ConfigDict 
 
 
+class ColsToChoseRequest(BaseModel):
+    all_possible_cols: List[str]
+
+
 class DataFrameRequest(BaseModel):
     """
     Базовая модель для передачи списка словарей (аналог DataFrame).
