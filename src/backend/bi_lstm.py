@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from src.core.logger import logger
 from tensorflow.keras.callbacks import Callback, EarlyStopping, ReduceLROnPlateau
 from tensorflow.keras.layers import LSTM, Bidirectional, Dense, Dropout
 from tensorflow.keras.models import Sequential
@@ -29,7 +30,6 @@ class TerminateOnNaNCallback(tf.keras.callbacks.Callback):
 
         # Если loss является NaN или None, остановим обучение
         if loss is None or np.isnan(loss):
-            print(f'\nОбучение остановлено на эпохе {epoch + 1} из-за NaN/None значений в loss.')
             self.model.stop_training = True
             df_evaluetion, df_true_all_col, loss_list, df_real_predict = None, None, None, None
             response_code = 100
@@ -62,8 +62,7 @@ def make_predictions(x_input, x_future, n_features, model, lag):
         try:
             x_input_tensor = tf.convert_to_tensor(x_input.reshape((1, lag, n_features)), dtype=tf.float32)
         except Exception as e:
-            print('--------------------ERROR---------------------------')
-            print(e)
+            logger.error(f"Error converting x_input to tensor: {e}")
         y_predict = model.predict(x_input_tensor, verbose=1)
         predict_values.append(y_predict)
         x_input = np.delete(x_input, (0), axis=1)
@@ -87,9 +86,6 @@ def forecast(
         model_architecture_params,
 ):
     model_architecture_params = model_architecture_params[0]
-
-    print(df_all_data_norm)
-
 
     possible_cols = [col_target, 'year', 'week', 'day_of_week', 'hour', 'minute', 'second', 'hour_sin', 'hour_cos',
                      'day_of_week_sin', 'day_of_week_cos', 'week_sin', 'week_cos',]
@@ -115,18 +111,12 @@ def forecast(
 
     columns = col_for_train
 
-    print(f'all_columns = {all_columns}')
-
-
-    print(f'col_for_train = {col_for_train}')
-
     train_index = evaluation_index
 
     df_true_all_col = df_true_all_col.iloc[:last_know_index + 1]
 
     df = df_all_data_norm[col_for_train]
     df_train = df.iloc[:train_index]
-    print('is work0')
 
     df_test = df.iloc[train_index + 1: last_know_index + 1]
     df_test.loc[:, col_target] = np.nan
@@ -139,8 +129,6 @@ def forecast(
     X, y = split_sequence(values, lag)
 
     n_features = values.shape[1]
-
-    print('is work1')
 
     model = Sequential()
     if len(model_architecture_params) == 3:
@@ -180,19 +168,13 @@ def forecast(
     early_stopping = EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
     reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.2, patience=5, min_lr=0.001)
     save_best_weights_callback = SaveBestWeights()
-    print('----------------------------model_architecture_params-------------------------------')
-    print(f'{model_architecture_params}')
-    print('------------------------------------------------------------------------------------')
-
-    print('is work2')
 
 
     if type != 'predictions':
         try:
             x_input = x_input.reshape((1, lag, n_features))
         except Exception as e:
-            print('--------------------ERROR---------------------------')
-            print(e)
+            logger.error(f"Error reshaping x_input: {e}")
 
 
         x_input = x_input.reshape((1, lag, n_features))
@@ -201,7 +183,7 @@ def forecast(
 
 
         predict_values = np.array(predict_values).flatten()
-        print(f'predict_values = {predict_values}')
+        logger.debug(f'predict_values = {predict_values}')
 
         df_evaluetion[col_target] = predict_values
         if len(diff_cols) > 0:
@@ -230,25 +212,7 @@ def forecast(
         df_train = df_all_data_norm[:last_know_index+1]
 
 
-    print(f'train_index = {train_index}')
-    print(f'last_know_index = {last_know_index}')
-    print(f'evaluation_index = {evaluation_index}')
-
-
-
-
-    print('-----------------------df_train--------------------')
-
-    print(df_train)
-
     df_test = df_all_data_norm.iloc[train_index + 1:]
-    print('-----------------------df_test--------------------')
-
-    print(df_test)
-
-    print('-----------------------df_all_data_norm--------------------')
-
-    print(df_all_data_norm)
 
 
     df_test.loc[:, col_target] = np.nan
@@ -273,8 +237,7 @@ def forecast(
     predict_values = make_predictions(x_input, x_future, n_features, model, lag)
 
     predict_values = np.array(predict_values).flatten()
-
-    print(f'predict_values = {predict_values}')
+    logger.debug(f'predict_values = {predict_values}')
 
     df_real_predict[col_target] = predict_values
     if len(diff_cols) > 0:
@@ -282,7 +245,6 @@ def forecast(
             df_real_predict[col] = df_true_all_col_skip[col]
 
     df_real_predict[col_target] = predict_values
-    print('is work')
 
     df_evaluetion['second'] = df_evaluetion['second'].fillna(0)
     df_true_all_col['second'] = df_true_all_col['second'].fillna(0)
@@ -316,8 +278,6 @@ def forecast(
 
     loss_list = [1]
 
-    print('----------------------------ПРОВЕРКА----------------------------------------------')
-
     dataframes = {
         'df_evaluation': df_evaluetion,
         'df_true_all_col': df_true_all_col,
@@ -327,7 +287,7 @@ def forecast(
     for name, df in dataframes.items():
         none_indices = df[df.isnull().any(axis=1)].index.tolist()
         if none_indices:
-            print(f"В DataFrame '{name}' есть None на строках: {none_indices}")
+            logger.warning(f"DataFrame '{name}' contains None/NaN values at rows: {none_indices}")
             df_evaluetion = pd.DataFrame()
             df_true_all_col = pd.DataFrame()
             df_real_predict = pd.DataFrame()
