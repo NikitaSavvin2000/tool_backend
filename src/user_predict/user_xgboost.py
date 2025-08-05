@@ -1,25 +1,18 @@
+# src/user_predict/user_xgboost.py
 import os
-from src.backend.normalization import Time2Vec
-from src.xgboost_selection_of_parameters.feature_selection import col_selection_xgboots
+
 import numpy as np
 import pandas as pd
-from src.backend.xgb import forecast_XGBoost_user
-from src.utils.possible_forecast_date import calculate_time_interval
+from xgboost import XGBRegressor
 
+from src.backend.normalization import Time2Vec
+from src.backend.xgb import forecast_XGBoost_user
+from src.core.constants.xgboost_constants import MODEL_ARCHITECTURE_PARAMS
+from src.core.logger import logger
+from src.utils.possible_forecast_date import calculate_time_interval
+from src.xgboost_selection_of_parameters.feature_selection import col_selection_xgboots
 
 home_path = os.getcwd()
-
-MODEL_ARCHITECTURE_PARAMS = {
-    "objective": "reg:squarederror",
-    "n_estimators": 500,
-    "learning_rate": 0.1,
-    "max_depth": 15,
-    "subsample": 0.9,
-    "colsample_bytree": 0.9,
-    "min_child_weight": 5,
-    "booster": "gbtree"
-}
-
 
 def forecast_XGBoost(
         col_target, time_column, df_all_data_norm, last_known_index, lag,

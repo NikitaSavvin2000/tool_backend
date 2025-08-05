@@ -1,12 +1,12 @@
-
-import tensorflow as tf
-
-from src.config import logger
+# src/xgboost_model/model.py
 import os
 
 import numpy as np
 import pandas as pd
+import tensorflow as tf
 from xgboost import XGBRegressor
+
+from src.core.logger import logger
 
 home_path = os.getcwd()
 

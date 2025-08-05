@@ -1,33 +1,52 @@
-import uvicorn
-import pandas as pd
+# src/_server.py
 import os
+from typing import Annotated
 
-from typing import Annotated, List
-from fastapi import FastAPI, HTTPException, Body
+import pandas as pd
+import uvicorn
+from fastapi import Body, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.backend.metrix import metrix_all
+from core.configuration.config import settings
+from src.backend.all_available_forecast import (
+    all_available_forecast,
+    cols_to_chose,
+    convert_df_to_datetime,
+    generate_possible_date,
+)
 from src.backend.forecast import forecast
 from src.backend.lstm import forecast_LSTM
-from src.backend.xgb import forecast_XGBoost
-from src.config import logger, public_or_local
-from src.processing.processing import to_float
-from src.backend.normalization import Time2Vec
+from src.backend.metrix import metrix_all
 from src.backend.new_network import forecast_neural_networks
+from src.backend.normalization import Time2Vec
 from src.backend.update_col_for_train import update_col_for_train, update_col_for_train_lstm
-from src.models.schemes import (
-    AnalyticsDFsRequest, NormalizationRequest, ForecastRequest,
-    ReverseNormalizationRequest, MenrixAllRequest, ForecastRequestXGBoost,
-    ForecastRequestNeuralNetworks, UpdateColRequest, ColsToChose, ConvertRequest, PredictRequest
-)
+from src.backend.xgb import forecast_XGBoost
+from src.core.logger import logger
 from src.examples_fastapi.examples import (
-    example_dfs_1, example_dfs_2, example_dfs_3,
-    example_not_norm_data, example_reverse_norm_data,
-    example_forecast_point, example_forecast_point_XGBoost,
-    example_forecast_neural_networks, example_metrix_all,
+    example_dfs_1,
+    example_dfs_2,
+    example_dfs_3,
+    example_forecast_neural_networks,
+    example_forecast_point,
+    example_forecast_point_XGBoost,
+    example_metrix_all,
+    example_not_norm_data,
+    example_reverse_norm_data,
 )
-
-from src.backend.all_available_forecast import cols_to_chose, convert_df_to_datetime, generate_possible_date, all_available_forecast
+from src.models.schemes import (
+    AnalyticsDFsRequest,
+    ColsToChose,
+    ConvertRequest,
+    ForecastRequest,
+    ForecastRequestNeuralNetworks,
+    ForecastRequestXGBoost,
+    MenrixAllRequest,
+    NormalizationRequest,
+    PredictRequest,
+    ReverseNormalizationRequest,
+    UpdateColRequest,
+)
+from src.processing.processing import to_float
 
 home_path = os.getcwd()
 
@@ -42,7 +61,7 @@ example_df_json_long = example_df_long.to_dict(orient="records")
 
 
 
-if public_or_local == 'LOCAL':
+if settings.PUBLIC_OR_LOCAL == 'LOCAL':
     url = 'http://localhost'
 else:
     url = 'http://77.37.136.11'

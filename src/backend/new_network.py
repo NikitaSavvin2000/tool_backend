@@ -1,14 +1,16 @@
+# src/backend/new_network.py
+import os
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-
-from src.config import logger
-from tensorflow.keras import regularizers
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.callbacks import Callback
-from tensorflow.keras.layers import LSTM, Dense, Bidirectional, Dropout, MaxPooling1D, Conv1D
-import os
 import yaml
+from tensorflow.keras import regularizers
+from tensorflow.keras.callbacks import Callback
+from tensorflow.keras.layers import LSTM, Bidirectional, Conv1D, Dense, MaxPooling1D
+from tensorflow.keras.models import Sequential
+
+from src.core.logger import logger
 
 home_path = os.getcwd()
 
@@ -260,7 +262,6 @@ def forecast_neural_networks(
 
 
     if type != 'predictions':
-        history = model.fit(X, y, epochs=epochs, verbose=1,)
         try:
             x_input = x_input.reshape((1, lag, n_features))
         except Exception as e:

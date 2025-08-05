@@ -1,79 +1,93 @@
-from fastapi import APIRouter, Body, HTTPException
-from src.models.schemes import MenrixAllRequest
-from src.services.metrix_service import run_metrix_all
-from src.config import logger
+# src/api/v1/metrix.py
+
+from typing import Any, Dict
+
 import pandas as pd
+from fastapi import APIRouter, Body, HTTPException
+
+from src.core.logger import logger
+from src.models.schemes import MetricsRequest
+from src.services.metrix_service import run_metrix_all
 
 router = APIRouter()
 
-@router.post("/all_metrix")
-async def get_all_metrix(body: MenrixAllRequest = Body(...)):
+@router.post("/all-metrics", response_model=dict, tags=["Metrics"])
+async def calculate_all_metrics(body: MetricsRequest = Body(...)) -> Dict[str, Any]:
     """
     Эндпоинт для расчёта метрик между двумя наборами данных.
-
+    
     Description:
-    -------------
-    Данный эндпоинт принимает два DataFrame (основной и сравнительный), 
-    вычисляет метрики качества прогноза и возвращает результаты.
+    - Принимает два DataFrame (основной и сравнительный), вычисляет метрики качества прогноза
+      и возвращает результаты.
     
     Parameters:
-    -----------
-    - **col_time** (str): Название временной колонки.
-    - **col_target** (str): Название целевой колонки.
-    - **json_list_df_reverse_evaluation** (List[Dict]): Список словарей — оценочные данные.
-    - **json_list_df_reverse_comparative** (List[Dict]): Сравнительные данные.
-
+    - **body (MetricsRequest)**: Схема запроса, содержащая следующие поля:
+        - col_time (str): Название временной колонки.
+        - col_target (str): Название целевой колонки.
+        - df_evaluation (List[Dict]): Основной DataFrame в формате JSON.
+        - df_comparative (List[Dict]): Сравнительный DataFrame в формате JSON.
+    
     Returns:
-    --------
-    - **dict**: Результат выполнения функции `run_metrix_all`, содержащий:
-        - metrics: dict — метрики (например, MAE, RMSE).
-        - df_metrics: dict — DataFrame с детализацией ошибок по точкам.
-
+    - **dict**: Результаты расчёта метрик, содержащие:
+        - metrics (Dict[str, float]): Значения метрик (например, RMSE, MAE, MAPE).
+        - df_metrics (Dict): DataFrame с детализацией метрик.
+    
     Example Request:
-    ----------------
     ```json
     {
-        "col_time": "Datetime",
-        "col_target": "consumption",
-        "json_list_df_reverse_evaluation": [
-            {"Datetime": "2018-01-10 05:00:00", "consumption": 34000.5},
-            ...
+        "col_time": "time",
+        "col_target": "value",
+        "df_evaluation": [
+            {"time": "2023-01-01 00:00:00", "value": 10},
+            {"time": "2023-01-01 00:15:00", "value": 20}
         ],
-        "json_list_df_reverse_comparative": [
-            {"Datetime": "2018-01-10 05:00:00", "consumption": 34000.0},
-            ...
+        "df_comparative": [
+            {"time": "2023-01-01 00:00:00", "value": 12},
+            {"time": "2023-01-01 00:15:00", "value": 22}
         ]
     }
     ```
-
+    
     Example Response:
-    -----------------
     ```json
     {
         "metrics": {
-            "MAE": 12.3,
-            "RMSE": 15.6,
-            "R2": 0.98
+            "RMSE": 1.414,
+            "MAE": 1.0,
+            "MAPE": 5.0
         },
         "df_metrics": {
-            "index": ["2018-01-10 05:00:00", ...],
-            "consumption": [12.3, ...]
+            "time": ["2023-01-01 00:00:00", "2023-01-01 00:15:00"],
+            "value_true": [10, 20],
+            "value_pred": [12, 22]
         }
     }
     ```
-
+    
     Raises:
-    -------
-    - **HTTPException 400**: Если произошла ошибка при преобразовании данных или при вычислении метрик.
+    - **HTTPException 400**: Если входные данные пустые или произошла ошибка при расчёте метрик.
     """
     try:
-        col_time = body.col_time
-        col_target = body.col_target
-        df_evaluation = pd.DataFrame(body.json_list_df_reverse_evaluation)
-        df_comparative = pd.DataFrame(body.json_list_df_reverse_comparative)
+        # Преобразование входных данных в DataFrame
+        df_evaluation = pd.DataFrame(body.df_evaluation)
+        df_comparative = pd.DataFrame(body.df_comparative)
 
-        result = run_metrix_all(col_time, col_target, df_evaluation, df_comparative)
+        # Проверка на пустые данные
+        if df_evaluation.empty or df_comparative.empty:
+            raise HTTPException(
+                status_code=400,
+                detail="Входные DataFrame не могут быть пустыми."
+            )
+
+        # Выполнение расчёта метрик
+        result = run_metrix_all(
+            col_time=body.col_time,
+            col_target=body.col_target,
+            df_evaluation=df_evaluation,
+            df_comparative=df_comparative
+        )
         return result
+
     except Exception as e:
-        logger.error(f"Error in all_metrix endpoint: {e}")
-        raise HTTPException(status_code=400, detail="Unknown Error")
+        logger.error(f"Ошибка в эндпоинте /all-metrics: {e}")
+        raise HTTPException(status_code=400, detail=str(e))

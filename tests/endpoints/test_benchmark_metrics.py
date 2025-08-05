@@ -1,5 +1,4 @@
-#tests/indicators/test_benchmark_metrics.py
-import pytest
+#tests/endpoints/test_benchmark_metrics.py
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 

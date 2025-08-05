@@ -1,11 +1,13 @@
+# src/routers/vectorization_router.py
+from typing import Dict, List
+
 import pandas as pd
 from fastapi import APIRouter, Body, HTTPException
-from src.services.normalization_service import run_normalization
-from src.config import logger
-from src.examples_fastapi.examples import example_not_norm_data
 from pydantic import BaseModel
-from typing import List, Dict
 
+from src.core.logger import logger
+from src.examples_fastapi.examples import example_not_norm_data
+from src.services.normalization_service import run_normalization
 
 router = APIRouter()
 
@@ -15,9 +17,9 @@ class NormalizationRequest(BaseModel):
     json_list_df: List[Dict]
 
 
-@router.post("/vectorization")
+@router.post("/")
 async def normalize_data(body: NormalizationRequest = Body(
-    example={
+    examples={
         "col_time": example_not_norm_data['col_time'],
         "col_target": example_not_norm_data['col_target'],
         "json_list_df": example_not_norm_data['json_list_df'],

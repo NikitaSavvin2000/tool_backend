@@ -1,39 +1,58 @@
+# src/utils/date_utils.py
+import re
 from datetime import datetime, timezone
+from typing import Union
+
+import pandas as pd
 from dateutil.parser import parse
 
-def standardize_datetime(input_date: str) -> str:
-    """
-    Преобразует входную дату в единый формат ISO 8601 с временем в UTC.
 
-    :param input_date: Входная строка с датой/временем в любом формате.
-    :return: Стандартная строка в формате YYYY-MM-DD HH:MM:SS UTC.
+def standardize_datetime(input_date: Union[str, int, float, datetime]) -> str:
+    """
+    Приводит входные данные к стандартному формату даты и времени: '%Y-%m-%d %H:%M:%S'.
+    
+    :param input_date: Входная дата в различных форматах (строка, Unix timestamp, datetime).
+    :return: Стандартизированная строка даты и времени.
+    :raises ValueError: Если входной формат не поддерживается.
     """
     try:
-        # 1. Определяем тип входного значения
+        dt = None
+
+        # Если входной формат — datetime
         if isinstance(input_date, datetime):
             dt = input_date
+
+        # Если входной формат — число (Unix timestamp)
         elif isinstance(input_date, (int, float)):
-            # Интерпретируем как Unix timestamp
-            dt = datetime.fromtimestamp(input_date, tz=timezone.utc)
+            timestamp = input_date
+            if timestamp > 10**8:  # Предполагаем, что это Unix timestamp
+                dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+            else:  # Иначе предполагаем, что это год
+                dt = datetime(year=int(timestamp), month=1, day=1, tzinfo=timezone.utc)
+
+        # Если входной формат — строка
         elif isinstance(input_date, str):
-            # Проверяем, является ли строка числом
-            if input_date.isdigit():
+            input_date = input_date.strip()
+
+            # Проверка на Unix timestamp в строковом формате
+            if re.match(r"^\d+$", input_date):
                 timestamp = int(input_date)
-                # Если это похоже на Unix timestamp (длинное число), интерпретируем как timestamp
                 if timestamp > 10**8:
                     dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
                 else:
-                    # Иначе предполагаем, что это год
-                    dt = datetime.strptime(input_date, "%Y")
-                    dt = dt.replace(month=1, day=1, hour=0, minute=0, second=0)
+                    dt = datetime(year=timestamp, month=1, day=1, tzinfo=timezone.utc)
+
+            # Явная обработка частичных форматов дат
             else:
-                # Явная обработка частичных форматов дат
                 possible_formats = [
                     "%Y-%m",
                     "%Y-%m-%d",
                     "%d-%m-%Y",
                     "%Y-%m-%d %H:%M",
                     "%Y-%m-%d %I:%M %p",
+                    "%B %Y",
+                    "%B %d, %Y",
+                    "%Y%m%d",
                 ]
                 for fmt in possible_formats:
                     try:
@@ -46,19 +65,41 @@ def standardize_datetime(input_date: str) -> str:
                     except ValueError:
                         continue
                 else:
-                    # Если ни один формат не подошел, пробуем парсинг через dateutil
                     dt = parse(input_date)
-        else:
+
+        if dt is None:
             raise ValueError("Unsupported input type")
 
-        # 2. Приводим к UTC
+        # Приводим к UTC
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
         else:
             dt = dt.astimezone(timezone.utc)
 
-        # 3. Преобразуем datetime в строку
+        # Преобразуем datetime в строку
         return dt.strftime('%Y-%m-%d %H:%M:%S')
 
     except Exception as e:
         raise ValueError(f"Error processing date: {e}")
+
+
+def calculate_time_interval(df: pd.DataFrame, time_column: str) -> float:
+    """
+    Вычисляет интервал времени между последовательными записями в DataFrame.
+    
+    :param df: DataFrame с временным столбцом.
+    :param time_column: Название временного столбца.
+    :return: Интервал времени в секундах.
+    """
+    try:
+        # Преобразование временного столбца в datetime
+        df[time_column] = pd.to_datetime(df[time_column], errors='coerce')
+
+        # Вычисление интервала времени
+        time_diffs = df[time_column].diff().dropna()
+        avg_interval = time_diffs.mean().total_seconds()
+
+        return avg_interval
+
+    except Exception as e:
+        raise ValueError(f"Error calculating time interval: {e}")

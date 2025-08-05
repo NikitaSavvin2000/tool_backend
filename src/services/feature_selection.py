@@ -1,4 +1,4 @@
-import asyncio
+# src/services/feature_selection.py
 import logging
 from pathlib import Path
 from typing import Dict, List
@@ -428,7 +428,7 @@ def lag_selection_xgboots(
     df_all_data = pd.concat([df, df_empty.dropna(how="all")], ignore_index=True)
     df_all_data = df_all_data.sort_values(by=time_column).reset_index(drop=True)
 
-    print(f'[INFO] Time2Vec is working')
+    print('[INFO] Time2Vec is working')
 
     t2v = Time2Vec(col_time=time_column, col_target=col_target)
     df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
@@ -441,7 +441,7 @@ def lag_selection_xgboots(
     best_lag = None
     best_mape = float('inf')
 
-    print(f'[INFO] lag evaluation is working')
+    print('[INFO] lag evaluation is working')
 
     for lag in tqdm(range(1, max_lag + 1), bar_format='{l_bar}{n_fmt}/{total_fmt} ({percentage:3.0f}%)'):
         df_true_all, df_pred_vector = forecast_XGBoost_sistem(

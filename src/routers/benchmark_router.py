@@ -1,6 +1,10 @@
-from fastapi import APIRouter
+# src/routers/benchmark_router.py
+from typing import Dict, List
+
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, HttpUrl
-from typing import List, Dict
+
+from src.core.decorators.log_decorators import log_endpoint
 
 router = APIRouter()
 
@@ -21,8 +25,9 @@ class BenchmarkResponse(BaseModel):
     datasets: List[DatasetBenchmark]
     colab_links: Dict[str, HttpUrl]
 
-@router.get("/benchmarks", response_model=BenchmarkResponse)
-async def get_benchmark_metrics():
+@router.get("/", response_model=BenchmarkResponse)
+@log_endpoint()
+async def get_benchmark_metrics(request: Request):
     """
     Получить метрики бенчмарка моделей по датасетам.
 

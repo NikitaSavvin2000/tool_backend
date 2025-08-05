@@ -1,10 +1,12 @@
-import os
-import pandas as pd
+# src/routers/possible_date_router.py
 import logging
+import os
+from typing import Annotated, Dict, List
+
+import pandas as pd
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
-from typing import List, Dict
-from typing import Annotated, List
+
 from src.utils.possible_forecast_date import generate_possible_date
 
 logging.basicConfig(level=logging.INFO)
@@ -25,10 +27,10 @@ class ConvertRequest(BaseModel):
     time_column: str
 
 
-@router.post("/possible_date", response_model=dict)
+@router.post("/", response_model=dict)
 async def func_generate_possible_date(body: Annotated[
     ConvertRequest, Body(
-        example={
+        examples={
             "df": example_df_json_long,
             "time_column": "time"
         })]):

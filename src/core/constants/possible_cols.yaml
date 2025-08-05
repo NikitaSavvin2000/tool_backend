@@ -1,4 +1,4 @@
-# config/possible_cols.yaml
+# src/core/constants/possible_cols.yaml
 all_possible_cols:
   - "year"
   - "month"

@@ -1,12 +1,13 @@
+# src/routers/reverse_vectorization_router.py
+from typing import Annotated, Dict, List
+
 import pandas as pd
 from fastapi import APIRouter, Body, HTTPException
-from src.services.normalization_service import run_reverse_normalization
-from src.config import logger
-from src.examples_fastapi.examples import example_reverse_norm_data
 from pydantic import BaseModel
-from typing import List, Dict
-from typing import Annotated, List
 
+from src.core.logger import logger
+from src.examples_fastapi.examples import example_reverse_norm_data
+from src.services.normalization_service import run_reverse_normalization
 
 router = APIRouter()
 
@@ -17,10 +18,10 @@ class ReverseNormalizationRequest(BaseModel):
     min_val: float
     max_val: float
 
-@router.post("/reverse_vectorization")
+@router.post("/")
 async def reverse_vectorization_data(body: Annotated[
     ReverseNormalizationRequest, Body(
-        example={
+        examples={
             "col_time": example_reverse_norm_data['col_time'],
             "col_target": example_reverse_norm_data['col_target'],
             "json_list_norm_df": example_reverse_norm_data['json_list_norm_df'],

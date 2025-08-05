@@ -1,54 +1,76 @@
 # src/services/pipeline_service.py
-from src.backend.all_available_forecast import cols_to_chose as backend_cols_to_chose
-from src.backend.all_available_forecast import convert_df_to_datetime as backend_convert_df_to_datetime
-from src.backend.all_available_forecast import generate_possible_date as backend_generate_possible_date
-from src.backend.all_available_forecast import all_available_forecast as backend_all_available_forecast
 
-from src.config import logger
+from typing import Dict, List
+
 import pandas as pd
 
-def cols_to_chose(df):
-    try:
-        return backend_cols_to_chose(df)
-    except Exception as e:
-        logger.error(e)
-        raise
+from src.core.logger import logger
+from src.utils.pipeline_utils import generate_possible_date, prepare_data_for_pipeline
 
-def convert_df_to_datetime(df, time_column):
-    try:
-        return backend_convert_df_to_datetime(df, time_column)
-    except Exception as e:
-        logger.error(e)
-        raise
 
-def generate_possible_date(df, time_column):
+def cols_to_chose(all_possible_cols: List[str]) -> List[str]:
+    """
+    Возвращает доступные колонки для анализа.
+    
+    :param all_possible_cols: Список всех возможных колонок.
+    :return: Список доступных колонок.
+    """
     try:
-        return backend_generate_possible_date(df, time_column)
+        return [col for col in all_possible_cols if col.startswith(("year", "month", "day"))]
     except Exception as e:
-        logger.error(e)
+        logger.error(f"Ошибка в cols_to_chose: {e}")
         raise
 
 
-def all_available_forecast(df, time_column, col_target, forecast_horizon_time):
+def convert_df_to_datetime(df: pd.DataFrame, time_column: str) -> pd.DataFrame:
+    """
+    Конвертирует временную колонку в формат datetime.
+    
+    :param df: Исходный DataFrame.
+    :param time_column: Название временной колонки.
+    :return: Преобразованный DataFrame.
+    """
     try:
-        if df.empty:
-            raise ValueError("DataFrame is empty")
-        if time_column not in df.columns:
-            raise ValueError(f"Time column '{time_column}' not found in data")
-        if pd.isna(df[time_column]).any():
-            raise ValueError(f"Time column '{time_column}' contains missing or invalid values")
-
-        result = backend_all_available_forecast(
-            df=df,
-            time_column=time_column,
-            col_target=col_target,
-            forecast_horizon_time=forecast_horizon_time
-        )
-        return result
-
-    except ValueError as ve:
-        logger.error(f"Validation error: {ve}")
-        raise ve  # Это должно быть проброшено, чтобы @handle_exceptions поймало его
+        df[time_column] = pd.to_datetime(df[time_column], errors='coerce')
+        return df
     except Exception as e:
-        logger.error(f"Ошибка в all_available_forecast: {e}", exc_info=True)
-        raise RuntimeError(f"Internal server error: {e}") from e
+        logger.error(f"Ошибка в convert_df_to_datetime: {e}")
+        raise
+
+
+def generate_possible_date_endpoint(
+    df: pd.DataFrame, time_column: str, col_target: str, forecast_horizon_time: str
+) -> List[str]:
+    """
+    Эндпоинт для генерации возможных дат прогнозирования.
+    
+    :param df: Исходный DataFrame.
+    :param time_column: Название временной колонки.
+    :param col_target: Название целевой колонки.
+    :param forecast_horizon_time: Горизонт прогнозирования.
+    :return: Список возможных дат.
+    """
+    try:
+        return generate_possible_date(df, time_column, col_target, forecast_horizon_time)
+    except Exception as e:
+        logger.error(f"Ошибка в generate_possible_date_endpoint: {e}")
+        raise
+
+
+def prepare_data_for_pipeline_endpoint(
+    df: pd.DataFrame, time_column: str, col_target: str, norm_values: bool = True
+) -> Dict[str, pd.DataFrame]:
+    """
+    Эндпоинт для подготовки данных для пайплайна.
+    
+    :param df: Исходный DataFrame.
+    :param time_column: Название временной колонки.
+    :param col_target: Название целевой колонки.
+    :param norm_values: Флаг для нормализации значений.
+    :return: Словарь с подготовленными данными.
+    """
+    try:
+        return prepare_data_for_pipeline(df, time_column, col_target, norm_values)
+    except Exception as e:
+        logger.error(f"Ошибка в prepare_data_for_pipeline_endpoint: {e}")
+        raise
