@@ -1,10 +1,11 @@
 # src/backend/update_col_for_train.py
 import os
+from pathlib import Path 
 import yaml
 from typing import List, Dict
 
-home_path = os.getcwd()
-
+SCRIPT_DIR = Path(__file__).parent.resolve() 
+POSSIBLE_COLS_FILE_PATH = SCRIPT_DIR.parent / "core" / "constants" / "possible_cols.yaml"
 
 class NotExistCol(Exception):
     def __init__(self, not_possible_cols: List[str], possible_cols: List[str]):
@@ -14,6 +15,30 @@ class NotExistCol(Exception):
             f'Возможные колонки: {possible_cols}'
         )
         super().__init__(message)
+
+def load_possible_columns() -> List[str]:
+    """
+    Загружает список всех возможных колонок из YAML-файла.
+
+    Returns:
+        List[str]: Список возможных колонок.
+
+    Raises:
+        ValueError: Если файл не найден или не может быть прочитан.
+    """
+    try:
+        with open(POSSIBLE_COLS_FILE_PATH, 'r', encoding='utf-8') as f:
+            data = yaml.safe_load(f)
+        possible_cols = data.get('all_possible_cols', [])
+        if not isinstance(possible_cols, list):
+             raise ValueError(f"Файл {POSSIBLE_COLS_FILE_PATH} не содержит корректный список 'all_possible_cols'.")
+        return possible_cols
+    except FileNotFoundError:
+        raise ValueError(f"Файл с возможными колонками не найден: {POSSIBLE_COLS_FILE_PATH}")
+    except yaml.YAMLError as e:
+        raise ValueError(f"Ошибка при чтении файла {POSSIBLE_COLS_FILE_PATH}: {e}")
+    except Exception as e:
+        raise ValueError(f"Неизвестная ошибка при загрузке возможных колонок: {e}")
 
 
 def update_col_for_train(new_cols_for_train: List[str]) -> Dict[str, List[str]]:
@@ -33,15 +58,7 @@ def update_col_for_train(new_cols_for_train: List[str]) -> Dict[str, List[str]]:
     if not new_cols_for_train:
         raise ValueError("Список колонок для обучения не может быть пустым.")
 
-    possible_cols = [
-        "year", "month", "day", "week", "day_of_week", "hour", "minute", "second",
-        "hour_sin", "hour_cos", "day_of_week_sin", "day_of_week_cos",
-        "week_sin", "week_cos", "month_sin", "month_cos",
-        "part_of_day", "is_night", "is_weekend", "day_of_year",
-        "is_working_hours", "season", "season_sin", "season_cos",
-        "quarter", "quarter_sin", "quarter_cos", "moon_phase",
-        "time_trend", "fourier_time"
-    ]
+    possible_cols = load_possible_columns() 
 
     not_possible_cols = [col for col in new_cols_for_train if col not in possible_cols]
 
@@ -52,11 +69,10 @@ def update_col_for_train(new_cols_for_train: List[str]) -> Dict[str, List[str]]:
             f"Возможные колонки: {possible_cols}"
         )
 
-    file_path = f'{home_path}/src/backend/col_for_train.yaml'
+    file_path = SCRIPT_DIR / "col_for_train.yaml" 
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             col_for_train = yaml.safe_load(f)
-            print(f"Текущие колонки: {col_for_train['col_for_train']}")
 
         col_for_train['col_for_train'] = new_cols_for_train
 
@@ -89,15 +105,7 @@ def update_col_for_train_lstm(new_cols_for_train: List[str]) -> Dict[str, List[s
     if not new_cols_for_train:
         raise ValueError("Список колонок для LSTM не может быть пустым.")
 
-    possible_cols = [
-        "year", "month", "day", "week", "day_of_week", "hour", "minute", "second",
-        "hour_sin", "hour_cos", "day_of_week_sin", "day_of_week_cos",
-        "week_sin", "week_cos", "month_sin", "month_cos",
-        "part_of_day", "is_night", "is_weekend", "day_of_year",
-        "is_working_hours", "season", "season_sin", "season_cos",
-        "quarter", "quarter_sin", "quarter_cos", "moon_phase",
-        "time_trend", "fourier_time"
-    ]
+    possible_cols = load_possible_columns() 
 
     not_possible_cols = [col for col in new_cols_for_train if col not in possible_cols]
 
@@ -108,11 +116,10 @@ def update_col_for_train_lstm(new_cols_for_train: List[str]) -> Dict[str, List[s
             f"Возможные колонки: {possible_cols}"
         )
 
-    file_path = f'{home_path}/src/backend/col_for_train_lstm.yaml'
+    file_path = SCRIPT_DIR / "col_for_train_lstm.yaml"
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             col_for_train = yaml.safe_load(f)
-            print(f"Текущие колонки для LSTM: {col_for_train['col_for_train']}")
 
         col_for_train['col_for_train'] = new_cols_for_train
 
