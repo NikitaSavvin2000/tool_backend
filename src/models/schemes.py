@@ -1,11 +1,7 @@
 # src/models/schemes.py
-from typing import Any, Dict, List, Optional
-
-from pydantic import (
-    BaseModel,
-    ConfigDict,  # Только этот способ для V2
-    Field,
-)
+from typing import List, Dict, Any, Optional
+from pydantic import BaseModel, Field
+from pydantic import ConfigDict 
 
 
 class ColsToChoseRequest(BaseModel):
@@ -89,6 +85,10 @@ class PredictRequest(BaseModel):
     optimizer: str = Field(default="adam", description="Оптимизатор")
     dropout_count: float = Field(default=0.2, ge=0.0, le=0.5, description="Dropout rate") 
 
+    model_architecture_params: Optional[List[Dict[str, Any]]] = Field(
+        default=None, description="Параметры архитектуры модели"
+    )
+
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
@@ -148,6 +148,28 @@ class UserPredictRequest(PredictRequest):
         }
     )
 
+class UpdateColRequest(BaseModel):
+    """
+    Схема для обновления списка колонок, используемых для обучения.
+    Используется в /update_col_for_train и /update_col_for_train_lstm.
+    """
+    col_for_train: List[str] = Field(
+        ...,
+        description="Список названий колонок, которые будут использоваться для обучения"
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "col_for_train": ["year", "month", "hour", "is_weekend"]
+                },
+                {
+                    "col_for_train": ["temperature", "humidity", "lag_1"]
+                }
+            ]
+        }
+    )
 
 class MetricsResponse(BaseModel):
     RMSE: float

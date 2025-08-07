@@ -6,7 +6,6 @@ from src.core.logger import logger
 from src.models.schemes import UserPredictRequest
 from src.services.user_predict_service import run_user_forecast
 
-# Создаем экземпляр роутера
 router = APIRouter()
 
 @router.post("/", response_model=Dict[str, Any], tags=["User Forecast"])
@@ -37,8 +36,7 @@ async def user_forecast(body: UserPredictRequest = Body(...)) -> Dict[str, Any]:
             data_list = body.json_list_df_all_data_norm
             logger.info(f"Колонки во входных данных: {list(data_list[0].keys()) if data_list else 'Нет данных'}")
             logger.info(f"Целевая колонка: {body.col_target}")
-            
-            # === Теперь это работает! ===
+
             logger.info(f"Горизонт прогнозирования: {body.forecast_horizon}")
             
             logger.info(f"Колонки для обучения: {body.col_for_train}")

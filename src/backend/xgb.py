@@ -238,7 +238,6 @@ def forecast_XGBoost_user(
         tuple: (df_train, df_real_predict) DataFrames with true and predicted values.
     """
 
-    # --- Обработка временной колонки ---
     df_all_data_norm[time_column] = pd.to_datetime(df_all_data_norm[time_column], errors='coerce')
     df_all_data_norm = df_all_data_norm.sort_values(by=time_column).reset_index(drop=True)
 
@@ -255,16 +254,13 @@ def forecast_XGBoost_user(
 
     df_working = df_all_data_norm[[time_column] + col_for_train].copy()
 
-    # --- Обработка целевой переменной ---
     df_working[col_target] = df_working[col_target].replace('None', np.nan).astype(float)
 
-    # --- Разделение данных ---
     df_train = df_working.iloc[:last_known_index].copy()
     df_test = df_working.iloc[last_known_index:].copy()
-    df_test.loc[:, col_target] = np.nan # Используем .loc для избежания предупреждений
+    df_test.loc[:, col_target] = np.nan 
     df_real_predict = df_test.copy()
 
-    # --- Проверка NaN ---
     nan_locations = df_train.isna()
     if nan_locations.any().any():
         print("NaN values found in df_train:")
@@ -275,34 +271,28 @@ def forecast_XGBoost_user(
     else:
         print("No NaN values found in df_train.")
 
-    values = df_train[col_for_train].values # (n_train_samples, n_features_in_col_for_train)
+    values = df_train[col_for_train].values 
 
     x_input = create_x_input(df_train[col_for_train], lag) 
 
-
-    # Генерация последовательностей для обучения модели
     X, y = split_sequence(values, lag)
 
-    n_features = len(col_for_train) # Количество признаков в col_for_train
+    n_features = len(col_for_train)
 
-    # --- Обучение модели XGBoost ---
     xgb_model = XGBRegressor(**model_architecture_params)
-    # Преобразуем X для XGBoost: из (n_samples, lag, n_features) в (n_samples, lag * n_features)
     X_reshaped = X.reshape(X.shape[0], -1)
 
-    y_target = y[:, 0] # Предполагаем, что col_target первый
-    xgb_model.fit(X_reshaped, y_target) # Обучаем на значении col_target
+    y_target = y[:, 0] 
+    xgb_model.fit(X_reshaped, y_target)
 
     print("x_input shape:", x_input.shape)
     print("n_features used for training:", n_features)
 
 
     try:
-        # make_predictions_xgb сама обрабатывает форму
-        y_pred_array = make_predictions_xgb(xgb_model, x_input) # x_input: (lag, n_features)
-        # y_pred_array будет массивом, берем первый (и скорее всего единственный) элемент
+        y_pred_array = make_predictions_xgb(xgb_model, x_input)
         predict_value_scalar = float(y_pred_array[0])
-        predict_values = [predict_value_scalar] # Оборачиваем в список, как ожидалось ранее
+        predict_values = [predict_value_scalar] 
     except Exception as pred_error:
         logger.error(f"Ошибка при генерации прогноза с XGBoost: {pred_error}")
         raise pred_error
