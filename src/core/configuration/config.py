@@ -21,7 +21,7 @@ class Settings:
 
     def get_origins_urls(self):
         if self.PUBLIC_OR_LOCAL == 'PUBLIC':
-            return 'http://77.37.136.11'
+            return ['http://77.37.136.11']
 
 
         return ["http://localhost", "http://77.37.136.11"]

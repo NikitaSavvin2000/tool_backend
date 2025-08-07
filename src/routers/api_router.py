@@ -7,7 +7,10 @@ src/routers/api_router.py
 """
 from fastapi import APIRouter
 
+from src.routers.all_metrics_router import router as all_metrics_router
+from src.routers.analytics_router import router as analytics_router
 from src.routers.benchmark_router import router as benchmark_router
+from src.routers.col_update_router import router as col_update_router
 
 # Импортируем все роутеры напрямую
 from src.routers.forecast_router import router as forecast_router
@@ -18,9 +21,6 @@ from src.routers.pipeline_router import router as pipeline_router
 from src.routers.possible_date_router import router as possible_date_router
 from src.routers.reverse_vectorization_router import router as reverse_vectorization_router
 from src.routers.user_forecast_router import router as user_forecast_router
-from src.routers.col_update_router import router as col_update_router
-from src.routers.analytics_router import router as analytics_router
-from src.routers.all_metrics_router import router as all_metrics_router
 
 # Создаём главный роутер с префиксом API
 api_router = APIRouter()

@@ -68,7 +68,6 @@ markers = [
     "unit_transform",
 ]
 pythonpath = [
-    "src",
     ".",
 ]
 
@@ -87,7 +86,3 @@ select = [
 ]
 
 ignore = ["E501", "F811"]  # Игнорировать длину строки и неиспользуемые функци
-
-[tool.pytest.ini_options]
-pythonpath = "."
-testpaths = "tests"

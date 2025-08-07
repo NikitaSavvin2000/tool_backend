@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 
 from src.core.configuration.config import settings
 from src.core.logger import logger
-from src.core.token import verify_token
+from src.core.token import token_validator
 from src.routers.api_router import api_router
 
 # Загрузка переменных окружения
@@ -25,7 +25,7 @@ logger.info(f"[WORKERS] Count workers = {workers}")
 # Создание FastAPI приложения
 app = FastAPI(
     docs_url="/docs",
-    dependencies=[Depends(verify_token)] if settings.VERIFY_TOKEN else [],
+    dependencies=[Depends(token_validator)] if settings.VERIFY_TOKEN else [],
 )
 
 # Добавление middleware для CORS
