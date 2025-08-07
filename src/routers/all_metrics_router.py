@@ -2,10 +2,11 @@
 Роутер для эндпоинта /all-metrics (расчёт метрик между двумя DataFrame).
 """
 
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
+import pandas as pd
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
-import pandas as pd
 
 from src.core.logger import logger
 from src.services.metrix_service import run_metrix_all

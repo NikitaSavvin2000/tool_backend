@@ -1,8 +1,10 @@
 # src/routers/normalization_router.py
+from typing import Any, Dict, List
+
 import pandas as pd
-from typing import List, Dict, Any
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
+
 from src.core.logger import logger
 from src.services.normalization_service import run_normalization
 

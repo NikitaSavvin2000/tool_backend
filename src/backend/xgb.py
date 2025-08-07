@@ -7,8 +7,8 @@ import yaml
 from xgboost import XGBRegressor
 
 from src.core.logger import logger
-from utils.lstm_utils import create_x_input, make_predictions, split_sequence
 from src.utils.xgb_utils import make_predictions_xgb
+from utils.lstm_utils import create_x_input, make_predictions, split_sequence
 
 home_path = os.getcwd()
 

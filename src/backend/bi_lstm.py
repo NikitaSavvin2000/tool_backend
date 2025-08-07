@@ -2,10 +2,11 @@
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from src.core.logger import logger
 from tensorflow.keras.callbacks import Callback, EarlyStopping, ReduceLROnPlateau
 from tensorflow.keras.layers import LSTM, Bidirectional, Dense, Dropout
 from tensorflow.keras.models import Sequential
+
+from src.core.logger import logger
 
 
 class SaveBestWeights(Callback):

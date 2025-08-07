@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:d5f3504b55e40bc5b838fb8807552a2ed56b6d294d35b57285be878ddfb3a2a4"
+content_hash = "sha256:4957070e53aa5a593e73919f0826b70b8db803229a757f126dc55bcbeb322d5d"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -282,6 +282,22 @@ groups = ["default"]
 files = [
     {file = "distlib-0.3.9-py2.py3-none-any.whl", hash = "sha256:47f8c22fd27c27e25a65601af709b38e4f0a45ea4fc2e710f65755fa8caaaf87"},
     {file = "distlib-0.3.9.tar.gz", hash = "sha256:a60f20dea646b8a33f3e7772f74dc0b2d0772d2837ee1342a00645c81edf9403"},
+]
+
+[[package]]
+name = "environs"
+version = "14.3.0"
+requires_python = ">=3.9"
+summary = "simplified environment variable parsing"
+groups = ["default"]
+dependencies = [
+    "marshmallow>=3.18.0",
+    "python-dotenv",
+    "typing-extensions; python_version < \"3.11\"",
+]
+files = [
+    {file = "environs-14.3.0-py3-none-any.whl", hash = "sha256:91e4c4ea964be277855cdd83a588f6375f10fad9fa452660ecb9f503c230f26a"},
+    {file = "environs-14.3.0.tar.gz", hash = "sha256:20672d92db325ce8114872b1989104eb84f083486325b5a44bcddff56472a384"},
 ]
 
 [[package]]
@@ -694,6 +710,21 @@ files = [
     {file = "MarkupSafe-3.0.2-cp312-cp312-win32.whl", hash = "sha256:0f4ca02bea9a23221c0182836703cbf8930c5e9454bacce27e767509fa286a30"},
     {file = "MarkupSafe-3.0.2-cp312-cp312-win_amd64.whl", hash = "sha256:8e06879fc22a25ca47312fbe7c8264eb0b662f6db27cb2d3bbbc74b1df4b9b87"},
     {file = "markupsafe-3.0.2.tar.gz", hash = "sha256:ee55d3edf80167e48ea11a923c7386f4669df67d7994554387f84e7d8b0a2bf0"},
+]
+
+[[package]]
+name = "marshmallow"
+version = "4.0.0"
+requires_python = ">=3.9"
+summary = "A lightweight library for converting complex datatypes to and from native Python datatypes."
+groups = ["default"]
+dependencies = [
+    "backports-datetime-fromisoformat; python_version < \"3.11\"",
+    "typing-extensions; python_version < \"3.11\"",
+]
+files = [
+    {file = "marshmallow-4.0.0-py3-none-any.whl", hash = "sha256:e7b0528337e9990fd64950f8a6b3a1baabed09ad17a0dfb844d701151f92d203"},
+    {file = "marshmallow-4.0.0.tar.gz", hash = "sha256:3b6e80aac299a7935cfb97ed01d1854fb90b5079430969af92118ea1b12a8d55"},
 ]
 
 [[package]]
