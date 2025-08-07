@@ -1,10 +1,10 @@
-import pandas as pd
+from typing import Any, Dict
+
 from fastapi import APIRouter, Body, HTTPException
-from pydantic import BaseModel
-from typing import Any, List, Dict
+
 from src.core.logger import logger
-from src.services.user_predict_service import run_user_forecast
 from src.models.schemes import UserPredictRequest
+from src.services.user_predict_service import run_user_forecast
 
 # Создаем экземпляр роутера
 router = APIRouter()

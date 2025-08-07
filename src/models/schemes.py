@@ -1,7 +1,11 @@
 # src/models/schemes.py
-from typing import List, Dict, Any, Optional
-from pydantic import BaseModel, Field
-from pydantic import ConfigDict  # Только этот способ для V2
+from typing import Any, Dict, List, Optional
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,  # Только этот способ для V2
+    Field,
+)
 
 
 class ColsToChoseRequest(BaseModel):

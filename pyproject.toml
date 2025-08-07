@@ -36,6 +36,7 @@ dependencies = [
     "pyyaml>=6.0.2",
     "pytest-timeout>=2.4.0",
     "ruff>=0.12.5",
+    "environs>=14.3.0",
 ]
 requires-python = "==3.12.*"
 readme = "README.md"
@@ -68,6 +69,7 @@ markers = [
 ]
 pythonpath = [
     "src",
+    ".",
 ]
 
 [tool.ruff]

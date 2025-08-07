@@ -2,10 +2,12 @@
 """
 Роутер для вычисления метрик (MAE, RMSE, MAPE и др.)
 """
+from typing import Any, Dict, List
+
 import pandas as pd
-from typing import List, Dict, Any
 from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
+
 from src.core.logger import logger
 from src.services.metrix_service import run_metrix_all
 

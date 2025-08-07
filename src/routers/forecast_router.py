@@ -1,11 +1,10 @@
-from fastapi import APIRouter, HTTPException, Body
-from typing import Dict, Any
+import traceback
+from typing import Any, Dict
 
 import pandas as pd
-import traceback
+from fastapi import APIRouter, Body, HTTPException
 
-from src.backend.forecast import forecast  
-from src.models.schemes import ForecastRequest 
+from src.backend.forecast import forecast
 from src.models.schemes import PredictRequest
 
 router = APIRouter()

@@ -7,18 +7,19 @@ src/routers/api_router.py
 """
 from fastapi import APIRouter
 
+from src.routers.benchmark_router import router as benchmark_router
+
 # Импортируем все роутеры напрямую
 from src.routers.forecast_router import router as forecast_router
-from src.routers.normalization_router import router as normalization_router
-from src.routers.metrix_router import router as metrix_router
-from src.routers.pipeline_router import router as pipeline_router
 from src.routers.lstm_router import router as lstm_router
-from src.routers.xgboost_router import router as xgboost_router
-from src.routers.benchmark_router import router as benchmark_router
+from src.routers.metrix_router import router as metrix_router
+from src.routers.normalization_router import router as normalization_router
+from src.routers.pipeline_router import router as pipeline_router
 from src.routers.possible_date_router import router as possible_date_router
-from src.routers.vectorization_router import router as vectorization_router
 from src.routers.reverse_vectorization_router import router as reverse_vectorization_router
 from src.routers.user_forecast_router import router as user_forecast_router
+from src.routers.vectorization_router import router as vectorization_router
+from src.routers.xgboost_router import router as xgboost_router
 
 # Создаём главный роутер с префиксом API
 api_router = APIRouter()

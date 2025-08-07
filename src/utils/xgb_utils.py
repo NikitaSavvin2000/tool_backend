@@ -1,6 +1,7 @@
 # src/utils/xgb_utils.py
+
 import numpy as np
-from typing import Any
+
 
 def make_predictions_xgb(model, x_input: np.ndarray) -> np.ndarray:
     """
