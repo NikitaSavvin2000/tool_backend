@@ -77,7 +77,7 @@ def standardize_datetime(input_date: Union[str, int, float, datetime]) -> str:
             dt = dt.astimezone(timezone.utc)
 
         # Преобразуем datetime в строку
-        return dt.strftime('%Y-%m-%d %H:%M:%S')
+        return dt.strftime('%Y-%m-%d %H:%M:%S UTC')
 
     except Exception as e:
         raise ValueError(f"Error processing date: {e}")
