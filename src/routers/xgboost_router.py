@@ -1,19 +1,22 @@
 # src/routers/xgboost_router.py
+from typing import Dict, Any 
 
-import traceback
-from typing import Any, Dict
+from fastapi import APIRouter, Body
 
-import pandas as pd
-from fastapi import APIRouter, Body, HTTPException
+from src.models.schemes import PredictRequest 
 
-from src.core.logger import logger
-from src.models.schemes import PredictRequest
+from src.core.base_handler import BaseHandler
+from src.core.decorators.log_decorators import log_endpoint
+from src.core.decorators.exception_decorators import handle_exceptions
 from src.services.xgboost_service import run_xgboost_forecast
 
 router = APIRouter()
+base_handler = BaseHandler() 
 
-@router.post("/", response_model=dict)
-async def predict_xgboost(body: PredictRequest = Body(...)) -> Dict[str, Any]:
+@router.post("/", response_model=Dict[str, Any]) 
+@log_endpoint() 
+@handle_exceptions 
+async def predict_xgboost(body: PredictRequest = Body(...)) -> Dict[str, Any]: 
     """
     Эндпоинт для прогнозирования временного ряда с использованием XGBoost.
     
@@ -83,30 +86,15 @@ async def predict_xgboost(body: PredictRequest = Body(...)) -> Dict[str, Any]:
         }
     }
     ```
-    
-    Raises:
-    - **HTTPException 400**: Если переданы некорректные данные или произошла ошибка при прогнозировании.
     """
-    try:
-        # Логирование входного запроса
-        logger.info("Received request for XGBoost prediction")
+    df = base_handler.parse_and_validate_dataframe(body.df, df_name="Input DataFrame")
 
-        # Преобразование входных данных в DataFrame
-        df = pd.DataFrame(body.df)
+    result = run_xgboost_forecast(
+        df=df, # pd.DataFrame
+        time_column=body.time_column,
+        col_target=body.col_target,
+        forecast_horizon_time=body.forecast_horizon_time,
+        lag_search_depth=body.lag_search_depth,
+    )
 
-        # Выполнение прогноза
-        result = run_xgboost_forecast(
-            df=df,
-            time_column=body.time_column,
-            col_target=body.col_target,
-            forecast_horizon_time=body.forecast_horizon_time,
-            lag_search_depth=body.lag_search_depth,
-        )
-
-        return result
-
-    except Exception as e:
-        logger.error("🔥 Ошибка во время XGBoost предсказания:")
-        traceback.print_exc()
-        logger.error(f"📋 Сообщение: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+    return result

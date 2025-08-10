@@ -1,12 +1,67 @@
 # src/models/schemes.py
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import HttpUrl, BaseModel, ConfigDict, Field
+
+class AllMetricsRequest(BaseModel):
+    col_time: str
+    col_target: str
+    df_evaluation: List[Dict[str, Any]]
+    df_comparative: List[Dict[str, Any]]
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "col_time": "time",
+                "col_target": "value",
+                "df_evaluation": [
+                    {"time": "2023-01-01 00:00:00", "value": 10},
+                    {"time": "2023-01-01 00:15:00", "value": 20}
+                ],
+                "df_comparative": [
+                    {"time": "2023-01-01 00:00:00", "value": 12},
+                    {"time": "2023-01-01 00:15:00", "value": 22}
+                ]
+            }
+        }
 
 
 class ColsToChoseRequest(BaseModel):
     all_possible_cols: List[str]
 
+class ConvertRequest(BaseModel):
+    df: List[Dict]
+    time_column: str
+
+class PipelineRequest(BaseModel):
+    """
+    Запрос для подготовки данных пайплайна.
+    """
+    df: List[Dict[Any, Any]]
+    time_column: str
+    col_target: str
+    norm_values: bool = True 
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "df": [
+                    {"Дата": "2023-01-01", "Цена": 100},
+                    {"Дата": "2023-01-02", "Цена": 105},
+                    {"Дата": "2023-01-03", "Цена": 110}
+                ],
+                "time_column": "Дата",
+                "col_target": "Цена",
+                "norm_values": True
+            }
+        }
+
+class ReverseNormalizationRequest(BaseModel):
+    col_time: str
+    col_target: str
+    json_list_norm_df: List[Dict]
+    min_val: float
+    max_val: float
 
 class DataFrameRequest(BaseModel):
     """
@@ -242,3 +297,81 @@ class BenchmarkResponse(BaseModel):
     results: List[ModelMetric]
     best_model: str
     timestamp: str
+
+
+class BenchmarkModelMetric(BaseModel):
+    name: str
+    metrics: Dict[str, float]
+    relative_to_horizon: Dict[str, float]
+
+class BenchmarkDataset(BaseModel):
+    name: str
+    source_url: HttpUrl
+    models: List[BenchmarkModelMetric]
+
+class BenchmarkStaticResponse(BaseModel):
+    datasets: List[BenchmarkDataset]
+    colab_links: Dict[str, HttpUrl]
+
+class HorizonPredictRequest(BaseModel):
+    df: List[Dict[str, Any]]
+    time_column: str
+    col_target: str
+    forecast_horizon_time: str
+    lag_search_depth: Optional[int] = None
+
+class LSTMPredictRequest(BaseModel):
+    """
+    Схема запроса для прогнозирования с использованием LSTM.
+    
+    Parameters:
+    - **df (List[Dict])**: Входной DataFrame в формате JSON.
+    - **time_column (str)**: Название временной колонки.
+    - **col_target (str)**: Название целевой колонки.
+    - **forecast_horizon_time (str)**: Горизонт прогнозирования.
+    """
+    df: List[Dict]
+    time_column: str
+    col_target: str
+    forecast_horizon_time: str
+
+    
+class MetrixRequest(BaseModel):
+    col_time: str 
+    col_target: str
+    df_true: List[Dict[Any, Any]]
+    df_pred: List[Dict[Any, Any]]
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "col_time": "Дата",
+                "col_target": "Цена",
+                "df_true": [
+                    {"Дата": "2023-01-01", "Цена": 100},
+                    {"Дата": "2023-01-02", "Цена": 105}
+                ],
+                "df_pred": [
+                    {"Дата": "2023-01-01", "Цена": 102},
+                    {"Дата": "2023-01-02", "Цена": 104}
+                ]
+            }
+        }
+
+class NormalizationRequest(BaseModel):
+    col_time: str
+    col_target: str
+    json_list_df: List[Dict[Any, Any]]
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "col_time": "Дата",
+                "col_target": "Цена",
+                "json_list_df": [
+                    {"Дата": "2023-01-01", "Цена": 100},
+                    {"Дата": "2023-01-02", "Цена": 105},
+                    {"Дата": "2023-01-03", "Цена": 110}
+                ]
+            }
+        }

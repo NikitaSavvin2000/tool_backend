@@ -1,14 +1,21 @@
-from typing import Any, Dict
+# src/routers/user_forecast_router.py
+from typing import Dict, Any
 
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body
 
-from src.core.logger import logger
 from src.models.schemes import UserPredictRequest
+
+from src.core.base_handler import BaseHandler
+from src.core.decorators.log_decorators import log_endpoint
+from src.core.decorators.exception_decorators import handle_exceptions
 from src.services.user_predict_service import run_user_forecast
 
 router = APIRouter()
+base_handler = BaseHandler() 
 
 @router.post("/", response_model=Dict[str, Any], tags=["User Forecast"])
+@log_endpoint() 
+@handle_exceptions 
 async def user_forecast(body: UserPredictRequest = Body(...)) -> Dict[str, Any]:
     """
     Эндпоинт для пользовательского прогнозирования временных рядов.
@@ -22,42 +29,25 @@ async def user_forecast(body: UserPredictRequest = Body(...)) -> Dict[str, Any]:
         - json_list_df_all_data_norm (List[Dict]): Входной DataFrame в формате JSON.
         - time_column (str): Название временной колонки.
         - col_target (str): Название целевой колонки.
-        - forecast_horizon (str): Горизонт прогнозирования. (Исправлено: без _time)
+        - forecast_horizon (str): Горизонт прогнозирования.
         - col_for_train (List[str]): Список колонок для обучения.
-        - model_architecture_params (Optional[List[Dict]]): Параметры модели XGBoost.
-        - lag (Optional[int]): Размер лага для прогнозирования.
+        - lag (int): Размер лага для прогнозирования.
+        # Остальные поля из UserPredictRequest игнорируются сервисом run_user_forecast
     
     Returns:
     - **dict**: Результат прогнозирования, содержащий:
         - map_data (dict): Данные для отрисовки графика.
+        - ... (другие поля, возвращаемые run_user_forecast)
     """
-    try:
-            logger.info("Получен запрос на прогнозирование:")
-            data_list = body.json_list_df_all_data_norm
-            logger.info(f"Колонки во входных данных: {list(data_list[0].keys()) if data_list else 'Нет данных'}")
-            logger.info(f"Целевая колонка: {body.col_target}")
+    df = base_handler.parse_and_validate_dataframe(body.json_list_df_all_data_norm, df_name="Input DataFrame")
 
-            logger.info(f"Горизонт прогнозирования: {body.forecast_horizon}")
-            
-            logger.info(f"Колонки для обучения: {body.col_for_train}")
-            
-            logger.info(f"Размер лага: {body.lag}")
+    result = run_user_forecast(
+        df=df, # pd.DataFrame
+        time_column=body.time_column, 
+        col_target=body.col_target,
+        forecast_horizon_time=body.forecast_horizon,
+        col_for_train=body.col_for_train,
+        lag=body.lag,
+    )
 
-            result = run_user_forecast(
-                df=body.json_list_df_all_data_norm, 
-                time_column=body.time_column, 
-                col_target=body.col_target,
-                forecast_horizon_time=body.forecast_horizon, # Передаем значение
-                col_for_train=body.col_for_train,
-                lag=body.lag
-            )
-
-            return result
-
-    except ValueError as ve:
-        logger.error(f"Ошибка валидации данных: {ve}")
-        raise HTTPException(status_code=400, detail=str(ve))
-
-    except Exception as e:
-        logger.error(f"Неожиданная ошибка во время прогнозирования: {e}")
-        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+    return result

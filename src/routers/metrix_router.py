@@ -2,41 +2,17 @@
 """
 Роутер для вычисления метрик (MAE, RMSE, MAPE и др.)
 """
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import pandas as pd
 from fastapi import APIRouter, Body, HTTPException
-from pydantic import BaseModel
 
 from src.core.logger import logger
 from src.services.metrix_service import run_metrix_all
+from src.models.schemes import MetrixRequest
 
 router = APIRouter(tags=["Metrics"])
 
-class MetrixRequest(BaseModel):
-    col_time: str # Добавлено недостающее поле
-    col_target: str
-    df_true: List[Dict[Any, Any]]
-    df_pred: List[Dict[Any, Any]]
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "col_time": "Дата", # Пример для нового поля
-                "col_target": "Цена",
-                "df_true": [
-                    {"Дата": "2023-01-01", "Цена": 100},
-                    {"Дата": "2023-01-02", "Цена": 105}
-                ],
-                "df_pred": [
-                    {"Дата": "2023-01-01", "Цена": 102},
-                    {"Дата": "2023-01-02", "Цена": 104}
-                ]
-            }
-        }
-
-
-# Изменен путь эндпоинта с "/" на "/all-metrics"
 @router.post("/", response_model=Dict[str, Any]) 
 async def calculate_metrics(body: MetrixRequest = Body(...)):
     """
@@ -45,7 +21,6 @@ async def calculate_metrics(body: MetrixRequest = Body(...)):
     try:
         df_true = pd.DataFrame(body.df_true)
         df_pred = pd.DataFrame(body.df_pred)
-        # Исправлен вызов функции с правильными аргументами
         result = run_metrix_all(
             col_time=body.col_time,
             col_target=body.col_target,

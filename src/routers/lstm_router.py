@@ -1,35 +1,21 @@
 # src/routers/lstm_router.py
 
-import traceback
-from typing import Any, Dict, List
+from typing import Any, Dict
+from fastapi import APIRouter, Body
 
-import pandas as pd
-from fastapi import APIRouter, Body, HTTPException
-from pydantic import BaseModel
-
-from src.core.logger import logger
+from src.models.schemes import LSTMPredictRequest 
+from src.core.base_handler import BaseHandler
+from src.core.decorators.log_decorators import log_endpoint
+from src.core.decorators.exception_decorators import handle_exceptions
 from src.services.lstm_service import run_lstm_forecast
 
 router = APIRouter()
-
-class PredictRequest(BaseModel):
-    """
-    Схема запроса для прогнозирования с использованием LSTM.
-    
-    Parameters:
-    - **df (List[Dict])**: Входной DataFrame в формате JSON.
-    - **time_column (str)**: Название временной колонки.
-    - **col_target (str)**: Название целевой колонки.
-    - **forecast_horizon_time (str)**: Горизонт прогнозирования.
-    """
-    df: List[Dict]
-    time_column: str
-    col_target: str
-    forecast_horizon_time: str
-
+base_handler = BaseHandler()
 
 @router.post("/", response_model=dict)
-async def predict_lstm(body: PredictRequest = Body(...)) -> Dict[str, Any]:
+@log_endpoint() 
+@handle_exceptions 
+async def predict_lstm(body: LSTMPredictRequest = Body(...)) -> Dict[str, Any]:
     """
     Эндпоинт для прогнозирования временного ряда с использованием LSTM.
     
@@ -97,29 +83,14 @@ async def predict_lstm(body: PredictRequest = Body(...)) -> Dict[str, Any]:
         }
     }
     ```
-    
-    Raises:
-    - **HTTPException 400**: Если переданы некорректные данные или произошла ошибка при прогнозировании.
     """
-    try:
-        # Логирование входного запроса
-        logger.info("Received request for LSTM prediction")
+    df = base_handler.parse_and_validate_dataframe(body.df, df_name="Input DataFrame")
 
-        # Преобразование входных данных в DataFrame
-        df = pd.DataFrame(body.df)
+    result = run_lstm_forecast(
+        df=df,
+        time_column=body.time_column,
+        col_target=body.col_target,
+        forecast_horizon_time=body.forecast_horizon_time,
+    )
 
-        # Выполнение прогноза
-        result = run_lstm_forecast(
-            df=df,
-            time_column=body.time_column,
-            col_target=body.col_target,
-            forecast_horizon_time=body.forecast_horizon_time,
-        )
-
-        return result
-
-    except Exception as e:
-        logger.error("🔥 Ошибка во время LSTM предсказания:")
-        traceback.print_exc()
-        logger.error(f"📋 Сообщение: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+    return result

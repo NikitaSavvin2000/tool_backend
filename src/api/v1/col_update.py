@@ -86,9 +86,7 @@ async def update_col_train_lstm(body: UpdateColRequest = Body(...)):
         response = update_col_for_train_lstm(new_cols_for_train=col_for_train)
         return response
     except HTTPException:
-        # Пробрасываем уже сформированное HTTP-исключение
         raise
     except Exception as e:
         logger.error(f"Error in /update_col_for_train_lstm: {e}")
-        # Возвращаем реальное сообщение об ошибке, а не "Unknown Error"
         raise HTTPException(status_code=400, detail=str(e))
