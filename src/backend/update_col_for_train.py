@@ -1,8 +1,8 @@
 # src/backend/update_col_for_train.py
-import os
-from pathlib import Path 
+from pathlib import Path
+from typing import Dict, List
+
 import yaml
-from typing import List, Dict
 
 SCRIPT_DIR = Path(__file__).parent.resolve() 
 POSSIBLE_COLS_FILE_PATH = SCRIPT_DIR.parent / "core" / "constants" / "possible_cols.yaml"

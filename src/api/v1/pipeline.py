@@ -5,16 +5,16 @@ from typing import Any, Dict
 import pandas as pd
 from fastapi import APIRouter, Body, HTTPException
 
+from src.backend.all_available_forecast import all_available_forecast
 from src.core.logger import logger
 from src.models.schemes import ColsToChoseRequest
-from src.routers.lstm_router import PredictRequest
+from src.models.schemes import LSTMPredictRequest
 from src.routers.possible_date_router import ConvertRequest
 from src.services.pipeline_service import (
     cols_to_chose,
     convert_df_to_datetime,
     generate_possible_date,
 )
-from src.backend.all_available_forecast import all_available_forecast
 
 router = APIRouter()
 
@@ -119,7 +119,7 @@ async def convert_datetime(body: ConvertRequest = Body(...)) -> Dict[str, Any]:
 
 
 @router.post("/generate-possible-date", response_model=dict, tags=["Pipeline"])
-async def generate_possible_date_endpoint(body: PredictRequest = Body(...)) -> Dict[str, Any]:
+async def generate_possible_date_endpoint(body: LSTMPredictRequest = Body(...)) -> Dict[str, Any]:
     """
     Эндпоинт для генерации возможных дат прогнозирования.
     
@@ -127,7 +127,7 @@ async def generate_possible_date_endpoint(body: PredictRequest = Body(...)) -> D
     - Принимает временной ряд и горизонт прогнозирования, возвращает возможные даты.
     
     Parameters:
-    - **body (PredictRequest)**: Схема запроса, содержащая следующие поля:
+    - **body (LSTMPredictRequest)**: Схема запроса, содержащая следующие поля:
         - df (List[Dict]): Входной DataFrame в формате JSON.
         - time_column (str): Название временной колонки.
         - col_target (str): Название целевой колонки.
@@ -182,7 +182,7 @@ async def generate_possible_date_endpoint(body: PredictRequest = Body(...)) -> D
 
 
 @router.post("/all-available-forecast", response_model=dict, tags=["Pipeline"])
-async def all_available_forecast_endpoint(body: PredictRequest = Body(...)) -> Dict[str, Any]:
+async def all_available_forecast_endpoint(body: LSTMPredictRequest = Body(...)) -> Dict[str, Any]:
     """
     Эндпоинт для выполнения прогнозирования всеми доступными моделями.
     
@@ -190,7 +190,7 @@ async def all_available_forecast_endpoint(body: PredictRequest = Body(...)) -> D
     - Принимает временной ряд, выполняет прогнозирование всеми доступными моделями.
     
     Parameters:
-    - **body (PredictRequest)**: Схема запроса, содержащая следующие поля:
+    - **body (LSTMPredictRequest)**: Схема запроса, содержащая следующие поля:
         - df (List[Dict]): Входной DataFrame в формате JSON.
         - time_column (str): Название временной колонки.
         - col_target (str): Название целевой колонки.

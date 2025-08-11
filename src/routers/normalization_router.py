@@ -1,37 +1,36 @@
 # src/routers/normalization_router.py
 import pandas as pd
-from typing import List, Dict, Any
-from fastapi import APIRouter, Body, HTTPException
-from pydantic import BaseModel
-from src.core.logger import logger
+from fastapi import APIRouter, Body
+from typing import Dict, Any
+
+from src.models.schemes import NormalizationRequest
+
+from src.core.base_handler import BaseHandler
+from src.core.decorators.log_decorators import log_endpoint
+from src.core.decorators.exception_decorators import handle_exceptions
 from src.services.normalization_service import run_normalization
 
 router = APIRouter(tags=["Normalization"])
+base_handler = BaseHandler() 
 
-class NormalizationRequest(BaseModel):
-    col_time: str
-    col_target: str
-    json_list_df: List[Dict[Any, Any]]
+@router.post("/", response_model=Dict[str, Any]) 
+@log_endpoint() 
+@handle_exceptions 
+async def normalize_data(body: NormalizationRequest = Body(...)) -> Dict[str, Any]: 
+    """
+    Эндпоинт для нормализации данных временного ряда.
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "col_time": "Дата",
-                "col_target": "Цена",
-                "json_list_df": [
-                    {"Дата": "2023-01-01", "Цена": 100},
-                    {"Дата": "2023-01-02", "Цена": 105},
-                    {"Дата": "2023-01-03", "Цена": 110}
-                ]
-            }
-        }
+    Parameters:
+    - **body (NormalizationRequest)**: Схема запроса, содержащая следующие поля:
+        - json_list_df (List[Dict]): Входной DataFrame в формате JSON.
+        - col_time (str): Название колонки с временными метками.
+        - col_target (str): Название целевой колонки.
 
-@router.post("/")
-async def normalize_data(body: NormalizationRequest = Body(...)):
-    try:
-        df = pd.DataFrame(body.json_list_df)
-        result = run_normalization(df, body.col_time, body.col_target)
-        return result
-    except Exception as e:
-        logger.error(e)
-        raise HTTPException(status_code=400, detail=str(e))
+    Returns:
+    - **dict**: Результат нормализации.
+    """
+    df = base_handler.parse_and_validate_dataframe(body.json_list_df, df_name="Input DataFrame")
+
+    result = run_normalization(df, body.col_time, body.col_target)
+    
+    return result

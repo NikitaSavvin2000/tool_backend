@@ -1,9 +1,9 @@
 # src/services/user_predict_service.py
 
+import traceback
 from typing import Any, Dict, List
 
 import pandas as pd
-import traceback
 
 from src.backend.xgb import forecast_XGBoost_user
 from src.core.logger import logger

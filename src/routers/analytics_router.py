@@ -1,20 +1,22 @@
 # src/routers/analytics_router.py
+from typing import Any, Dict
+
 from fastapi import APIRouter, Body
+
+from src.core.decorators.exception_decorators import handle_exceptions
+from src.core.decorators.log_decorators import log_endpoint
 from src.models.schemes import AnalyticsRequest
 from src.services.analytics_service import run_analytics_dfs
-from typing import Dict, Any
 
 router = APIRouter()
 
-@router.post("/analyticsdfs", response_model=dict, tags=["Analytics"])
+@router.post("/", response_model=Dict[str, Any], tags=["Analytics"])
+@log_endpoint()
+@handle_exceptions
 async def get_analytics_dfs(body: AnalyticsRequest = Body(...)) -> Dict[str, Any]:
     """
     Эндпоинт для анализа множества DataFrame'ов.
     Принимает список JSON-представлений DataFrame'ов.
-    Возвращает общее сообщение и словарь с количеством NaN по колонкам для каждого DF.
+    Возвращает словарь с количеством NaN по колонкам для каждого DF.
     """
-    try:
-        result = run_analytics_dfs(body.dataframes)
-        return result
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return run_analytics_dfs(body.dataframes)

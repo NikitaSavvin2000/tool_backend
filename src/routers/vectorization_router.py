@@ -1,37 +1,29 @@
 # src/routers/vectorization_router.py
-from typing import Dict, List
+from typing import Dict, Any
 
-import pandas as pd
-from fastapi import APIRouter, Body, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, Body
 
-from src.core.logger import logger
-from src.examples_fastapi.examples import example_not_norm_data
+from src.models.schemes import NormalizationRequest
+
+from src.core.base_handler import BaseHandler
+from src.core.decorators.log_decorators import log_endpoint
+from src.core.decorators.exception_decorators import handle_exceptions
 from src.services.normalization_service import run_normalization
 
 router = APIRouter()
+base_handler = BaseHandler()
 
-class NormalizationRequest(BaseModel):
-    col_time: str
-    col_target: str
-    json_list_df: List[Dict]
-
-
-@router.post("/")
-async def normalize_data(body: NormalizationRequest = Body(
-    examples={
-        "col_time": example_not_norm_data['col_time'],
-        "col_target": example_not_norm_data['col_target'],
-        "json_list_df": example_not_norm_data['json_list_df'],
-    }
-)):
+@router.post("/", response_model=Dict[str, Any]) 
+@log_endpoint()
+@handle_exceptions
+async def normalize_data(body: NormalizationRequest = Body(...)) -> Dict[str, Any]:
     """
     Эндпоинт для нормализации временного ряда.
 
     Description:
     -------------
     Принимает DataFrame и проводит его нормализацию по указанной временной и целевой колонкам.
-    Использует Time2Vec для преобразования временных данных.
+    Использует Min-Max нормализацию для целевой колонки и Time2Vec для преобразования временных данных.
 
     Parameters:
     -----------
@@ -43,7 +35,7 @@ async def normalize_data(body: NormalizationRequest = Body(
     Returns:
     --------
     - **dict**: Результат нормализации, содержащий:
-        - df_all_data_norm (dict): Нормализованный DataFrame.
+        - df_all_data_norm (List[Dict]): Нормализованный DataFrame.
         - min_val (float): Минимальное значение целевой колонки.
         - max_val (float): Максимальное значение целевой колонки.
 
@@ -64,10 +56,10 @@ async def normalize_data(body: NormalizationRequest = Body(
     -----------------
     ```json
     {
-        "df_all_data_norm": {
-            "Datetime": ["2017-01-01 00:00:00", ...],
-            "consumption": [0.0, 0.001, ...]
-        },
+        "df_all_data_norm": [
+            {"Datetime": "2017-01-01 00:00:00", "consumption": 0.0, "year": 0.5, ...},
+            {"Datetime": "2017-01-01 00:15:00", "consumption": 0.001, "year": 0.5, ...}
+        ],
         "min_val": 28349.81,
         "max_val": 34120.55
     }
@@ -76,12 +68,10 @@ async def normalize_data(body: NormalizationRequest = Body(
     Raises:
     -------
     - **HTTPException 400**: Если входной DataFrame пустой или произошла ошибка при нормализации.
+    (Обрабатывается декоратором @handle_exceptions)
     """
-    try:
-        df = pd.DataFrame(body.json_list_df)
-        result = run_normalization(df, body.col_time, body.col_target)
+    df = base_handler.parse_and_validate_dataframe(body.json_list_df, df_name="Input DataFrame")
 
-        return result
-    except Exception as e:
-        logger.error(e)
-        raise HTTPException(status_code=400, detail=str(e))
+    result = run_normalization(df, body.col_time, body.col_target)
+    
+    return result

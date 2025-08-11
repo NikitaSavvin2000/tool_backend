@@ -3,16 +3,16 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 
-from api.v1.benchmark_metrics import router as benchmark_router
+from src.routers.benchmark_router import router as benchmark_router
 
 app = FastAPI()
-app.include_router(benchmark_router, prefix="/api/v1/benchmark-metrics")
+app.include_router(benchmark_router, prefix="/api/v1/benchmark")
 
 client = TestClient(app)
 
 # Строгие проверки структуры, типов и сообщений к assert
 def test_benchmark_metrics_response():
-    response = client.get("/api/v1/benchmark-metrics")
+    response = client.get("/api/v1/benchmark")
     assert response.status_code == 200, "Response status is not 200 OK"
 
     data = response.json()

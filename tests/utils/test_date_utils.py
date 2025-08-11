@@ -1,6 +1,6 @@
 # tests/test_date_utils.py
 from datetime import datetime
-from utils.date_utils import standardize_datetime
+from src.utils.date_utils import standardize_datetime
 
 def test_standardize_datetime():
     assert standardize_datetime(datetime(2023, 10, 5, 12, 30, 0)) == "2023-10-05 12:30:00 UTC"

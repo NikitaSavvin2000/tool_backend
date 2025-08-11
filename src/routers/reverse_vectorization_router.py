@@ -1,60 +1,66 @@
 # src/routers/reverse_vectorization_router.py
-from typing import Annotated, Dict, List
+from typing import Dict, Any
 
-import pandas as pd
-from fastapi import APIRouter, Body, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, Body
 
-from src.core.logger import logger
-from src.examples_fastapi.examples import example_reverse_norm_data
+from src.models.schemes import ReverseNormalizationRequest
+
+from src.core.base_handler import BaseHandler
+from src.core.decorators.log_decorators import log_endpoint
+from src.core.decorators.exception_decorators import handle_exceptions
 from src.services.normalization_service import run_reverse_normalization
 
 router = APIRouter()
+base_handler = BaseHandler() 
 
-class ReverseNormalizationRequest(BaseModel):
-    col_time: str
-    col_target: str
-    json_list_norm_df: List[Dict]
-    min_val: float
-    max_val: float
-
-@router.post("/")
-async def reverse_vectorization_data(body: Annotated[
-    ReverseNormalizationRequest, Body(
-        examples={
-            "col_time": example_reverse_norm_data['col_time'],
-            "col_target": example_reverse_norm_data['col_target'],
-            "json_list_norm_df": example_reverse_norm_data['json_list_norm_df'],
-            "min_val": example_reverse_norm_data['min_val'],
-            "max_val": example_reverse_norm_data['max_val']
-        })]):
+@router.post("/", response_model=Dict[str, Any])
+@log_endpoint() 
+@handle_exceptions 
+async def reverse_vectorization_data(body: ReverseNormalizationRequest = Body(...)) -> Dict[str, Any]:
     """
-    Эндпоинт для нормализации временного ряда.
+    Эндпоинт для обратной нормализации (денормализации) временного ряда.
 
     Description:
     -------------
-    Принимает DataFrame и проводит его нормализацию по указанной временной и целевой колонкам.
-    Использует Time2Vec для преобразования временных данных.
+    Принимает нормализованный DataFrame и проводит обратную нормализацию (денормализацию)
+    по указанной временной и целевой колонкам, используя предоставленные min/max значения.
 
     Parameters:
     -----------
-    - **body (NormalizationRequest)**: Схема запроса, содержащая:
-        - json_list_df (List[Dict]): Входные данные в формате списка словарей.
+    - **body (ReverseNormalizationRequest)**: Схема запроса, содержащая:
+        - json_list_norm_df (List[Dict]): Нормализованные данные в формате списка словарей.
         - col_time (str): Название временной колонки.
-        - col_target (str): Название целевой колонки для нормализации.
+        - col_target (str): Название целевой колонки для денормализации.
+        - min_val (float): Минимальное значение, использованное при нормализации.
+        - max_val (float): Максимальное значение, использованное при нормализации.
 
     Returns:
     --------
-    - **dict**: Результат нормализации, содержащий:
-        - df_all_data_norm (dict): Нормализованный DataFrame.
-        - min_val (float): Минимальное значение целевой колонки.
-        - max_val (float): Максимальное значение целевой колонки.
+    - **dict**: Результат денормализации, содержащий:
+        - df_denorm (List[Dict]): Денормализованный DataFrame в формате списка словарей.
+        - col_time (str): Название временной колонки.
+        - col_target (str): Название целевой колонки.
 
     Example Request:
     ----------------
     ```json
     {
-        "json_list_df": [
+        "json_list_norm_df": [
+            {"Datetime": "2017-01-01 00:00:00", "consumption_norm": 0.0},
+            {"Datetime": "2017-01-01 00:15:00", "consumption_norm": 0.001}
+        ],
+        "col_time": "Datetime",
+        "col_target": "consumption",
+        "min_val": 28349.81,
+        "max_val": 34120.55
+    }
+    ```
+
+    Example Response:
+    -----------------
+    ```json
+    {
+        "df_denorm": [
             {"Datetime": "2017-01-01 00:00:00", "consumption": 31935.19},
             {"Datetime": "2017-01-01 00:15:00", "consumption": 31846.25}
         ],
@@ -63,46 +69,17 @@ async def reverse_vectorization_data(body: Annotated[
     }
     ```
 
-    Example Response:
-    -----------------
-    ```json
-    {
-        "df_all_data_norm": {
-            "Datetime": ["2017-01-01 00:00:00", ...],
-            "consumption": [0.0, 0.001, ...]
-        },
-        "min_val": 28349.81,
-        "max_val": 34120.55
-    }
-    ```
-
     Raises:
     -------
-    - **HTTPException 400**: Если входной DataFrame пустой или произошла ошибка при нормализации.
+    - **HTTPException 400**: Если входной DataFrame пустой или произошла ошибка при денормализации.
     """
+    df = base_handler.parse_and_validate_dataframe(body.json_list_norm_df, df_name="Normalized Input DataFrame")
 
-    try:
-        col_time = body.col_time
-        col_target = body.col_target
-        json_list_norm_df = body.json_list_norm_df
-        min_val = body.min_val
-        max_val = body.max_val
-        df = pd.DataFrame(json_list_norm_df)
-
-        if not df.empty:
-            result = run_reverse_normalization(df, col_time, col_target, min_val, max_val)
-            return result
-        else:
-            logger.error("Something happened during creation of the search table")
-            raise HTTPException(
-                status_code=400,
-                detail="Bad Request",
-                headers={"X-Error": "Something happened during creation of the search table"},
-            )
-    except Exception as ApplicationError:
-        logger.error(ApplicationError.__repr__())
-        raise HTTPException(
-            status_code=400,
-            detail="Unknown Error",
-            headers={"X-Error": f"{ApplicationError.__repr__()}"},
-        )
+    result = run_reverse_normalization(
+        df=df, # pd.DataFrame
+        col_time=body.col_time,
+        col_target=body.col_target,
+        min_val=body.min_val,
+        max_val=body.max_val
+    )
+    return result

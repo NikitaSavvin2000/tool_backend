@@ -1,40 +1,22 @@
 # src/routers/possible_date_router.py
-import logging
-import os
-from typing import Annotated, Dict, List
+from typing import Dict, Any # Добавлен импорт Any
 
-import pandas as pd
-from fastapi import APIRouter, Body, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, Body
 
+from src.models.schemes import ConvertRequest
+
+from src.core.base_handler import BaseHandler
+from src.core.decorators.log_decorators import log_endpoint
+from src.core.decorators.exception_decorators import handle_exceptions
 from src.utils.possible_forecast_date import generate_possible_date
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 router = APIRouter()
+base_handler = BaseHandler() 
 
-home_path = os.getcwd()
-
-example_df = pd.read_csv(f'{home_path}/src/examples_data/example_data.csv')
-example_df = example_df.drop(columns=["Unnamed: 0"])
-example_df_long = example_df[:1000]
-
-example_df_json_long = example_df_long.to_dict(orient="records")
-
-class ConvertRequest(BaseModel):
-    df: List[Dict]
-    time_column: str
-
-
-@router.post("/", response_model=dict)
-async def func_generate_possible_date(body: Annotated[
-    ConvertRequest, Body(
-        examples={
-            "df": example_df_json_long,
-            "time_column": "time"
-        })]):
-
+@router.post("/", response_model=Dict[str, Any])
+@log_endpoint()
+@handle_exceptions 
+async def func_generate_possible_date(body: ConvertRequest = Body(...)) -> Dict[str, Any]:
     """
     Генерирует возможный диапазон дат и времени для фронта на основе временного столбца DataFrame.
 
@@ -45,16 +27,15 @@ async def func_generate_possible_date(body: Annotated[
     Максимальная дата (`max`) определяется как `5%` от длины DataFrame в будущем, с учётом вычисленного интервала времени.
     Также возвращается параметр `min_forecast_horizon_time`, который обозначает минимально возможную дату для выбора пользователем.
 
-    Параметры:
+    Parameters:
     ----------
-    df : pd.DataFrame
-        DataFrame, содержащий временные данные.
-    time_column : str
-        Название столбца, содержащего временные метки.
+    - **body (ConvertRequest)**: Схема запроса, содержащая:
+        - df (List[Dict]): Входной DataFrame в формате JSON.
+        - time_column (str): Название столбца, содержащего временные метки.
 
     Возвращает:
     ----------
-    dict:
+    - **dict**:
         - `date`: словарь с минимальной (`min`) и максимальной (`max`) датами.
         - `min_forecast_horizon_time`: минимально возможная дата для выбора пользователем.
         - `time_hour`: список возможных значений часов (от `0` до `23`).
@@ -99,18 +80,7 @@ async def func_generate_possible_date(body: Annotated[
     print(response)
     ```
     """
-    try:
-        json_df = body.df
-        df = pd.DataFrame(json_df)
-        time_column = body.time_column
+    df = base_handler.parse_and_validate_dataframe(body.df, df_name="Input DataFrame")
 
-        response = generate_possible_date(df=df, time_column=time_column)
-        return response
-
-    except Exception as ApplicationError:
-        logger.error(ApplicationError.__repr__())
-        raise HTTPException(
-            status_code=400,
-            detail="Unknown Error",
-            headers={"X-Error": f"{ApplicationError.__repr__()}"},
-        )
+    response = generate_possible_date(df=df, time_column=body.time_column)
+    return response
