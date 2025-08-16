@@ -133,6 +133,10 @@ def user_predict_XGBoost(
     default_cols = load_possible_cols()
 
     print('[INFO] >>>> lag_selection_xgboots is working')
+
+    if lag_search_depth is None:
+        lag_search_depth = 1
+
     if lag_search_depth == 1 or lag_search_depth == 0 or lag_search_depth > 21 or lag_search_depth < 0:
         lag = 1
         errors = {"mape": "unknown"}
