@@ -67,52 +67,59 @@ class ForecastRequest(BaseModel):
     )
 
 
+# class PredictRequest(BaseModel):
+#     """
+#     Модель для запроса прогноза (LSTM/XGBoost/User Forecast).
+#     """
+#     json_list_df_all_data_norm: List[Dict[str, Any]] = Field(
+#         ...,
+#         description="Нормализованные данные временного ряда"
+#     )
+#     time_column: str
+#     col_target: str = Field(..., description="Целевая колонка")
+#     evaluation_index: int = Field(..., ge=1, description="Индекс начала оценки")
+#     last_know_index: int = Field(..., ge=0, description="Последний известный индекс")
+#     epochs: int = Field(..., ge=1, le=1000, description="Количество эпох обучения")
+#     lag: int = Field(..., ge=1, description="Количество шагов для lookback")
+#     activation: str = Field(default="relu", description="Функция активации")
+#     optimizer: str = Field(default="adam", description="Оптимизатор")
+#     dropout_count: float = Field(default=0.2, ge=0.0, le=0.5, description="Dropout rate")
+#
+#     model_architecture_params: Optional[List[Dict[str, Any]]] = Field(
+#         default=None, description="Параметры архитектуры модели"
+#     )
+#
+#     model_config = ConfigDict(
+#         json_schema_extra={
+#             "examples": [
+#                 {
+#                     "json_list_df_all_data_norm": [
+#                         {"temperature": 0.1, "year": 0.5},
+#                         {"temperature": 0.2, "year": 0.5}
+#                     ],
+#                     "col_target": "temperature",
+#                     "evaluation_index": 10,
+#                     "last_know_index": 12,
+#                     "epochs": 5,
+#                     "lag": 2,
+#                     "activation": "relu",
+#                     "optimizer": "adam",
+#                     "dropout_count": 0.2,
+#                     "model_architecture_params": [
+#                         {"layer": 1, "type": "LSTM", "neurons": 64}
+#                     ]
+#                 }
+#             ]
+#         }
+#     )
+
+
 class PredictRequest(BaseModel):
-    """
-    Модель для запроса прогноза (LSTM/XGBoost/User Forecast).
-    """
-    json_list_df_all_data_norm: List[Dict[str, Any]] = Field(
-        ...,
-        description="Нормализованные данные временного ряда"
-    )
+    df: List[Dict]
     time_column: str
-    col_target: str = Field(..., description="Целевая колонка")
-    evaluation_index: int = Field(..., ge=1, description="Индекс начала оценки")
-    last_know_index: int = Field(..., ge=0, description="Последний известный индекс")
-    epochs: int = Field(..., ge=1, le=1000, description="Количество эпох обучения")
-    lag: int = Field(..., ge=1, description="Количество шагов для lookback")
-    activation: str = Field(default="relu", description="Функция активации")
-    optimizer: str = Field(default="adam", description="Оптимизатор")
-    dropout_count: float = Field(default=0.2, ge=0.0, le=0.5, description="Dropout rate") 
-
-    model_architecture_params: Optional[List[Dict[str, Any]]] = Field(
-        default=None, description="Параметры архитектуры модели"
-    )
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "json_list_df_all_data_norm": [
-                        {"temperature": 0.1, "year": 0.5},
-                        {"temperature": 0.2, "year": 0.5}
-                    ],
-                    "col_target": "temperature",
-                    "evaluation_index": 10,
-                    "last_know_index": 12,
-                    "epochs": 5,
-                    "lag": 2,
-                    "activation": "relu",
-                    "optimizer": "adam",
-                    "dropout_count": 0.2,
-                    "model_architecture_params": [
-                        {"layer": 1, "type": "LSTM", "neurons": 64}
-                    ]
-                }
-            ]
-        }
-    )
-
+    col_target: str
+    forecast_horizon_time: str
+    lag_search_depth: Optional[int] = None
 
 class UserPredictRequest(PredictRequest):
     """
@@ -242,3 +249,8 @@ class BenchmarkResponse(BaseModel):
     results: List[ModelMetric]
     best_model: str
     timestamp: str
+
+
+class ConvertRequest(BaseModel):
+    df: List[Dict]
+    time_column: str

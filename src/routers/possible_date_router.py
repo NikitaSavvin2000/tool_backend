@@ -9,6 +9,9 @@ from pydantic import BaseModel
 
 from src.utils.possible_forecast_date import generate_possible_date
 
+from src.models.schemes import ConvertRequest
+
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -18,20 +21,16 @@ home_path = os.getcwd()
 
 example_df = pd.read_csv(f'{home_path}/src/examples_data/example_data.csv')
 example_df = example_df.drop(columns=["Unnamed: 0"])
-example_df_long = example_df[:1000]
+example_df_short = example_df[:100]
 
-example_df_json_long = example_df_long.to_dict(orient="records")
-
-class ConvertRequest(BaseModel):
-    df: List[Dict]
-    time_column: str
+example_df_json_short = example_df_short.to_dict(orient="records")
 
 
 @router.post("/", response_model=dict)
 async def func_generate_possible_date(body: Annotated[
     ConvertRequest, Body(
-        examples={
-            "df": example_df_json_long,
+        example={
+            "df": example_df_json_short,
             "time_column": "time"
         })]):
 

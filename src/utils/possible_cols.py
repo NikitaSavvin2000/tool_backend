@@ -9,7 +9,7 @@ from src.core.logger import logger
 
 # Определение корневой директории проекта
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # Корень проекта
-CONFIG_DIR = PROJECT_ROOT / "src" / "configuration"
+CONFIG_DIR = PROJECT_ROOT / "src" / "core" /"constants"
 
 def load_possible_cols() -> List[str]:
     """

@@ -465,7 +465,8 @@ def lag_selection_xgboots(
         y_true = df_evaluation[col_target].reset_index(drop=True)
         y_pred = df_real_predict[col_target].reset_index(drop=True)
 
-        _, _, _, mape, _ = calculate_metrics(y_true, y_pred)
+        metrix = calculate_metrics(y_true, y_pred)
+        mape = metrix["MAPE"]
 
         print(f">>> CURRENT MAPE = {round(mape, 3)}  CURRENT LAG = {lag} | BEST MAPE = {round(best_mape, 3)} BEST LAG = {best_lag}")
         logger.info(f">>> CURRENT MAPE = {round(mape, 3)}  CURRENT LAG = {lag} | BEST MAPE = {round(best_mape, 3)} BEST LAG = {best_lag}")
