@@ -1,8 +1,5 @@
 # src/server.py
 import multiprocessing
-import os
-import sys
-import yaml
 
 import uvicorn
 from dotenv import load_dotenv

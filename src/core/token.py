@@ -23,7 +23,7 @@ class TokenValidator:
             logger.info(f"Loading tokens from: {tokens_link}")
 
             df = pd.read_csv(tokens_link, encoding='utf-8')
-            valid_tokens = df.loc[df['source'] == 'horizon_orchestrator', 'token'].tolist()
+            valid_tokens = df.loc[df['source'] == 'tool_backend', 'token'].tolist()
 
             if not valid_tokens:
                 raise ValueError("No valid tokens found for 'tool_backend' source.")
