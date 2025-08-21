@@ -84,7 +84,7 @@ if __name__ == "__main__":
             "src.server:app",
             host=settings.HOST,
             port=settings.PORT,
-            workers=4,
+            workers=2,
             log_level="debug",
         )
     except Exception as e:
