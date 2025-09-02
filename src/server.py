@@ -67,9 +67,6 @@ app.add_middleware(
 # Подключение роутеров API
 app.include_router(api_router, prefix="/api/v1")
 
-for route in app.routes:
-    print(route.path)
-
 
 @app.get("/")
 def read_root():
