@@ -17,7 +17,7 @@ home_path = os.getcwd()
 
 example_df = pd.read_csv(f'{home_path}/src/examples_data/example_data.csv')
 example_df = example_df.drop(columns=["Unnamed: 0"])
-example_df_long = example_df[:100]
+example_df_long = example_df[:1000]
 
 example_df_json_long = example_df_long.to_dict(orient="records")
 
@@ -27,7 +27,6 @@ async def predict_xgboost(request: PredictRequest = Body(...,
              "time_column": "time",
              "col_target": "load_consumption",
              "forecast_horizon_time": "2022-09-10 05:55:00",
-             "lag_search_depth": 2,
              "df": example_df_json_long
          }
          )):
