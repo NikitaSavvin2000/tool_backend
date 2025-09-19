@@ -26,7 +26,7 @@ example_df_short = example_df[:100]
 example_df_json_short = example_df_short.to_dict(orient="records")
 
 
-@router.post("/", response_model=dict)
+@router.post("/possible-date", response_model=dict)
 async def func_generate_possible_date(body: Annotated[
     ConvertRequest, Body(
         example={

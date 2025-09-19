@@ -9,7 +9,9 @@ from fastapi import APIRouter, Body, HTTPException
 
 from src.core.logger import logger
 from src.models.schemes import PredictRequest
-from src.services.xgboost_service import user_predict_XGBoost
+# from src.services.xgboost_service import user_predict_XGBoost
+from src.services.xgboost.xgboost_forecast import user_predict_XGBoost
+
 
 router = APIRouter()
 
@@ -21,7 +23,7 @@ example_df_long = example_df[:1000]
 
 example_df_json_long = example_df_long.to_dict(orient="records")
 
-@router.post("/", response_model=dict)
+@router.post("/predict-xgboost", response_model=dict)
 async def predict_xgboost(request: PredictRequest = Body(...,
          example={
              "time_column": "time",

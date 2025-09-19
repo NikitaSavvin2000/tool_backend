@@ -6,7 +6,7 @@ from src.utils.date_utils import standardize_datetime
 from src.utils.possible_cols import load_possible_cols
 from xgboost import XGBRegressor
 from src.utils.metrics import calculate_metrics
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import numpy as np
 
@@ -274,6 +274,7 @@ def user_predict_XGBoost(
         forecast_horizon_time: str,
         lag_search_depth: int = 1
 ) -> dict:
+
     """
     Генерирует прогноз временного ряда с использованием XGBoost.
 
@@ -335,17 +336,13 @@ def user_predict_XGBoost(
 
     best_params["best_params"] = model_params
 
-    original_format = df[time_column].copy()
-    df.loc[:, time_column] = pd.to_datetime(df[time_column], errors="coerce")
-    df = df.sort_values(by=time_column, ascending=True).reset_index(drop=True)
-    df[time_column] = original_format
+    df[time_column] = pd.to_datetime(df[time_column])  # если ещё не datetime
+    df = df.sort_values(by=time_column, ascending=False).reset_index(drop=True)
 
-    # Определение временного интервала
-    last_value = df[[time_column, col_target]].iloc[-1]
-    last_known_data = df.iloc[-1][time_column]
+
     time_point_interval = abs(calculate_time_interval(df, time_column))
-
-    last_time = df[time_column].iloc[-1]
+    last_time = df[time_column].max()
+    last_value = df[df[time_column] == last_time][[time_column, col_target]].iloc[0]
 
     date_range = pd.date_range(
         start=last_time,
@@ -354,7 +351,7 @@ def user_predict_XGBoost(
     )
     date_range = date_range[1:]
     df_future = pd.DataFrame({time_column: date_range, col_target: [None] * len(date_range)})
-
+    df_future[time_column] = pd.to_datetime(df_future[time_column])
 
     df_all_data = pd.concat([df, df_future], ignore_index=True).sort_values(by=time_column, ascending=True).reset_index(drop=True)
     last_known_index = len(df_all_data) - len(date_range)
@@ -415,14 +412,17 @@ def user_predict_XGBoost(
     df[time_column] = df[time_column].apply(lambda x: standardize_datetime(str(x)))
 
     # Подготовка результатов
+    cols_to_show = [time_column, col_target]
+    df_real_predict = df_real_predict[cols_to_show]
     predictions = df_real_predict.to_dict(orient="records")
+
     return {
         "map_data": {
             "data": {
                 "predictions": predictions,
             },
             "errors": errors,
-            "last_know_data": last_known_data,
+            "last_know_data": last_time,
             "title": f"Реальный прогноз {col_target}",
             "legend": {
                 "last_know_data_line": {
