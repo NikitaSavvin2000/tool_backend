@@ -15,13 +15,13 @@ experiment_path = os.path.join(home_path, "src", "services", "xgboost",  "experi
 
 
 collection_data = {
-    "italy": {
-        "df": pd.read_csv(os.path.join(data_path, "load_consumption_2025.csv")),
-        "time_column": "datetime",
-        "col_target": "load_consumption",
-        "lag_search_depth": 0,
-        "points_to_predict": 288
-    },
+    # "italy": {
+    #     "df": pd.read_csv(os.path.join(data_path, "load_consumption_2025.csv")),
+    #     "time_column": "datetime",
+    #     "col_target": "load_consumption",
+    #     "lag_search_depth": 0,
+    #     "points_to_predict": 288
+    # },
     "ats": {
         "df": pd.read_csv(os.path.join(data_path, "DEKENERG_ZONE2_S_PAMURENE.csv")),
         "time_column": "datetime",
@@ -63,6 +63,8 @@ if __name__ == "__main__":
         points_to_predict = collection_data[data_name_to_experiment]["points_to_predict"]
         lag_search_depth = collection_data[data_name_to_experiment]["lag_search_depth"]
 
+        df[time_column] = pd.to_datetime(df[time_column]) + pd.DateOffset(years=9)
+
         df = df.sort_values(by=time_column, ascending=False)
         forecast_horizon_time = df[time_column].iloc[0]
 
@@ -81,6 +83,8 @@ if __name__ == "__main__":
         test_response_structure(result)
 
         df_pred = pd.DataFrame(result["map_data"]["data"]["predictions"])
+
+        print(df_pred)
 
         df_pred = df_pred.sort_values(by=time_column, ascending=False).reset_index(drop=True)
         df_true = df_true.sort_values(by=time_column, ascending=False).reset_index(drop=True)

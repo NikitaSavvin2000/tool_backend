@@ -7,7 +7,7 @@ from src.utils.possible_cols import load_possible_cols
 from xgboost import XGBRegressor
 from src.utils.metrics import calculate_metrics
 from typing import List, Tuple, Dict
-
+import math
 import numpy as np
 
 model_architecture_params = [{
@@ -341,14 +341,25 @@ def user_predict_XGBoost(
 
 
     time_point_interval = abs(calculate_time_interval(df, time_column))
+
+    def _smart_round(x):
+        if x == 0:
+            return 0
+        magnitude = 10 ** int(math.log10(abs(x)) - 1)
+        return round(x / magnitude) * magnitude
+
     last_time = df[time_column].max()
     last_value = df[df[time_column] == last_time][[time_column, col_target]].iloc[0]
+    time_point_interval = _smart_round(time_point_interval)
+
+    print(f"time_point_interval = {time_point_interval}")
 
     date_range = pd.date_range(
         start=last_time,
         end=forecast_horizon_time,
         freq=f"{int(time_point_interval)}s",
     )
+    print(f"date_range = {date_range}")
     date_range = date_range[1:]
     df_future = pd.DataFrame({time_column: date_range, col_target: [None] * len(date_range)})
     df_future[time_column] = pd.to_datetime(df_future[time_column])

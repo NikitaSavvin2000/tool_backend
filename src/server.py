@@ -12,7 +12,6 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from src.core.configuration.config import settings
 from src.core.logger import logger
 from src.routers.api_router import api_router
-from src.core.token import token_validator
 
 from src.routers.forecast_router import router as forecast_router
 
@@ -40,7 +39,6 @@ app = FastAPI(
     docs_url=docs_url,
     openapi_url="/openapi.json",
     root_path=API_PREFIX,
-    dependencies=[Depends(token_validator)] if settings.VERIFY_TOKEN else []
 )
 
 @app.exception_handler(RequestValidationError)
