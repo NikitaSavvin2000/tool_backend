@@ -9,6 +9,12 @@ from src.utils.metrics import calculate_metrics
 from typing import List, Tuple, Dict
 import math
 import numpy as np
+import plotly.graph_objects as go
+import pandas as pd
+import numpy as np
+from scipy.stats import linregress
+from scipy.signal import find_peaks
+import json
 
 model_architecture_params = [{
     "objective": "reg:squarederror",
@@ -183,8 +189,6 @@ def lag_selection_xgboots(
     df_all_data = pd.concat([df, df_empty.dropna(how="all")], ignore_index=True)
     df_all_data = df_all_data.sort_values(by=time_column).reset_index(drop=True)
 
-    print('[INFO] Time2Vec is working')
-
     t2v = Time2Vec(col_time=time_column, col_target=col_target)
     df_all_data_norm, min_val, max_val = t2v.vectorization(df_all_data)
 
@@ -196,7 +200,6 @@ def lag_selection_xgboots(
     best_lag = None
     best_mape = float('inf')
 
-    print('[INFO] lag evaluation is working')
 
     for lag in tqdm(range(1, max_lag + 1), bar_format='{l_bar}{n_fmt}/{total_fmt} ({percentage:3.0f}%)'):
         df_true_all, df_pred_vector = forecast_XGBoost_sistem(
@@ -223,7 +226,6 @@ def lag_selection_xgboots(
         metrix = calculate_metrics(y_true, y_pred)
         mape = metrix["MAPE"]
 
-        print(f">>> CURRENT MAPE = {round(mape, 3)}  CURRENT LAG = {lag} | BEST MAPE = {round(best_mape, 3)} BEST LAG = {best_lag}")
         logger.info(f">>> CURRENT MAPE = {round(mape, 3)}  CURRENT LAG = {lag} | BEST MAPE = {round(best_mape, 3)} BEST LAG = {best_lag}")
 
         if mape < best_mape:
@@ -293,7 +295,6 @@ def user_predict_XGBoost(
 
     default_cols = load_possible_cols()
 
-    print('[INFO] >>>> lag_selection_xgboots is working')
 
     if lag_search_depth is None:
         lag_search_depth = 1
@@ -352,14 +353,12 @@ def user_predict_XGBoost(
     last_value = df[df[time_column] == last_time][[time_column, col_target]].iloc[0]
     time_point_interval = _smart_round(time_point_interval)
 
-    print(f"time_point_interval = {time_point_interval}")
 
     date_range = pd.date_range(
         start=last_time,
         end=forecast_horizon_time,
         freq=f"{int(time_point_interval)}s",
     )
-    print(f"date_range = {date_range}")
     date_range = date_range[1:]
     df_future = pd.DataFrame({time_column: date_range, col_target: [None] * len(date_range)})
     df_future[time_column] = pd.to_datetime(df_future[time_column])
@@ -425,7 +424,10 @@ def user_predict_XGBoost(
     # Подготовка результатов
     cols_to_show = [time_column, col_target]
     df_real_predict = df_real_predict[cols_to_show]
-    predictions = df_real_predict.to_dict(orient="records")
+
+    df_real_predict = df_real_predict.astype(str)
+    predictions = json.loads(df_real_predict.to_json(orient='records', force_ascii=False))
+    # predictions = df_real_predict.to_dict(orient="records")
 
     return {
         "map_data": {
@@ -453,3 +455,142 @@ def user_predict_XGBoost(
             },
         },
     }
+
+
+
+def analyze_time_series_for_llm(df, time_column, col_target):
+    df_sorted = df.sort_values(time_column)
+    time_values = pd.to_datetime(df_sorted[time_column])
+    target_values = df_sorted[col_target].astype(float)
+
+    result = {}
+    result['description'] = "Словарь содержит сводку временного ряда: ключевые статистики, тренды, пики и экстремумы. Каждый ключ имеет описание на русском языке."
+
+    result['time_range'] = {
+        'start_date': str(time_values.min()),
+        'end_date': str(time_values.max()),
+        'description': "Начальная и конечная даты временного ряда."
+    }
+
+    result['basic_statistics'] = {
+        'mean': float(target_values.mean()),
+        'median': float(target_values.median()),
+        'std_dev': float(target_values.std()),
+        'variance': float(target_values.var()),
+        'range': float(target_values.max() - target_values.min()),
+        'first_value': float(target_values.iloc[0]),
+        'last_value': float(target_values.iloc[-1]),
+        'total_change': float(target_values.iloc[-1] - target_values.iloc[0]),
+        'percent_change': float((target_values.iloc[-1] - target_values.iloc[0]) / target_values.iloc[0] * 100
+                                if target_values.iloc[0] != 0 else np.nan),
+        'description': "Основные статистические характеристики ряда и общее изменение от первой до последней точки."
+    }
+
+    slope, intercept, r_value, p_value, std_err = linregress(np.arange(len(target_values)), target_values)
+    if slope > 0:
+        trend = 'возрастающий'
+    elif slope < 0:
+        trend = 'убывающий'
+    else:
+        trend = 'стабильный'
+
+    result['trend'] = {
+        'direction': trend,
+        'slope': float(slope),
+        'r_squared': float(r_value**2),
+        'p_value': float(p_value),
+        'description': "Общий тренд временного ряда: возрастающий, убывающий или стабильный, с характеристиками линейной регрессии."
+    }
+
+    peaks_idx, _ = find_peaks(target_values)
+    troughs_idx, _ = find_peaks(-target_values)
+
+    result['peaks'] = {
+        'values': [float(target_values[i]) for i in peaks_idx],
+        'dates': [str(time_values[i]) for i in peaks_idx],
+        'description': "Все локальные максимумы (пики) временного ряда и соответствующие им даты."
+    }
+
+    result['troughs'] = {
+        'values': [float(target_values[i]) for i in troughs_idx],
+        'dates': [str(time_values[i]) for i in troughs_idx],
+        'description': "Все локальные минимумы (впадины) временного ряда и соответствующие им даты."
+    }
+
+    result['extremes'] = {
+        'max_value': float(target_values.max()),
+        'max_date': str(time_values[target_values.idxmax()]),
+        'min_value': float(target_values.min()),
+        'min_date': str(time_values[target_values.idxmin()]),
+        'description': "Глобальный максимум и минимум временного ряда с датами их появления."
+    }
+
+    result['quartiles'] = {
+        '25_percentile': float(target_values.quantile(0.25)),
+        '50_percentile': float(target_values.quantile(0.5)),
+        '75_percentile': float(target_values.quantile(0.75)),
+        'description': "Квартильные значения для оценки распределения временного ряда."
+    }
+
+    return result
+
+
+def agent_predict(
+        df: pd.DataFrame,
+        time_column: str,
+        col_target: str,
+        forecast_horizon_time: str,
+        lag_search_depth: int = 1
+) -> dict:
+
+    result = user_predict_XGBoost(
+        df=df,
+        time_column=time_column,
+        col_target=col_target,
+        forecast_horizon_time=forecast_horizon_time,
+        lag_search_depth=lag_search_depth,
+    )
+
+    predict_table = result["map_data"]["data"]["predictions"]
+    last_know_data = result["map_data"]["last_know_data"]
+
+    df_predictions = pd.DataFrame(predict_table)
+
+    df[time_column] = pd.to_datetime(df[time_column])
+    df = df.sort_values(by=time_column, ascending=False).reset_index(drop=True)
+
+    count_to_show = len(df_predictions) * 2
+    df_last = df.head(count_to_show)
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=df_last[time_column],
+        y=df_last[col_target],
+        mode='lines',
+        name=f'Предыдущие значения - {col_target}',
+        line=dict(color='blue')
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=df_predictions[time_column],
+        y=df_predictions[col_target],
+        mode='lines',
+        name=f'Прогноз - {col_target}',
+        line=dict(color='orange')
+    ))
+
+    fig.update_layout(
+        title=f'График прогноза {col_target}',
+        xaxis_title='Время',
+        yaxis_title=col_target,
+        template='plotly_white',
+        hovermode='x',  # вертикальная линия при наведении
+        xaxis=dict(showspikes=True, spikemode='across', spikesnap='cursor', showline=True, spikecolor='gray', spikethickness=1)
+    )
+
+    html_output = fig.to_html()
+
+    meta_info = analyze_time_series_for_llm(df=df_predictions, time_column=time_column, col_target=col_target)
+
+    return meta_info, html_output, predict_table

@@ -13,7 +13,7 @@ class Settings:
         self.PUBLIC_OR_LOCAL = env.str("PUBLIC_OR_LOCAL", "LOCAL")
 
         self.HOST = env.str("HOST", '0.0.0.0')
-        self.PORT = env.int('PORT', 7070)
+        self.PORT = env.int('PORT', 7071)
 
 
 

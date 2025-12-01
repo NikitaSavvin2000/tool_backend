@@ -10,7 +10,7 @@ from fastapi import APIRouter, Body, HTTPException
 from src.core.logger import logger
 from src.models.schemes import PredictRequest
 # from src.services.xgboost_service import user_predict_XGBoost
-from src.services.xgboost.xgboost_forecast import user_predict_XGBoost
+from src.services.xgboost.xgboost_forecast import user_predict_XGBoost, agent_predict
 
 
 router = APIRouter()
@@ -131,6 +131,128 @@ async def predict_xgboost(request: PredictRequest = Body(...,
         )
 
         return result
+
+    except Exception as e:
+        logger.error("🔥 Ошибка во время XGBoost предсказания:")
+        traceback.print_exc()
+        logger.error(f"📋 Сообщение: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+
+@router.post("/predict_agent", response_model=dict)
+async def predict_xgboost(request: PredictRequest = Body(...,
+                                                         example={
+                                                             "time_column": "time",
+                                                             "col_target": "load_consumption",
+                                                             "forecast_horizon_time": "2022-09-10 05:55:00",
+                                                             "df": example_df_json_long
+                                                         }
+                                                         )):
+    """
+    Генерирует прогноз временного ряда с использованием pipeline Horizon на базе XGBoost.
+
+    Описание:
+    ----------
+    Функция принимает временной ряд, нормализует данные, формирует будущий интервал времени и
+    выполняет прогнозирование. Возвращает результат в формате JSON, который включает последние известные
+    данные и прогнозируемые значения для визуализации на фронтенде.
+
+    Параметры:
+    ----------
+    1. `df` (pd.DataFrame) — Исходный DataFrame, содержащий временной ряд с целевой переменной.
+    2. `time_column` (str) — Название столбца, содержащего временные метки.
+    3. `col_target` (str) — Название целевой переменной, по которой строится прогноз.
+    4. `forecast_horizon_time` (str) — Временная граница прогнозирования в формате **yyyy-mm-dd hh:mm:ss** .
+
+    Возвращает:
+    ----------
+    - map_data (dict) - словапь данных для отрисовки в словаре содержаться:
+    1. `data` (dict):
+            - **last_real_data** (list[dict]) — Последние известны еданные пользователя
+            - **predictions** (list[dict]) — Данные предсказания.
+    2. `errors` (dict): - процент ошибки на тестировании
+            - **mape** float— mape
+    3. `last_know_data_line` (dict) — линия, обозначающая последнюю известную дату:
+        - **text** (dict):
+            - **en** (str) — описание на английском языке.
+            - **ru** (str) — описание на русском языке.
+        - **color** (str) — цвет линии, разделяющей реальные данные и прогноз.
+    4. `real_data_line` (dict) — линия реальных данных:
+        - **text** (dict):
+            - **en** (str) — описание на английском языке.
+            - **ru** (str) — описание на русском языке.
+        - **color** (str) — цвет линии реальных данных на графике.
+    5. `predict_data_line` (dict) — линия прогнозируемых данных:
+        - **text** (dict):
+            - **en** (str) — описание на английском языке.
+            - **ru** (str) — описание на русском языке.
+        - **color** (str) — цвет линии прогнозируемых данных.
+
+
+    Пример вызова API python:
+    ------------------
+    ```
+    import requests
+    import pandas as pd
+
+    def func_generate_forecast(df: pd.DataFrame, time_column: str, col_target: str, forecast_horizon_time: str):
+        url = "http://your_backend_url/backend/v1/generate_forecast"
+
+        df_records = df.to_dict(orient='records')
+
+        data = {
+            "df": df_records,
+            "time_column": time_column,
+            "col_target": col_target,
+            "forecast_horizon_time": forecast_horizon_time
+        }
+
+        try:
+            response = requests.post(url, json=data)
+
+            if response.status_code == 200:
+                return response.json()
+            else:
+                print(f"Ошибка при запросе: {response.status_code}")
+                return None
+        except requests.exceptions.RequestException as e:
+            print(f"Ошибка при запросе: {e}")
+            return None
+
+    df = pd.read_csv(<here yor data>)
+
+    time_column = 'time'
+    col_target = 'load_consumption'
+    forecast_horizon_time = '2022-09-10 05:00:00'
+    df[time_column] = pd.to_datetime(df[time_column])
+
+    response = func_generate_forecast(df, time_column, col_target, forecast_horizon_time)
+    ```
+    """
+
+    try:
+        # Логирование входного запроса
+        logger.info("Received request for XGBoost prediction")
+
+        # Преобразование входных данных в DataFrame
+        df = pd.DataFrame(request.df)
+
+        # Выполнение прогноза
+
+        meta_info, html_chart, predict_table = agent_predict(
+            df=df,
+            time_column=request.time_column,
+            col_target=request.col_target,
+            forecast_horizon_time=request.forecast_horizon_time,
+            lag_search_depth=request.lag_search_depth,
+        )
+
+        return {
+            "meta_info": meta_info,
+            "html_chart": html_chart,
+            "predict_table": predict_table
+        }
 
     except Exception as e:
         logger.error("🔥 Ошибка во время XGBoost предсказания:")
