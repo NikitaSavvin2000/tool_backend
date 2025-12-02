@@ -589,6 +589,17 @@ def agent_predict(
         xaxis=dict(showspikes=True, spikemode='across', spikesnap='cursor', showline=True, spikecolor='gray', spikethickness=1)
     )
 
+    fig.update_layout(
+        legend=dict(
+            orientation='h',
+            yanchor='bottom',
+            y=-0.3,
+            xanchor='center',
+            x=0.5
+        ),
+        autosize=True,
+    )
+
     html_output = fig.to_html()
 
     meta_info = analyze_time_series_for_llm(df=df_predictions, time_column=time_column, col_target=col_target)
